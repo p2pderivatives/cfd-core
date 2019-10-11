@@ -1,0 +1,765 @@
+// Copyright 2019 CryptoGarage
+/**
+ * @file cfdcore_transaction.cpp
+ *
+ * @brief Transaction関連クラスの実装ファイルです。
+ */
+#include <limits>
+#include <string>
+#include <vector>
+
+#include "cfdcore/cfdcore_bytedata.h"
+#include "cfdcore/cfdcore_exception.h"
+#include "cfdcore/cfdcore_logger.h"
+#include "cfdcore/cfdcore_transaction.h"
+#include "cfdcore/cfdcore_util.h"
+#include "cfdcore_wally_util.h"  // NOLINT
+#include "wally_script.h"        // NOLINT
+
+namespace cfd {
+namespace core {
+
+using logger::info;
+using logger::warn;
+
+// -----------------------------------------------------------------------------
+// ファイル内定数
+// -----------------------------------------------------------------------------
+/// Transactionの最小Hexサイズ
+static constexpr size_t kTransactionMinimumHexSize =
+    AbstractTransaction::kTransactionMinimumSize * 2;
+
+// -----------------------------------------------------------------------------
+// TxOut
+// -----------------------------------------------------------------------------
+TxOut::TxOut() {
+  // do nothing
+}
+
+TxOut::TxOut(const Amount &value, const Script &locking_script)
+    : AbstractTxOut(value, locking_script) {
+  // do nothing
+}
+
+// -----------------------------------------------------------------------------
+// TxOutReference
+// -----------------------------------------------------------------------------
+TxOutReference::TxOutReference(const TxOut &tx_out)
+    : AbstractTxOutReference(tx_out) {
+  // do nothing
+}
+
+// -----------------------------------------------------------------------------
+// TxIn
+// -----------------------------------------------------------------------------
+TxIn::TxIn(const Txid &txid, uint32_t index, uint32_t sequence)
+    : AbstractTxIn(txid, index, sequence) {
+  // do nothing
+}
+
+TxIn::TxIn(
+    const Txid &txid, uint32_t index, uint32_t sequence,
+    const Script &unlocking_script)
+    : AbstractTxIn(txid, index, sequence, unlocking_script) {
+  // do nothing
+}
+
+// -----------------------------------------------------------------------------
+// TxInReference
+// -----------------------------------------------------------------------------
+TxInReference::TxInReference(const TxIn &tx_in)
+    : AbstractTxInReference(tx_in) {
+  // do nothing
+}
+
+// -----------------------------------------------------------------------------
+// Transaction
+// -----------------------------------------------------------------------------
+Transaction::Transaction() : Transaction(2, static_cast<uint32_t>(0)) {
+  // do nothing
+}
+
+Transaction::Transaction(int32_t version, uint32_t lock_time)
+    : vin_(), vout_() {
+  struct wally_tx *tx_pointer = NULL;
+  int ret = wally_tx_init_alloc(version, lock_time, 0, 0, &tx_pointer);
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_init_alloc NG[{}] ", ret);
+    throw CfdException(
+        kCfdIllegalArgumentError, "transaction data generate error.");
+  }
+  wally_tx_pointer_ = tx_pointer;
+}
+
+Transaction::Transaction(const std::string &hex_string) : vin_(), vout_() {
+  SetFromHex(hex_string);
+}
+
+Transaction::Transaction(const Transaction &transaction)
+    : Transaction(transaction.GetHex()) {
+  // copy constructor
+}
+
+bool Transaction::CheckTxOutBuffer(
+    const uint8_t *buffer, size_t buf_size, uint64_t txout_num,
+    size_t txout_num_size, void *tx_pointer, std::vector<TxOut> *txout_list) {
+  bool is_success = false;
+  if (buf_size > txout_num_size) {
+    size_t data_size = buf_size - txout_num_size;
+    size_t offset = 0;
+    const uint8_t *address_pointer = buffer;
+    address_pointer += txout_num_size;
+    bool is_error = false;
+    for (uint64_t index = 0; index < txout_num; ++index) {
+      const uint8_t *work_address = &address_pointer[offset];
+      size_t limit = data_size - offset;
+      size_t total = 0;
+      // value分のチェック
+      if (limit <= sizeof(int64_t)) {
+        is_error = true;
+        break;
+      }
+      uint64_t amount;
+      memcpy(&amount, work_address, sizeof(amount));
+      work_address += sizeof(uint64_t);
+      limit -= sizeof(uint64_t);
+      total += sizeof(uint64_t);
+      // locking scriptのチェック
+      uint64_t script_size = 0;
+      size_t vnum_size = 0;
+      if (!GetVariableInt(work_address, limit, &script_size, &vnum_size)) {
+        is_error = true;
+        break;
+      } else if (limit < (vnum_size + script_size)) {
+        is_error = true;
+        break;
+      }
+      work_address += vnum_size;
+      total += vnum_size + script_size;
+      offset += total;
+
+      // TxOut情報コピー
+      if (tx_pointer != NULL) {
+        int ret = wally_tx_add_raw_output(
+            static_cast<struct wally_tx *>(tx_pointer), amount, work_address,
+            script_size, 0);
+        if (ret != WALLY_OK) {
+          warn(CFD_LOG_SOURCE, "wally_tx_add_raw_output NG[{}].", ret);
+          throw CfdException(kCfdIllegalStateError, "vout add error.");
+        }
+      }
+      if (txout_list != nullptr) {
+        std::vector<uint8_t> byte_array(script_size);
+        memcpy(byte_array.data(), work_address, byte_array.size());
+        TxOut out(
+            Amount::CreateBySatoshiAmount(amount),
+            Script(ByteData(byte_array)));
+        txout_list->push_back(out);
+      }
+    }
+
+    if ((!is_error) && (data_size == offset)) {
+      is_success = true;
+    }
+  }
+  return is_success;
+}
+
+void Transaction::SetFromHex(const std::string &hex_string) {
+  void *original_address = wally_tx_pointer_;
+  bool append_txout = false;
+  std::vector<TxIn> vin_work;
+  std::vector<TxOut> vout_work;
+
+  // tx情報は作成済みである前提とする。(作成済みじゃないと不整合を起こす)
+  struct wally_tx *tx_pointer = NULL;
+  int ret = wally_tx_from_hex(hex_string.c_str(), 0, &tx_pointer);
+  if (ret == WALLY_OK) {
+    if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0) &&
+        (hex_string.size() > kTransactionMinimumHexSize)) {
+      // txinが0かつtxoutが1の時に生じる解析不正状態と判断して、例外ルートに入れ込む
+      // (libwallyがwitness txと誤認する)
+      wally_tx_free(tx_pointer);
+      tx_pointer = NULL;
+      ret = WALLY_EINVAL;
+    }
+  }
+
+  if (ret == WALLY_EINVAL) {
+    ByteData tx_byte = StringUtil::StringToByte(hex_string);
+    const std::vector<uint8_t> &tx_buf = tx_byte.GetBytes();
+    const uint8_t *address_pointer = tx_buf.data();
+
+    // 最小サイズであれば、解析実施
+    if (hex_string.size() >= kTransactionMinimumHexSize) {
+      uint32_t version = 0;
+      uint32_t lock_time = 0;
+      memcpy(&version, address_pointer, sizeof(version));
+      address_pointer += sizeof(version);
+      if (*address_pointer != 0) {
+        // markerが1か、txinが1以上。
+        // libwallyで解析可能なタイプなので、不正データとして処理
+      } else {
+        // txinが0か、markerが0
+        ++address_pointer;
+        if ((*address_pointer == 0) &&
+            (hex_string.size() == kTransactionMinimumHexSize)) {
+          // txoutが0
+          ++address_pointer;
+          memcpy(&lock_time, address_pointer, sizeof(lock_time));
+          ret = wally_tx_init_alloc(version, lock_time, 0, 0, &tx_pointer);
+          if (ret != WALLY_OK) {
+            warn(CFD_LOG_SOURCE, "wally_tx_init_alloc NG[{}] ", ret);
+            throw CfdException(
+                kCfdIllegalArgumentError, "transaction data generate error.");
+          }
+          info(CFD_LOG_SOURCE, "call wally_tx_init_alloc");
+        } else {
+          // 残サイズをチェックし、txinが0かつtxoutが1以上なのかどうかチェック
+          const uint8_t *start_address = tx_buf.data();
+          size_t size = address_pointer - start_address;
+          uint64_t txout_num = 0;
+          size_t num_size = 0;
+          // txbufのサイズから、txout領域前までのサイズとlocktime分を差し引く
+          size_t buf_size = tx_buf.size() - size - sizeof(uint32_t);
+          if (!GetVariableInt(
+                  address_pointer, buf_size, &txout_num, &num_size)) {
+            // 不正
+          } else if (!CheckTxOutBuffer(
+                         address_pointer, buf_size, txout_num, num_size)) {
+            // 不正
+          } else {
+            // txout OK
+            // locktimeコピー
+            const uint8_t *work_address = address_pointer + buf_size;
+            memcpy(&lock_time, work_address, sizeof(lock_time));
+            ret = wally_tx_init_alloc(version, lock_time, 0, 0, &tx_pointer);
+            if (ret != WALLY_OK) {
+              warn(CFD_LOG_SOURCE, "wally_tx_init_alloc NG[{}] ", ret);
+              throw CfdException(
+                  kCfdIllegalArgumentError,
+                  "transaction data generate error.");
+            }
+            info(CFD_LOG_SOURCE, "call wally_tx_init_alloc");
+            append_txout = true;
+            // 改めてTxOutにデータ追加
+            CheckTxOutBuffer(
+                address_pointer, buf_size, txout_num, num_size, tx_pointer,
+                &vout_work);
+          }
+        }
+      }
+    }
+  }
+
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_from_hex NG[{}] ", ret);
+    throw CfdException(kCfdIllegalArgumentError, "transaction data invalid.");
+  }
+  wally_tx_pointer_ = tx_pointer;
+
+  try {
+    // create TxIn and TxOut
+    for (size_t index = 0; index < tx_pointer->num_inputs; ++index) {
+      struct wally_tx_input *txin_item = &tx_pointer->inputs[index];
+      std::vector<uint8_t> txid_buf(
+          txin_item->txhash, txin_item->txhash + sizeof(txin_item->txhash));
+      std::vector<uint8_t> script_buf(
+          txin_item->script, txin_item->script + txin_item->script_len);
+      Script unlocking_script = Script(ByteData(script_buf));
+      /* 一旦除外
+      if (!unlocking_script.IsPushOnly()) {
+        warn(CFD_LOG_SOURCE, "IsPushOnly() false.");
+        throw CfdException(
+            kCfdIllegalArgumentError,
+            "unlocking script error. "
+            "The script needs to be push operator only.");
+      } */
+      TxIn txin(
+          Txid(ByteData256(txid_buf)), txin_item->index, txin_item->sequence,
+          unlocking_script);
+      if ((txin_item->witness != NULL) &&
+          (txin_item->witness->num_items != 0)) {
+        struct wally_tx_witness_item *witness_stack;
+        for (size_t w_index = 0; w_index < txin_item->witness->num_items;
+             ++w_index) {
+          witness_stack = &txin_item->witness->items[w_index];
+          const std::vector<uint8_t> witness_buf(
+              witness_stack->witness,
+              witness_stack->witness + witness_stack->witness_len);
+          txin.AddScriptWitnessStack(ByteData(witness_buf));
+        }
+      }
+      vin_work.push_back(txin);
+    }
+
+    info(CFD_LOG_SOURCE, "num_outputs={} ", tx_pointer->num_outputs);
+    if (!append_txout) {
+      for (size_t index = 0; index < tx_pointer->num_outputs; ++index) {
+        struct wally_tx_output *txout_item = &tx_pointer->outputs[index];
+        std::vector<uint8_t> script_buf(
+            txout_item->script, txout_item->script + txout_item->script_len);
+        TxOut txout(
+            Amount::CreateBySatoshiAmount(txout_item->satoshi),
+            Script(ByteData(script_buf)));
+        vout_work.push_back(txout);
+      }
+    }
+
+    // コピー処理が成功したら、旧バッファを解放
+    if (original_address != NULL) {
+      wally_tx_free(static_cast<struct wally_tx *>(original_address));
+      vin_.clear();
+      vout_.clear();
+    }
+    vin_ = vin_work;
+    vout_ = vout_work;
+  } catch (const CfdException &exception) {
+    // エラー時は解放
+    wally_tx_free(tx_pointer);
+    wally_tx_pointer_ = original_address;
+    throw exception;
+  } catch (...) {
+    // エラー時は解放
+    wally_tx_free(tx_pointer);
+    wally_tx_pointer_ = original_address;
+    throw CfdException(kCfdUnknownError);
+  }
+}
+
+Transaction &Transaction::operator=(const Transaction &transaction) & {
+  SetFromHex(transaction.GetHex());
+  return *this;
+}
+
+uint32_t Transaction::GetTotalSize() const {
+  size_t length = 0;
+  struct wally_tx *tx_pointer =
+      static_cast<struct wally_tx *>(wally_tx_pointer_);
+  // input/output共に0個の場合、libwallyがElementsTransactionと誤認してしまう。
+  if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0)) {
+    length = static_cast<size_t>(kTransactionMinimumSize);
+  } else {
+    length = AbstractTransaction::GetTotalSize();
+  }
+  return static_cast<uint32_t>(length);
+}
+
+uint32_t Transaction::GetVsize() const {
+  size_t vsize = 0;
+  struct wally_tx *tx_pointer =
+      static_cast<struct wally_tx *>(wally_tx_pointer_);
+  // input/output共に0個の場合、libwallyがElementsTransactionと誤認してしまう。
+  if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0)) {
+    vsize = static_cast<size_t>(kTransactionMinimumSize);
+  } else {
+    vsize = AbstractTransaction::GetVsize();
+  }
+  return static_cast<uint32_t>(vsize);
+}
+
+uint32_t Transaction::GetWeight() const {
+  size_t weight = 0;
+  struct wally_tx *tx_pointer =
+      static_cast<struct wally_tx *>(wally_tx_pointer_);
+  // input/output共に0個の場合、libwallyがElementsTransactionと誤認してしまう。
+  if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0)) {
+    weight = static_cast<size_t>(kTransactionMinimumSize) * 4;
+  } else {
+    weight = AbstractTransaction::GetWeight();
+  }
+  return static_cast<uint32_t>(weight);
+}
+
+const TxInReference Transaction::GetTxIn(uint32_t index) const {
+  CheckTxInIndex(index, __LINE__, __FUNCTION__);
+  return TxInReference(vin_[index]);
+}
+
+uint32_t Transaction::GetTxInIndex(const Txid &txid, uint32_t vout) const {
+  for (size_t i = 0; i < vin_.size(); ++i) {
+    if (vin_[i].GetTxid().Equals(txid) && vin_[i].GetVout() == vout) {
+      return static_cast<uint32_t>(i);
+    }
+  }
+  warn(CFD_LOG_SOURCE, "Txid is not found.");
+  throw CfdException(kCfdIllegalArgumentError, "Txid is not found.");
+}
+
+uint32_t Transaction::GetTxInCount() const {
+  return static_cast<uint32_t>(vin_.size());
+}
+
+const std::vector<TxInReference> Transaction::GetTxInList() const {
+  std::vector<TxInReference> refs;
+  for (TxIn tx_in : vin_) {
+    refs.push_back(TxInReference(tx_in));
+  }
+  return refs;
+}
+
+uint32_t Transaction::AddTxIn(
+    const Txid &txid, uint32_t index, uint32_t sequence,
+    const Script &unlocking_script) {
+  if (vin_.size() == std::numeric_limits<uint32_t>::max()) {
+    warn(CFD_LOG_SOURCE, "vin maximum.");
+    throw CfdException(kCfdIllegalStateError, "txin maximum.");
+  }
+
+  AbstractTransaction::AddTxIn(txid, index, sequence, unlocking_script);
+  TxIn txin(txid, index, sequence);
+  if (!unlocking_script.IsEmpty()) {
+    txin = TxIn(txid, index, sequence, unlocking_script);
+  }
+
+  vin_.push_back(txin);
+
+  return static_cast<uint32_t>(vin_.size() - 1);
+}
+
+void Transaction::RemoveTxIn(uint32_t index) {
+  AbstractTransaction::RemoveTxIn(index);
+
+  std::vector<TxIn>::const_iterator ite = vin_.cbegin();
+  if (index != 0) {
+    ite += index;
+  }
+  vin_.erase(ite);
+}
+
+void Transaction::SetUnlockingScript(
+    uint32_t tx_in_index, const Script &unlocking_script) {
+  AbstractTransaction::SetUnlockingScript(tx_in_index, unlocking_script);
+  vin_[tx_in_index].SetUnlockingScript(unlocking_script);
+}
+
+void Transaction::SetUnlockingScript(
+    uint32_t tx_in_index, const std::vector<ByteData> &unlocking_script) {
+  Script generate_unlocking_script =
+      AbstractTransaction::SetUnlockingScript(tx_in_index, unlocking_script);
+  vin_[tx_in_index].SetUnlockingScript(generate_unlocking_script);
+}
+
+uint32_t Transaction::GetScriptWitnessStackNum(uint32_t tx_in_index) const {
+  CheckTxInIndex(tx_in_index, __LINE__, __FUNCTION__);
+  return vin_[tx_in_index].GetScriptWitnessStackNum();
+}
+
+const ScriptWitness Transaction::AddScriptWitnessStack(
+    uint32_t tx_in_index, const ByteData &data) {
+  return AddScriptWitnessStack(tx_in_index, data.GetBytes());
+}
+
+const ScriptWitness Transaction::AddScriptWitnessStack(
+    uint32_t tx_in_index, const ByteData160 &data) {
+  return AddScriptWitnessStack(tx_in_index, data.GetBytes());
+}
+
+const ScriptWitness Transaction::AddScriptWitnessStack(
+    uint32_t tx_in_index, const ByteData256 &data) {
+  return AddScriptWitnessStack(tx_in_index, data.GetBytes());
+}
+
+const ScriptWitness Transaction::AddScriptWitnessStack(
+    uint32_t tx_in_index, const std::vector<uint8_t> &data) {
+  AbstractTransaction::AddScriptWitnessStack(tx_in_index, data);
+
+  const ScriptWitness &witness =
+      vin_[tx_in_index].AddScriptWitnessStack(ByteData(data));
+  return witness;
+}
+
+const ScriptWitness Transaction::SetScriptWitnessStack(
+    uint32_t tx_in_index, uint32_t witness_index, const ByteData &data) {
+  return SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+}
+
+const ScriptWitness Transaction::SetScriptWitnessStack(
+    uint32_t tx_in_index, uint32_t witness_index, const ByteData160 &data) {
+  return SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+}
+
+const ScriptWitness Transaction::SetScriptWitnessStack(
+    uint32_t tx_in_index, uint32_t witness_index, const ByteData256 &data) {
+  return SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+}
+
+const ScriptWitness Transaction::SetScriptWitnessStack(
+    uint32_t tx_in_index, uint32_t witness_index,
+    const std::vector<uint8_t> &data) {
+  AbstractTransaction::SetScriptWitnessStack(tx_in_index, witness_index, data);
+
+  const ScriptWitness &witness =
+      vin_[tx_in_index].SetScriptWitnessStack(witness_index, ByteData(data));
+  return witness;
+}
+
+void Transaction::RemoveScriptWitnessStackAll(uint32_t tx_in_index) {
+  AbstractTransaction::RemoveScriptWitnessStackAll(tx_in_index);
+
+  vin_[tx_in_index].RemoveScriptWitnessStackAll();
+}
+
+const TxOutReference Transaction::GetTxOut(uint32_t index) const {
+  CheckTxOutIndex(index, __LINE__, __FUNCTION__);
+  return TxOutReference(vout_[index]);
+}
+
+uint32_t Transaction::GetTxOutCount() const {
+  return static_cast<uint32_t>(vout_.size());
+}
+
+const std::vector<TxOutReference> Transaction::GetTxOutList() const {
+  std::vector<TxOutReference> refs;
+  for (TxOut tx_out : vout_) {
+    refs.push_back(TxOutReference(tx_out));
+  }
+  return refs;
+}
+
+uint32_t Transaction::AddTxOut(
+    const Amount &value, const Script &locking_script) {
+  if (vout_.size() == std::numeric_limits<uint32_t>::max()) {
+    warn(CFD_LOG_SOURCE, "vout maximum.");
+    throw CfdException(kCfdIllegalStateError, "vout maximum.");
+  }
+
+  AbstractTransaction::AddTxOut(value, locking_script);
+
+  TxOut out(value, locking_script);
+  vout_.push_back(out);
+  return static_cast<uint32_t>(vout_.size() - 1);
+}
+
+void Transaction::RemoveTxOut(uint32_t index) {
+  AbstractTransaction::RemoveTxOut(index);
+
+  std::vector<TxOut>::const_iterator ite = vout_.cbegin();
+  if (index != 0) {
+    ite += index;
+  }
+  vout_.erase(ite);
+}
+
+ByteData256 Transaction::GetSignatureHash(
+    uint32_t txin_index, const ByteData &script_data, HashType hash_type,
+    SigHashType sighash_type) {
+  return GetSignatureHash(
+      txin_index, script_data, hash_type, sighash_type,
+      Amount::CreateBySatoshiAmount(0));
+}
+
+ByteData256 Transaction::GetSignatureHash(
+    uint32_t txin_index, const ByteData &script_data, HashType hash_type,
+    SigHashType sighash_type, Amount txin_value) {
+  std::vector<uint8_t> buffer(SHA256_LEN);
+  const std::vector<uint8_t> &bytes = script_data.GetBytes();
+  struct wally_tx *tx_pointer = NULL;
+  int ret = WALLY_OK;
+
+  // tx情報は作成済みである前提とする。(作成済みじゃないと不整合を起こす)
+  const std::vector<uint8_t> &tx_bytedata = GetData(HasWitness()).GetBytes();
+  ret = wally_tx_from_bytes(
+      tx_bytedata.data(), tx_bytedata.size(), 0, &tx_pointer);
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_from_bytes NG[{}] ", ret);
+    throw CfdException(kCfdIllegalArgumentError, "transaction data invalid.");
+  }
+
+  ret = WALLY_ENOMEM;
+  if (tx_pointer != NULL) {
+    try {
+      uint32_t tx_flag = 0;
+      if (hash_type == HashType::kP2wpkh || hash_type == HashType::kP2wsh) {
+        tx_flag = GetWallyFlag() & WALLY_TX_FLAG_USE_WITNESS;
+      }
+      ret = wally_tx_get_btc_signature_hash(
+          tx_pointer, txin_index, bytes.data(), bytes.size(),
+          txin_value.GetSatoshiValue(), sighash_type.GetSigHashFlag(), tx_flag,
+          buffer.data(), buffer.size());
+      wally_tx_free(tx_pointer);
+    } catch (...) {
+      wally_tx_free(tx_pointer);  // 例外時は別途解放(warn()で例外出る可能性)
+      warn(CFD_LOG_SOURCE, "wally_tx_get_btc_signature_hash cause exception.");
+      ret = WALLY_ERROR;
+    }
+  }
+
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_get_btc_signature_hash NG[{}] ", ret);
+    throw CfdException(
+        kCfdIllegalArgumentError, "SignatureHash generate error.");
+  }
+
+  return ByteData256(buffer);
+}
+
+bool Transaction::HasWitness() const {
+  for (const TxIn &txin : vin_) {
+    if (!txin.GetScriptWitness().GetWitness().empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+ByteData Transaction::GetData(bool has_witness) const {
+  struct wally_tx *tx_pointer =
+      static_cast<struct wally_tx *>(wally_tx_pointer_);
+  size_t size = 0;
+  uint32_t flag = 0;
+  if (has_witness) {
+    flag = WALLY_TX_FLAG_USE_WITNESS;
+  }
+
+  int ret = wally_tx_get_length(tx_pointer, flag, &size);
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_get_length NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "tx length calc error.");
+  }
+  if (size < kTransactionMinimumHexSize) {
+    ret = WALLY_EINVAL;
+  }
+  std::vector<uint8_t> buffer(size);
+  if (ret != WALLY_EINVAL) {
+    ret = wally_tx_to_bytes(
+        tx_pointer, flag, buffer.data(), buffer.size(), &size);
+  }
+  if (ret == WALLY_EINVAL) {
+    /* TODO objectとの変換について。
+     * libwallyでは、txin/txoutが空のデータを許容していない。
+     * そのためtxin/txoutが空の場合はobject to byteはエラーとなる。
+     * よって特定状況下では独自の処理を実行する。
+     */
+    if ((tx_pointer->num_inputs == 0) || (tx_pointer->num_outputs == 0)) {
+      info(CFD_LOG_SOURCE, "wally_tx_get_length size[{}]", size);
+      // wally_tx_get_lengthが不正値の場合があるため必要サイズ計算 (多めに確保)
+      size_t need_size = sizeof(struct wally_tx);
+      need_size += tx_pointer->num_inputs * sizeof(struct wally_tx_input);
+      need_size += tx_pointer->num_outputs * sizeof(struct wally_tx_output);
+      for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
+        const struct wally_tx_input *input = tx_pointer->inputs + i;
+        need_size += input->script_len + 10;
+      }
+      for (uint32_t i = 0; i < tx_pointer->num_outputs; ++i) {
+        const struct wally_tx_output *output = tx_pointer->outputs + i;
+        need_size += output->script_len + 10;
+      }
+      if (flag) {
+        for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
+          const struct wally_tx_input *input = tx_pointer->inputs + i;
+          size_t num_items = input->witness ? input->witness->num_items : 0;
+          for (uint32_t j = 0; j < num_items; ++j) {
+            const struct wally_tx_witness_item *stack;
+            stack = input->witness->items + j;
+            need_size += stack->witness_len + 10;
+          }
+          need_size += 10;
+        }
+      }
+      if (need_size > buffer.size()) {
+        buffer.resize(need_size);
+        info(CFD_LOG_SOURCE, "buffer.resize[{}]", need_size);
+      }
+
+      uint8_t *address_pointer = buffer.data();
+      memcpy(
+          address_pointer, &tx_pointer->version, sizeof(tx_pointer->version));
+      address_pointer += sizeof(tx_pointer->version);
+      if (flag && (tx_pointer->num_inputs != 0)) {  // witness
+        *address_pointer = 0;                       // marker is 0
+        ++address_pointer;
+        *address_pointer = 1;  // flag is 1(witness)
+        ++address_pointer;
+      }
+
+      // txin
+      address_pointer =
+          CopyVariableInt(tx_pointer->num_inputs, address_pointer);
+      for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
+        const struct wally_tx_input *input = tx_pointer->inputs + i;
+        memcpy(address_pointer, input->txhash, sizeof(input->txhash));
+        address_pointer += sizeof(input->txhash);
+        memcpy(address_pointer, &input->index, sizeof(input->index));
+        address_pointer += sizeof(input->index);
+        address_pointer = CopyVariableBuffer(
+            input->script, input->script_len, address_pointer);
+        memcpy(address_pointer, &input->sequence, sizeof(input->sequence));
+        address_pointer += sizeof(input->sequence);
+      }
+
+      // txout
+      address_pointer =
+          CopyVariableInt(tx_pointer->num_outputs, address_pointer);
+      for (uint32_t i = 0; i < tx_pointer->num_outputs; ++i) {
+        const struct wally_tx_output *output = tx_pointer->outputs + i;
+        memcpy(address_pointer, &output->satoshi, sizeof(output->satoshi));
+        address_pointer += sizeof(output->satoshi);
+        address_pointer = CopyVariableBuffer(
+            output->script, output->script_len, address_pointer);
+      }
+
+      // witness
+      if (flag) {
+        for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
+          const struct wally_tx_input *input = tx_pointer->inputs + i;
+          size_t num_items = input->witness ? input->witness->num_items : 0;
+          address_pointer = CopyVariableInt(num_items, address_pointer);
+          for (uint32_t j = 0; j < num_items; ++j) {
+            const struct wally_tx_witness_item *stack;
+            stack = input->witness->items + j;
+            address_pointer = CopyVariableBuffer(
+                stack->witness, stack->witness_len, address_pointer);
+          }
+        }
+      }
+
+      // locktime
+      memcpy(
+          address_pointer, &tx_pointer->locktime,
+          sizeof(tx_pointer->locktime));
+      address_pointer += sizeof(tx_pointer->locktime);
+
+      unsigned char *start_address = buffer.data();
+      size = address_pointer - start_address;
+      if (buffer.size() > size) {
+        buffer.resize(size);
+        info(CFD_LOG_SOURCE, "set buffer size[{}]", size);
+      }
+    } else {
+      // 例外エラー
+      warn(CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}].", ret);
+      throw CfdException(kCfdIllegalStateError, "tx hex convert error.");
+    }
+  } else if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "tx hex convert error.");
+  }
+
+  return ByteData(buffer);
+}
+
+uint32_t Transaction::GetWallyFlag() const {
+  return WALLY_TX_FLAG_USE_WITNESS;
+}
+
+void Transaction::CheckTxInIndex(
+    uint32_t index, int line, const char *caller) const {
+  if (vin_.size() <= index) {
+    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    warn(location, "vin[{}] out_of_range.", index);
+    throw CfdException(kCfdOutOfRangeError, "vin out_of_range error.");
+  }
+}
+
+void Transaction::CheckTxOutIndex(
+    uint32_t index, int line, const char *caller) const {
+  if (vout_.size() <= index) {
+    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    warn(location, "vout[{}] out_of_range.", index);
+    throw CfdException(kCfdOutOfRangeError, "vin out_of_range error.");
+  }
+}
+
+}  // namespace core
+}  // namespace cfd

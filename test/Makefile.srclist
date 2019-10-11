@@ -1,0 +1,48 @@
+TEST_CFDCORE_ELEMENTS_SOURCES = \
+    test_elements_confidentialaddress.cpp \
+    test_elements_confidentialtransaction.cpp \
+    test_elements_confidentialtxin.cpp \
+    test_elements_confidentialtxout.cpp \
+    test_elements_confidentialnonce.cpp \
+    test_elements_confidentialassetid.cpp \
+    test_elements_confidentialvalue.cpp \
+    test_elements_blindfactor.cpp \
+    test_elements_contracthashutil.cpp
+
+TEST_CFDCORE_SOURCES= \
+    test_txid.cpp \
+    test_blockhash.cpp \
+    test_bytedata.cpp \
+    test_bytedata160.cpp \
+    test_bytedata256.cpp \
+    test_hashutil.cpp \
+    test_hdwallet.cpp \
+    test_cryptoutil.cpp \
+    test_stringutil.cpp \
+    test_amount.cpp \
+    test_transaction.cpp \
+    test_abstracttxin.cpp \
+    test_abstracttxout.cpp \
+    test_abstract_transaction.cpp \
+    test_pubkey.cpp \
+    test_privkey.cpp \
+    test_extkey.cpp \
+    test_address.cpp \
+    test_scriptbuilder.cpp \
+    test_script.cpp \
+    test_scriptoperator.cpp \
+    test_scripthash.cpp \
+    test_scriptelement.cpp \
+    test_scriptutil.cpp \
+    test_txin_txinreference.cpp \
+    test_txout_txoutreference.cpp \
+    test_scriptwitness.cpp \
+    test_signatureutil.cpp \
+    test_randomnumberutil.cpp \
+    ${TEST_CFDCORE_ELEMENTS_SOURCES}
+
+TEST_CFDCORE_STATIC_SOURCES= \
+    test_cfdlogger.cpp \
+    test_manager.cpp \
+    test_secp256k1.cpp
+

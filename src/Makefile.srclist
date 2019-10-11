@@ -1,0 +1,22 @@
+CFDCORE_ELEMENTS_SOURCES = \
+  cfdcore_elements_address.cpp \
+  cfdcore_elements_script.cpp \
+  cfdcore_elements_transaction.cpp
+
+CFDCORE_SOURCES = \
+  cfdcore_manager.cpp \
+  cfdcore_logger.cpp \
+  cfdcore_bytedata.cpp \
+  cfdcore_util.cpp \
+  cfdcore_wally_util.cpp \
+  cfdcore_script.cpp \
+  cfdcore_transaction_common.cpp \
+  cfdcore_transaction.cpp \
+  cfdcore_hdwallet.cpp \
+  cfdcore_key.cpp \
+  cfdcore_amount.cpp \
+  cfdcore_coin.cpp \
+  cfdcore_address.cpp \
+  cfdcore_secp256k1.cpp \
+  ${CFDCORE_ELEMENTS_SOURCES}
+
