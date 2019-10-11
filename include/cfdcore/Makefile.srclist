@@ -1,0 +1,21 @@
+# ./include/cfdcore/Makefile.inc
+
+CFDCORE_ELEMENTS_PKGINCLUDE_FILES = \
+  cfdcore_elements_address.h \
+  cfdcore_elements_script.h \
+  cfdcore_elements_transaction.h
+
+CFDCORE_PKGINCLUDE_FILES = \
+  cfdcore_common.h \
+  cfdcore_hdwallet.h \
+  cfdcore_json_mapping_base.h \
+  cfdcore_json_writer.h \
+  cfdcore_bytedata.h \
+  cfdcore_transaction_common.h \
+  cfdcore_transaction.h \
+  cfdcore_util.h \
+  cfdcore_address.h \
+  cfdcore_coin.h \
+  cfdcore_logger_interface.h \
+  $(CFDCORE_ELEMENTS_PKGINCLUDE_FILES)
+

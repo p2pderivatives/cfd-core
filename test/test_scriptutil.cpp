@@ -1,0 +1,410 @@
+#include "gtest/gtest.h"
+#include <string>
+#include <vector>
+
+#include "cfdcore/cfdcore_bytedata.h"
+#include "cfdcore/cfdcore_coin.h"
+#include "cfdcore/cfdcore_exception.h"
+#include "cfdcore/cfdcore_key.h"
+#include "cfdcore/cfdcore_script.h"
+#include "cfdcore/cfdcore_util.h"
+
+using cfd::core::BlockHash;
+using cfd::core::ByteData;
+using cfd::core::ByteData160;
+using cfd::core::ByteData256;
+using cfd::core::CfdException;
+using cfd::core::HashUtil;
+using cfd::core::Pubkey;
+using cfd::core::Script;
+using cfd::core::ScriptUtil;
+
+// ファイルごとに構造体の名前を変えること
+struct ScriptUtil_PubkeyTestVector {
+  Pubkey input_pubkey;
+  Script expect_locking_script;
+};
+
+TEST(ScriptUtil, GetP2pkLockingScriptTest) {
+  const std::vector<ScriptUtil_PubkeyTestVector> test_vectors = {
+    {
+      Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+      Script("2102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0ac")
+    },
+    {
+      Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+      Script("210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590cac")
+    },
+    {
+      Pubkey("04fe53c78e36b86aae8082484a4007b706d5678cabb92d178fc95020d4d8dc41ef44cfbb8dfa7a593c7910a5b6f94d079061a7766cbeed73e24ee4f654f1e51904"),
+      Script("4104fe53c78e36b86aae8082484a4007b706d5678cabb92d178fc95020d4d8dc41ef44cfbb8dfa7a593c7910a5b6f94d079061a7766cbeed73e24ee4f654f1e51904ac")
+    },
+  };
+
+  Script actual;
+  for (const ScriptUtil_PubkeyTestVector& test_vector : test_vectors) {
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2pkLockingScript(test_vector.input_pubkey)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+  }
+}
+
+TEST(ScriptUtil, GetP2pkhLockingScriptTest) {
+  const std::vector<ScriptUtil_PubkeyTestVector> test_vectors = {
+    {
+      Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+      Script("76a914edaf2414751239b72b653ea004adc310a3522e3788ac")
+    },
+    {
+      Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+      Script("76a91449a011f97ba520dab063f309bad59daeb30de10188ac")
+    },
+    {
+      Pubkey("04fe53c78e36b86aae8082484a4007b706d5678cabb92d178fc95020d4d8dc41ef44cfbb8dfa7a593c7910a5b6f94d079061a7766cbeed73e24ee4f654f1e51904"),
+      Script("76a9148c1c7f335f5db8ae4e01615edb14844213ead72588ac")
+    },
+  };
+
+  Script actual;
+  for (const ScriptUtil_PubkeyTestVector& test_vector : test_vectors) {
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2pkhLockingScript(test_vector.input_pubkey)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+    ByteData160 pubkey_hash = HashUtil::Hash160(test_vector.input_pubkey);
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2pkhLockingScript(pubkey_hash)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+  }
+}
+
+TEST(ScriptUtil, GetP2wpkhLockingScriptTest) {
+  const std::vector<ScriptUtil_PubkeyTestVector> test_vectors = {
+    {
+      Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+      Script("0014edaf2414751239b72b653ea004adc310a3522e37")
+    },
+    {
+      Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+      Script("001449a011f97ba520dab063f309bad59daeb30de101")
+    },
+    {
+      Pubkey("04fe53c78e36b86aae8082484a4007b706d5678cabb92d178fc95020d4d8dc41ef44cfbb8dfa7a593c7910a5b6f94d079061a7766cbeed73e24ee4f654f1e51904"),
+      Script("00148c1c7f335f5db8ae4e01615edb14844213ead725")
+    },
+  };
+
+  Script actual;
+  for (const ScriptUtil_PubkeyTestVector& test_vector : test_vectors) {
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2wpkhLockingScript(test_vector.input_pubkey)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+    ByteData160 pubkey_hash = HashUtil::Hash160(test_vector.input_pubkey);
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2wpkhLockingScript(pubkey_hash)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+  }
+}
+
+// ファイルごとに構造体の名前を変えること
+struct ScriptUtil_ScriptTestVector {
+  Script input_redeem_script;
+  Script expect_locking_script;
+};
+
+TEST(ScriptUtil, GetP2shLockingScriptTest) {
+  const std::vector<ScriptUtil_ScriptTestVector> test_vectors = {
+    {
+      // 00 11 2222 333333 4444 55 6666 777777 8888 99
+      Script("01000111022222033333330244440155026666037777770288880199"),
+      Script("a914f1b3a2cc24eba8a741f963b309a7686f3bb6bfb487")
+    },
+    {
+      // p2pkh locking script
+      Script("76a914edaf2414751239b72b653ea004adc310a3522e3788ac"),
+      Script("a914fc3ddf7d4677ad022910dabd15c1fd14f5e7a15b87")
+    },
+    {
+      // p2wpkh locking script
+      Script("0014edaf2414751239b72b653ea004adc310a3522e37"),
+      Script("a91430cf0c44f55fe85b110d6bcdc771f1866c1f506f87")
+    },
+  };
+
+  Script actual;
+  for (const ScriptUtil_ScriptTestVector& test_vector : test_vectors) {
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2shLockingScript(test_vector.input_redeem_script)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+    ByteData160 script_hash = HashUtil::Hash160(test_vector.input_redeem_script);
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2shLockingScript(script_hash)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+  }
+}
+
+TEST(ScriptUtil, GetP2wshLockingScriptTest) {
+  const std::vector<ScriptUtil_ScriptTestVector> test_vectors = {
+    {
+      // 00 11 2222 333333 4444 55 6666 777777 8888 99
+      Script("01000111022222033333330244440155026666037777770288880199"),
+      Script("002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437")
+    },
+    {
+      // p2pkh locking script
+      Script("76a914edaf2414751239b72b653ea004adc310a3522e3788ac"),
+      Script("002049672615b13c511f9cef005d2290211c5924e28da4d68f5a8c6dfd1f108bf388")
+    },
+    {
+      // p2wpkh locking script
+      Script("0014edaf2414751239b72b653ea004adc310a3522e37"),
+      Script("0020c1a9921421f2ac0e76533e25ca211e6a1f9465bdf9931f5e9039dbdfdace0fa4")
+    },
+  };
+
+  Script actual;
+  for (const ScriptUtil_ScriptTestVector& test_vector : test_vectors) {
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2wshLockingScript(test_vector.input_redeem_script)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+    ByteData256 script_hash = HashUtil::Sha256(test_vector.input_redeem_script);
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateP2wshLockingScript(script_hash)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_locking_script.GetHex().c_str());
+  }
+}
+
+struct MultisigTestVector {
+  uint32_t req_sig;
+  std::vector<Pubkey> input_pubkeys;
+  Script expect_multisig_script;
+  std::string expect_message;
+};
+
+TEST(ScriptUtil, CreateMultisigRedeemScriptTest) {
+  const std::vector<MultisigTestVector> test_vectors = {
+    // 1-of-1 Multisig
+    {
+      1,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+      },
+      Script("512102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a051ae"),
+      ""
+    },
+    // 1-of-2 Multisig
+    {
+      1,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+      },
+      Script("512102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c52ae"),
+      ""
+    },
+    // 2-of-3 Multisig
+    {
+      2,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+        Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82"),
+      },
+      Script("522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae"),
+      ""
+    },
+    // 12-of-15 Multisig
+    {
+      12,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+        Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82"),
+        Pubkey("03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38"),
+        Pubkey("020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1"),
+        Pubkey("0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147"),
+        Pubkey("0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c"),
+        Pubkey("020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9"),
+        Pubkey("0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37"),
+        Pubkey("0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e"),
+        Pubkey("03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b"),
+        Pubkey("02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd"),
+        Pubkey("0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d"),
+        Pubkey("0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2"),
+        Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db"),
+      },
+      Script("5c2102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b822103ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb3821020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1210289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147210210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c21020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9210289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37210254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e2103a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b2102ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd210289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d210396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd221025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db5fae"),
+      ""
+    },
+    // 15-of-15 Multisig
+    {
+      15,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+        Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82"),
+        Pubkey("03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38"),
+        Pubkey("020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1"),
+        Pubkey("0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147"),
+        Pubkey("0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c"),
+        Pubkey("020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9"),
+        Pubkey("0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37"),
+        Pubkey("0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e"),
+        Pubkey("03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b"),
+        Pubkey("02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd"),
+        Pubkey("0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d"),
+        Pubkey("0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2"),
+        Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db"),
+      },
+      Script("5f2102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b822103ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb3821020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1210289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147210210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c21020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9210289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37210254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e2103a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b2102ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd210289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d210396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd221025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db5fae"),
+      ""
+    },
+  };
+
+  Script actual;
+  for (MultisigTestVector test_vector : test_vectors) {
+    EXPECT_NO_THROW((actual = ScriptUtil::CreateMultisigRedeemScript(test_vector.req_sig, test_vector.input_pubkeys)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_multisig_script.GetHex().c_str());
+  }
+}
+
+TEST(ScriptUtil, CreateMultisigRedeemScriptErrorTest) {
+  const std::vector<MultisigTestVector> test_vectors = {
+    // 0-of-1 Multisig
+    {
+      0,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+      },
+      Script(),
+      "CreateMultisigScript require_num is 0."
+    },
+    // 1-of-0 Multisig
+    {
+      1,
+      {
+      },
+      Script(),
+      "CreateMultisigScript empty pubkey array."
+    },
+    // 3-of-2 Multisig
+    {
+      3,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+      },
+      Script(),
+      "CreateMultisigScript require_num is over."
+    },
+    // 1-of-16 Multisig
+    {
+      1,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+        Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82"),
+        Pubkey("03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38"),
+        Pubkey("020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1"),
+        Pubkey("0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147"),
+        Pubkey("0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c"),
+        Pubkey("020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9"),
+        Pubkey("0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37"),
+        Pubkey("0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e"),
+        Pubkey("03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b"),
+        Pubkey("02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd"),
+        Pubkey("0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d"),
+        Pubkey("0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2"),
+        Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db"),
+        Pubkey("030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55"),
+      },
+      Script(),
+      "CreateMultisigScript pubkeys array size is over."
+    },
+  };
+
+  Script actual;
+  for (MultisigTestVector test_vector : test_vectors) {
+    try{
+      EXPECT_THROW((actual = ScriptUtil::CreateMultisigRedeemScript(test_vector.req_sig, test_vector.input_pubkeys)), CfdException);
+    } catch (CfdException &e) {
+      EXPECT_STREQ(e.what(), test_vector.expect_message.c_str());
+    }
+  }
+}
+
+TEST(ScriptUtil, IsValidRedeemScriptTest) {
+  // valid script data
+  Script empty_script("");
+  EXPECT_TRUE(ScriptUtil::IsValidRedeemScript(empty_script));
+
+  // valid script data
+  Script valid_script_1("01000111022222033333330244440155026666037777770288880199");
+  EXPECT_TRUE(ScriptUtil::IsValidRedeemScript(valid_script_1));
+
+  // valid limit script data size ((1 + 51) * 10 byte data)
+  Script valid_script_2("33000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+  EXPECT_TRUE(ScriptUtil::IsValidRedeemScript(valid_script_2));
+
+  // invalid script data ((1 + 51) * 10 + 1 byte data)
+  Script invalid_script("3300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+  EXPECT_FALSE(ScriptUtil::IsValidRedeemScript(invalid_script));
+}
+
+#ifndef CFD_DISABLE_ELEMENTS
+
+struct PegoutTestVector {
+  BlockHash genesisblock_hash;
+  Script parent_locking_script;
+  Pubkey btc_pubkey_bytes;
+  ByteData whitelist_proof;
+  Script expect_script;
+};
+
+TEST(ScriptUtil, CreatePegoutLogkingScriptTest) {
+  std::vector<PegoutTestVector> test_vectors = {
+    {
+      BlockHash(),
+      Script(),
+      Pubkey(),
+      ByteData(),
+      Script("6a0000"),
+    },
+    {
+      BlockHash("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"),
+      Script("a914f1b3a2cc24eba8a741f963b309a7686f3bb6bfb487"),
+      Pubkey("03d12ccde87bdbed99cdad58f4eeab0db9c8d52810133d3ed9aaf6cd802a33a57c"),
+      ByteData("01044e949dcf8ac2daac82a3e4999ee28e2711661793570c4daab34cd38d76a425d6bfe102f3fea8be12109925fad32c78b65afea4de1d17a826e7375d0e2d0066"),
+      Script("6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f17a914f1b3a2cc24eba8a741f963b309a7686f3bb6bfb4872103d12ccde87bdbed99cdad58f4eeab0db9c8d52810133d3ed9aaf6cd802a33a57c4101044e949dcf8ac2daac82a3e4999ee28e2711661793570c4daab34cd38d76a425d6bfe102f3fea8be12109925fad32c78b65afea4de1d17a826e7375d0e2d0066"),
+    },
+    {
+      BlockHash("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"),
+      Script("002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437"),
+      Pubkey("03d12ccde87bdbed99cdad58f4eeab0db9c8d52810133d3ed9aaf6cd802a33a57c"),
+      ByteData("01044e949dcf8ac2daac82a3e4999ee28e2711661793570c4daab34cd38d76a425d6bfe102f3fea8be12109925fad32c78b65afea4de1d17a826e7375d0e2d0066"),
+      Script("6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f22002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a4372103d12ccde87bdbed99cdad58f4eeab0db9c8d52810133d3ed9aaf6cd802a33a57c4101044e949dcf8ac2daac82a3e4999ee28e2711661793570c4daab34cd38d76a425d6bfe102f3fea8be12109925fad32c78b65afea4de1d17a826e7375d0e2d0066"),
+    },
+    // invalid Pubkey
+    {
+      BlockHash("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"),
+      Script("002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437"),
+      Pubkey(),
+      ByteData("01044e949dcf8ac2daac82a3e4999ee28e2711661793570c4daab34cd38d76a425d6bfe102f3fea8be12109925fad32c78b65afea4de1d17a826e7375d0e2d0066"),
+      Script("6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f22002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437"),
+    },
+    // empty whitelist proof
+    {
+      BlockHash("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"),
+      Script("002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437"),
+      Pubkey("03d12ccde87bdbed99cdad58f4eeab0db9c8d52810133d3ed9aaf6cd802a33a57c"),
+      ByteData(),
+      Script("6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f22002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437"),
+    },
+    // invalid Pubkey and empty whitelist proof
+    {
+      BlockHash("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"),
+      Script("002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437"),
+      Pubkey(),
+      ByteData(),
+      Script("6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f22002087cb0bc07de5b5befd7565b2c63fb1681efd8af7bd85a3f0f98a529a5c50a437"),
+    },
+  };
+
+  Script actual;
+  for (PegoutTestVector test_vector : test_vectors) {
+    EXPECT_NO_THROW((actual = ScriptUtil::CreatePegoutLogkingScript(test_vector.genesisblock_hash, test_vector.parent_locking_script, test_vector.btc_pubkey_bytes, test_vector.whitelist_proof)));
+    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_script.GetHex().c_str());
+  }
+}
+
+#endif  // CFD_DISABLE_ELEMENTS
