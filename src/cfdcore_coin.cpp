@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_coin.cpp
  *
- * @brief Coin(UTXO)関連クラス
+ * @brief Classes related to Coin(UTXO) / Coin(UTXO)関連クラス
  *
  */
 #include <string>

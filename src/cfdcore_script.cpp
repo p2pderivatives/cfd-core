@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_script.cpp
  *
- * @brief Script関連クラス実装
+ * @brief-eng implementation of Script related class
+ * @brief-jp Script関連クラス実装
  *
  */
 
@@ -198,6 +199,7 @@ ScriptOperator::ScriptOperator(ScriptType data_type)
 
 ScriptOperator::ScriptOperator(ScriptType data_type, const std::string& text)
     : data_type_(data_type), text_data_(text) {
+  // map register the const definition at production timing
   // const定義の実体化時にマップ登録する
   if (text.empty()) {
     if (!g_operator_map.empty()) {
@@ -281,6 +283,7 @@ ScriptElement::ScriptElement(const ScriptElement& element)
 ScriptElement::ScriptElement(const ScriptType& type)
     : type_(kElementOpCode), op_code_(type), binary_data_(), value_(0) {
   if ((type == kOp1Negate) || ((type >= kOp_1) && (type <= kOp_16))) {
+    // convert to numeric format
     // 数値型兼用
     int64_t base_value = static_cast<int64_t>(kOp_1) - 1;
     value_ = static_cast<int64_t>(type) - base_value;
@@ -291,6 +294,7 @@ ScriptElement::ScriptElement(const ScriptOperator& op_code)
     : type_(kElementOpCode), op_code_(op_code), binary_data_(), value_(0) {
   ScriptType type = op_code.GetDataType();
   if ((type == kOp1Negate) || ((type >= kOp_1) && (type <= kOp_16))) {
+    // convert to numeric format
     // 数値型兼用
     int64_t base_value = static_cast<int64_t>(kOp_1) - 1;
     value_ = static_cast<int64_t>(type) - base_value;
@@ -465,6 +469,7 @@ ScriptHash::ScriptHash(const Script& script, bool is_witness)
   std::vector<uint8_t> buffer;
   buffer.clear();
 
+  // hash calculation
   // hash計算
   if (is_witness) {
     ByteData256 hash256 = HashUtil::Sha256(script.GetData().GetBytes());
@@ -575,6 +580,7 @@ void Script::SetStackData(const ByteData& bytedata) {
         warn(CFD_LOG_SOURCE, "OP_PUSHDATA2 is incorrect size.");
         throw InvalidScriptException("OP_PUSHDATA2 is incorrect size.");
       }
+      // process under LittleEndian
       // LittleEndian前提の処理
       memcpy(&ushort_value, &buffer[offset], sizeof(ushort_value));
       collect_buffer_size = ushort_value;
@@ -588,6 +594,7 @@ void Script::SetStackData(const ByteData& bytedata) {
         warn(CFD_LOG_SOURCE, "OP_PUSHDATA4 is incorrect size.");
         throw InvalidScriptException("OP_PUSHDATA4 is incorrect size.");
       }
+      // process under LittleEndian
       // LittleEndian前提の処理
       memcpy(&uint_value, &buffer[offset], sizeof(uint_value));
       collect_buffer_size = uint_value;
@@ -599,6 +606,7 @@ void Script::SetStackData(const ByteData& bytedata) {
       //     && (byteadata <= OP_NOP10)))
       // TODO(k-matsuzawa): script拡張を考慮しOP値の厳格なチェックには行わない。
 
+      // Setting for ScriptOperator
       // ScriptOperator 設定
       ScriptType type = (ScriptType)view_data;
       if (!g_operator_map.empty()) {
@@ -607,6 +615,13 @@ void Script::SetStackData(const ByteData& bytedata) {
         if (ite != g_operator_map.end()) {
           ScriptElement script_element = ScriptElement(*ite->second);
           script_stack_.push_back(script_element);
+
+
+          // Since bytedata is stored as numerica type, after decoding bytedata
+          // Re-convert to numeric type based on the contents of OP_CODE.
+          /// Since OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY are
+          // in the range of OP_1-OP_16, they are excluded from
+          // this conversion process.
 
           // 数値型はbytedataとして格納されているため、bytedataとしてdecode後に
           // OP_CODEの内容から判断して数値型に再変換する。
@@ -680,6 +695,7 @@ void Script::SetStackData(const ByteData& bytedata) {
     }
   }
   if (is_collect_buffer) {
+    // incorrect script
     // 不正なスクリプト
     warn(CFD_LOG_SOURCE, "incorrect script data.");
     throw InvalidScriptException("incorrect script data.");
@@ -746,7 +762,8 @@ bool Script::IsPushOnly() const {
   bool is_push_only = true;
   for (const ScriptElement& element : script_stack_) {
     if (element.IsOpCode()) {
-      // OP_RESESRVEDもPush命令扱いとする（bitcoincore）
+      // OP_RESERVED is treated as Push command (bitcoincore)
+      // OP_RESERVEDもPush命令扱いとする（bitcoincore）
       if (element.GetOpCode().GetDataType() > ScriptType::kOp_16) {
         is_push_only = false;
         break;
@@ -986,6 +1003,7 @@ Script ScriptUtil::CreateP2pkhLockingScript(const ByteData160& pubkey_hash) {
 
 // OP_DUP OP_HASH160 <hash160(pubkey)> OP_EQUALVERIFY OP_CHECKSIG
 Script ScriptUtil::CreateP2pkhLockingScript(const Pubkey& pubkey) {
+  // create pubkey hash
   // pubkey hash作成
   ByteData160 pubkey_hash = HashUtil::Hash160(pubkey);
 
@@ -994,6 +1012,7 @@ Script ScriptUtil::CreateP2pkhLockingScript(const Pubkey& pubkey) {
 
 // OP_HASH160 <hash160(redeem_script)> OP_EQUAL
 Script ScriptUtil::CreateP2shLockingScript(const ByteData160& script_hash) {
+  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_HASH160);
@@ -1005,6 +1024,7 @@ Script ScriptUtil::CreateP2shLockingScript(const ByteData160& script_hash) {
 
 // OP_HASH160 <hash160(redeem_script)> OP_EQUAL
 Script ScriptUtil::CreateP2shLockingScript(const Script& redeem_script) {
+  // create script hash
   // script hash作成
   ByteData160 script_hash = HashUtil::Hash160(redeem_script);
 
@@ -1013,6 +1033,7 @@ Script ScriptUtil::CreateP2shLockingScript(const Script& redeem_script) {
 
 // OP_0 <hash160(pubkey)>
 Script ScriptUtil::CreateP2wpkhLockingScript(const ByteData160& pubkey_hash) {
+  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_0);
@@ -1023,6 +1044,7 @@ Script ScriptUtil::CreateP2wpkhLockingScript(const ByteData160& pubkey_hash) {
 
 // OP_0 <hash160(pubkey)>
 Script ScriptUtil::CreateP2wpkhLockingScript(const Pubkey& pubkey) {
+  // create pubkey hash
   // pubkey hash作成
   ByteData160 pubkey_hash = HashUtil::Hash160(pubkey);
 
@@ -1031,6 +1053,7 @@ Script ScriptUtil::CreateP2wpkhLockingScript(const Pubkey& pubkey) {
 
 // OP_0 <sha256(redeem_script)>
 Script ScriptUtil::CreateP2wshLockingScript(const ByteData256& script_hash) {
+  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_0);
@@ -1041,6 +1064,7 @@ Script ScriptUtil::CreateP2wshLockingScript(const ByteData256& script_hash) {
 
 // OP_0 <sha256(redeem_script)>
 Script ScriptUtil::CreateP2wshLockingScript(const Script& redeem_script) {
+  // create script hash
   // script hash作成
   ByteData256 script_hash = HashUtil::Sha256(redeem_script);
 
@@ -1092,6 +1116,7 @@ Script ScriptUtil::CreateMultisigRedeemScript(
   ScriptElement op_require_num(static_cast<int64_t>(require_signature_num));
   ScriptElement op_pubkey_num(static_cast<int64_t>(pubkeys.size()));
 
+  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(op_require_num.GetOpCode());
@@ -1115,6 +1140,7 @@ Script ScriptUtil::CreateMultisigRedeemScript(
 Script ScriptUtil::CreatePegoutLogkingScript(
     const BlockHash& genesisblock_hash, const Script& parent_locking_script,
     const Pubkey& btc_pubkey_bytes, const ByteData& whitelist_proof) {
+  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_RETURN);

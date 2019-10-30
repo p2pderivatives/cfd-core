@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_transaction_common.cpp
  *
- * @brief Transaction関連基底クラスの実装ファイルです。
+ * @brief-eng implementation of Transaction related common classes
+ * @brief-jp Transaction関連基底クラスの実装ファイルです。
  */
 #include <limits>
 #include <string>
@@ -23,6 +24,7 @@ namespace core {
 using logger::warn;
 
 // -----------------------------------------------------------------------------
+// In-file functions (ported from libwally. Varint_to_bytes, varbuff_to_bytes)
 // ファイル内関数（libwallyから移植。varint_to_bytes, varbuff_to_bytes）
 // -----------------------------------------------------------------------------
 static constexpr uint8_t kViTag16 = 253;  //!< VarInt16
@@ -184,6 +186,9 @@ AbstractTxOutReference::AbstractTxOutReference(const AbstractTxOut &tx_out)
 ByteData SignatureUtil::CreateWitnessProgramWPKH(const Pubkey &pubkey) {
   std::vector<uint8_t> buffer(kScriptHashP2pkhLength);
   size_t witness_prgram_length = 0;
+
+  // Set OP_DUP OP_HASH160 ~~~~ OP_EQUALVERIFY OP_CHECKSIG in
+  // → Set WALLY_SCRIPT_HASH160 and perform hashing at once
   // 中で OP_DUP OP_HASH160 ~~~~ OP_EQUALVERIFY OP_CHECKSIG をセット
   // →WALLY_SCRIPT_HASH160をセットして、ハッシュ化も一括実施させる
   const std::vector<uint8_t> &bytes = pubkey.GetData().GetBytes();
@@ -257,6 +262,10 @@ void AbstractTransaction::FreeWallyAddress(const void *wally_tx_pointer) {
 int32_t AbstractTransaction::GetVersion() const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
+
+  // Type is matched to bitcoin-core
+  // return reinterpret_cast <int32_t> (tx_pointer-> version);
+  // VC ++ errors and warnings appear, so change to pointer cast
   // 型はbitcoin-coreに合わせている
   // return reinterpret_cast<int32_t>(tx_pointer->version);
   // VC++でエラーやらWarningが出るので、ポインタキャストに変更

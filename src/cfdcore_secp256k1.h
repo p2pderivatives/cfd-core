@@ -14,17 +14,22 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief secp256k1クラス.
+ * @brief sept256k1 class / secp256k1クラス.
  */
 class Secp256k1 {
  public:
   /**
-   * @brief コンストラクタ
-   * @param[in] context Secp256k1コンテキスト
+   * @brief Construct / コンストラクタ
+   * @param[in] context Secp256k1 Context / Secp256k1コンテキスト
    */
   explicit Secp256k1(void* context);
 
   /**
+   * [ENG]
+   * @brief function for join Pubkey
+   * @param[in] pubkey_list input list for Pubkey to join
+   * @return data of combined Pubkey
+   * [JP]
    * @brief Pubkey合成処理
    * @param[in] pubkey_list 合成するPubkeyリスト
    * @return 合成したPubkeyデータ
@@ -32,6 +37,13 @@ class Secp256k1 {
   ByteData CombinePubkeySecp256k1Ec(const std::vector<ByteData>& pubkey_list);
 
   /**
+   * [ENG]
+   * @brief function for adjusting Pubkey
+   * @param[in] pubkey            Pubkey
+   * @param[in] tweak             adjustment value
+   * @param[in] is_tweak_check    boolean check for pubkey adjustment
+   * @return data of adjusted Pubkey data
+   * [JP]
    * @brief Pubkey調整処理
    * @param[in] pubkey            Pubkey
    * @param[in] tweak             調整値
@@ -42,6 +54,12 @@ class Secp256k1 {
       const ByteData& pubkey, const ByteData& tweak, bool is_tweak_check);
 
   /**
+   * [ENG]
+   * @brief function for adjusting Privkey
+   * @param[in] privkey           Privkey
+   * @param[in] tweak             Adjustment value
+   * @return data of adjusted Privkey data
+   * [JP]
    * @brief Privkey調整処理
    * @param[in] privkey           Privkey
    * @param[in] tweak             調整値
@@ -51,6 +69,11 @@ class Secp256k1 {
       const ByteData256& privkey, const ByteData256& tweak);
 
   /**
+   * [ENG]
+   * @brief function for negate Pubkey
+   * @param[in] pubkey            Pubkey
+   * @return data of negated Pubkey
+   * [JP]
    * @brief Pubkey negate処理
    * @param[in] pubkey            Pubkey
    * @return 加工後のPubkeyデータ
@@ -71,7 +94,8 @@ class Secp256k1 {
       uint64_t* min_value, uint64_t* max_value);
 
   /**
-   * @brief Whitelist 証明情報生成処理
+   * @brief-eng Whitelist generation process for certificate info
+   * @brief-jp Whitelist 証明情報生成処理
    * @param[in] offline_pubkey    offline pubkey
    * @param[in] online_privkey    online private key
    * @param[in] tweak_sum         tweak sum data
@@ -87,7 +111,7 @@ class Secp256k1 {
 
  private:
   /**
-   * @brief Secp256k1コンテキスト
+   * @brief Secp256k1 Context / Secp256k1コンテキスト
    */
   void* secp256k1_context_;
 };

@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_elements_address.cpp
  *
- * @brief Elements対応したAddressクラス定義
+ * @brief-eng definition of address class that handles Elements
+ * @brief-jp Elements対応したAddressクラス定義
  */
 #ifndef CFD_DISABLE_ELEMENTS
 
@@ -29,7 +30,8 @@ using logger::warn;
 // global / internal
 // -----------------------------------------------------------------------------
 /**
- * @brief blind addressのキーペア一覧を定義するための構造体.
+ * @brief-eng Structure to define a list of key pairs for blind address.
+ * @brief-jp blind addressのキーペア一覧を定義するための構造体.
  */
 struct ElementsBlindAddressFormat {
   std::string prefix_key;          //!< prefix key
@@ -38,8 +40,8 @@ struct ElementsBlindAddressFormat {
 };
 
 /**
- * @brief Blind addressのキーペア一覧を取得する.
- * @return Blind addressのキーペア一覧
+ * @brief get Blind address key pair list / Blind addressのキーペア一覧を取得する.
+ * @return Blind address key pair list / Blind addressのキーペア一覧
  */
 static std::vector<ElementsBlindAddressFormat> GetBlindKeyPair() {
   std::vector<ElementsBlindAddressFormat> result = {
@@ -116,7 +118,7 @@ void ElementsConfidentialAddress::DecodeAddress(
       try {
         output = nullptr;
 
-        // confidential_key取得
+        // Get confidential_key / confidential_key取得
         if (format.is_segwit) {
           hrp = data.GetString(format.blinded_prefix_key);
           is_find_blinded_prefix = true;
@@ -174,7 +176,7 @@ void ElementsConfidentialAddress::DecodeAddress(
           return;
         }
       } catch (const CfdException& except) {
-        // 無視
+        // Ignore / 無視
         trace(
             CFD_LOG_SOURCE, "DecodeAddress exception={}",
             std::string(except.what()));
@@ -241,7 +243,7 @@ void ElementsConfidentialAddress::CalculateAddress(
     try {
       output = nullptr;
 
-      // confidential_key取得
+      // Get confidential_key / confidential_key取得
       if (format.is_segwit) {
         hrp = data.GetString(format.blinded_prefix_key);
         ret = wally_confidential_addr_from_addr_segwit(
@@ -267,7 +269,7 @@ void ElementsConfidentialAddress::CalculateAddress(
         return;
       }
     } catch (const CfdException& except) {
-      // 無視
+      // Ignore / 無視
       trace(
           CFD_LOG_SOURCE, "CalculateAddress exception={}",
           std::string(except.what()));
@@ -299,7 +301,7 @@ bool ElementsConfidentialAddress::IsConfidentialAddress(
     info(CFD_LOG_SOURCE, "ConfidentialAddress={}", addr.GetAddress());
     is_valid = true;
   } catch (...) {
-    // 無視
+    // Ignore / 無視
     warn(CFD_LOG_SOURCE, "IsConfidentialAddress error. address={}.", address);
   }
   return is_valid;
