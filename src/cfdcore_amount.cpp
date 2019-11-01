@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_amount.cpp
  *
- * @brief Amountを表現するクラス
+ * @brief Class to show amount.  Amountを表現するクラス
  *
  */
 #include <algorithm>
@@ -25,6 +25,7 @@ Amount::Amount() : amount_(0) {
 }
 
 Amount::Amount(int64_t amount) : amount_(amount) {
+  // Amount validation is done by CreateBySatoshiAmount
   // amountのvalidationは、CreateBySatoshiAmountなどで実施
 }
 

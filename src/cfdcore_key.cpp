@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_key.cpp
  *
- * @brief Pubkey/Privkey関連クラス定義
+ * @brief-eng definition for Pubkey/Privkey class
+ * @brief-jp Pubkey/Privkey関連クラス定義
  */
 
 #include <string>
@@ -220,7 +221,7 @@ bool Privkey::IsInvalid() const {
 }
 
 bool Privkey::IsValid(const std::vector<uint8_t>& buffer) {
-  // TODO(MariSoejima) valid条件見直し要
+  // TODO(MariSoejima) review valid conditions / valid条件見直し要
   if (buffer.size() > 0) {
     return buffer.size() == kPrivkeySize;
   }

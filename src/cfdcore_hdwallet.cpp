@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_hdwallet.cpp
  *
- * @brief BIP32/BIP39/BIP44関連クラスの実装
+ * @brief-eng implementation of BIP32/BIP39/BIP44 classes
+ * @brief-jp BIP32/BIP39/BIP44関連クラスの実装
  */
 
 #include <string>
