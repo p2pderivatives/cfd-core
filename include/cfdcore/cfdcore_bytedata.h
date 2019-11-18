@@ -80,11 +80,26 @@ class CFD_CORE_EXPORT ByteData {
   ByteData Serialize() const;
 
   /**
+   * @brief serializeされたbyte dataのサイズを取得する。
+   * @return serialize data size
+   */
+  size_t GetSerializeSize() const;
+
+  /**
    * @brief 可変長サイズ情報(バッファ)を取得する.
    * @param[in] value    size value
    * @return variable size buffer
    */
   static ByteData GetVariableInt(uint64_t value);
+
+  /**
+   * @brief 指定された2つのバッファのHEX値を比較する.
+   * @param[in] source        source target
+   * @param[in] destination   destination target
+   * @retval true   大きい
+   * @retval false  小さい
+   */
+  static bool IsLarge(const ByteData& source, const ByteData& destination);
 
  private:
   /**

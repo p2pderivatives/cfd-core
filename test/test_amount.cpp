@@ -101,6 +101,42 @@ TEST(Amount, ComparisonOperatorsTest) {
   EXPECT_FALSE(base_amt != base_satoshi_val);
   EXPECT_TRUE(base_amt != Amount::CreateBySatoshiAmount(nq_satoshi_val));
   EXPECT_FALSE(base_amt != Amount::CreateBySatoshiAmount(base_satoshi_val));
+  // less
+  EXPECT_FALSE(nq_satoshi_val < base_amt);
+  EXPECT_FALSE(base_satoshi_val < base_amt);
+  EXPECT_TRUE(base_amt < nq_satoshi_val);
+  EXPECT_FALSE(base_amt < base_satoshi_val);
+  EXPECT_FALSE(Amount::CreateBySatoshiAmount(nq_satoshi_val) < base_amt);
+  EXPECT_FALSE(Amount::CreateBySatoshiAmount(base_satoshi_val) < base_amt);
+  EXPECT_TRUE(base_amt < Amount::CreateBySatoshiAmount(nq_satoshi_val));
+  EXPECT_FALSE(base_amt < Amount::CreateBySatoshiAmount(base_satoshi_val));
+  // greater
+  EXPECT_TRUE(nq_satoshi_val > base_amt);
+  EXPECT_FALSE(base_satoshi_val > base_amt);
+  EXPECT_FALSE(base_amt > nq_satoshi_val);
+  EXPECT_FALSE(base_amt > base_satoshi_val);
+  EXPECT_TRUE(Amount::CreateBySatoshiAmount(nq_satoshi_val) > base_amt);
+  EXPECT_FALSE(Amount::CreateBySatoshiAmount(base_satoshi_val) > base_amt);
+  EXPECT_FALSE(base_amt > Amount::CreateBySatoshiAmount(nq_satoshi_val));
+  EXPECT_FALSE(base_amt > Amount::CreateBySatoshiAmount(base_satoshi_val));
+  // less or equal
+  EXPECT_FALSE(nq_satoshi_val <= base_amt);
+  EXPECT_TRUE(base_satoshi_val <= base_amt);
+  EXPECT_TRUE(base_amt <= nq_satoshi_val);
+  EXPECT_TRUE(base_amt <= base_satoshi_val);
+  EXPECT_FALSE(Amount::CreateBySatoshiAmount(nq_satoshi_val) <= base_amt);
+  EXPECT_TRUE(Amount::CreateBySatoshiAmount(base_satoshi_val) <= base_amt);
+  EXPECT_TRUE(base_amt <= Amount::CreateBySatoshiAmount(nq_satoshi_val));
+  EXPECT_TRUE(base_amt <= Amount::CreateBySatoshiAmount(base_satoshi_val));
+  // greater or equal
+  EXPECT_TRUE(nq_satoshi_val >= base_amt);
+  EXPECT_TRUE(base_satoshi_val >= base_amt);
+  EXPECT_FALSE(base_amt >= nq_satoshi_val);
+  EXPECT_TRUE(base_amt >= base_satoshi_val);
+  EXPECT_TRUE(Amount::CreateBySatoshiAmount(nq_satoshi_val) >= base_amt);
+  EXPECT_TRUE(Amount::CreateBySatoshiAmount(base_satoshi_val) >= base_amt);
+  EXPECT_FALSE(base_amt >= Amount::CreateBySatoshiAmount(nq_satoshi_val));
+  EXPECT_TRUE(base_amt >= Amount::CreateBySatoshiAmount(base_satoshi_val));
 }
 
 TEST(Amount, ArithmeticOperatorsTest) {

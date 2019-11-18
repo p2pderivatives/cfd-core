@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_script.cpp
  *
- * @brief-eng implementation of Script related class
- * @brief-jp Script関連クラス実装
+ * @brief Script関連クラス実装
  *
  */
 
@@ -17,6 +16,7 @@
 #include <vector>
 
 #include "cfdcore/cfdcore_exception.h"
+#include "cfdcore/cfdcore_iterator.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_util.h"
@@ -199,7 +199,6 @@ ScriptOperator::ScriptOperator(ScriptType data_type)
 
 ScriptOperator::ScriptOperator(ScriptType data_type, const std::string& text)
     : data_type_(data_type), text_data_(text) {
-  // map register the const definition at production timing
   // const定義の実体化時にマップ登録する
   if (text.empty()) {
     if (!g_operator_map.empty()) {
@@ -283,7 +282,6 @@ ScriptElement::ScriptElement(const ScriptElement& element)
 ScriptElement::ScriptElement(const ScriptType& type)
     : type_(kElementOpCode), op_code_(type), binary_data_(), value_(0) {
   if ((type == kOp1Negate) || ((type >= kOp_1) && (type <= kOp_16))) {
-    // convert to numeric format
     // 数値型兼用
     int64_t base_value = static_cast<int64_t>(kOp_1) - 1;
     value_ = static_cast<int64_t>(type) - base_value;
@@ -294,7 +292,6 @@ ScriptElement::ScriptElement(const ScriptOperator& op_code)
     : type_(kElementOpCode), op_code_(op_code), binary_data_(), value_(0) {
   ScriptType type = op_code.GetDataType();
   if ((type == kOp1Negate) || ((type >= kOp_1) && (type <= kOp_16))) {
-    // convert to numeric format
     // 数値型兼用
     int64_t base_value = static_cast<int64_t>(kOp_1) - 1;
     value_ = static_cast<int64_t>(type) - base_value;
@@ -469,7 +466,6 @@ ScriptHash::ScriptHash(const Script& script, bool is_witness)
   std::vector<uint8_t> buffer;
   buffer.clear();
 
-  // hash calculation
   // hash計算
   if (is_witness) {
     ByteData256 hash256 = HashUtil::Sha256(script.GetData().GetBytes());
@@ -580,7 +576,6 @@ void Script::SetStackData(const ByteData& bytedata) {
         warn(CFD_LOG_SOURCE, "OP_PUSHDATA2 is incorrect size.");
         throw InvalidScriptException("OP_PUSHDATA2 is incorrect size.");
       }
-      // process under LittleEndian
       // LittleEndian前提の処理
       memcpy(&ushort_value, &buffer[offset], sizeof(ushort_value));
       collect_buffer_size = ushort_value;
@@ -594,7 +589,6 @@ void Script::SetStackData(const ByteData& bytedata) {
         warn(CFD_LOG_SOURCE, "OP_PUSHDATA4 is incorrect size.");
         throw InvalidScriptException("OP_PUSHDATA4 is incorrect size.");
       }
-      // process under LittleEndian
       // LittleEndian前提の処理
       memcpy(&uint_value, &buffer[offset], sizeof(uint_value));
       collect_buffer_size = uint_value;
@@ -606,7 +600,6 @@ void Script::SetStackData(const ByteData& bytedata) {
       //     && (byteadata <= OP_NOP10)))
       // TODO(k-matsuzawa): script拡張を考慮しOP値の厳格なチェックには行わない。
 
-      // Setting for ScriptOperator
       // ScriptOperator 設定
       ScriptType type = (ScriptType)view_data;
       if (!g_operator_map.empty()) {
@@ -615,13 +608,6 @@ void Script::SetStackData(const ByteData& bytedata) {
         if (ite != g_operator_map.end()) {
           ScriptElement script_element = ScriptElement(*ite->second);
           script_stack_.push_back(script_element);
-
-
-          // Since bytedata is stored as numerica type, after decoding bytedata
-          // Re-convert to numeric type based on the contents of OP_CODE.
-          /// Since OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY are
-          // in the range of OP_1-OP_16, they are excluded from
-          // this conversion process.
 
           // 数値型はbytedataとして格納されているため、bytedataとしてdecode後に
           // OP_CODEの内容から判断して数値型に再変換する。
@@ -695,7 +681,6 @@ void Script::SetStackData(const ByteData& bytedata) {
     }
   }
   if (is_collect_buffer) {
-    // incorrect script
     // 不正なスクリプト
     warn(CFD_LOG_SOURCE, "incorrect script data.");
     throw InvalidScriptException("incorrect script data.");
@@ -762,8 +747,7 @@ bool Script::IsPushOnly() const {
   bool is_push_only = true;
   for (const ScriptElement& element : script_stack_) {
     if (element.IsOpCode()) {
-      // OP_RESERVED is treated as Push command (bitcoincore)
-      // OP_RESERVEDもPush命令扱いとする（bitcoincore）
+      // OP_RESESRVEDもPush命令扱いとする（bitcoincore）
       if (element.GetOpCode().GetDataType() > ScriptType::kOp_16) {
         is_push_only = false;
         break;
@@ -1003,7 +987,6 @@ Script ScriptUtil::CreateP2pkhLockingScript(const ByteData160& pubkey_hash) {
 
 // OP_DUP OP_HASH160 <hash160(pubkey)> OP_EQUALVERIFY OP_CHECKSIG
 Script ScriptUtil::CreateP2pkhLockingScript(const Pubkey& pubkey) {
-  // create pubkey hash
   // pubkey hash作成
   ByteData160 pubkey_hash = HashUtil::Hash160(pubkey);
 
@@ -1012,7 +995,6 @@ Script ScriptUtil::CreateP2pkhLockingScript(const Pubkey& pubkey) {
 
 // OP_HASH160 <hash160(redeem_script)> OP_EQUAL
 Script ScriptUtil::CreateP2shLockingScript(const ByteData160& script_hash) {
-  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_HASH160);
@@ -1024,7 +1006,6 @@ Script ScriptUtil::CreateP2shLockingScript(const ByteData160& script_hash) {
 
 // OP_HASH160 <hash160(redeem_script)> OP_EQUAL
 Script ScriptUtil::CreateP2shLockingScript(const Script& redeem_script) {
-  // create script hash
   // script hash作成
   ByteData160 script_hash = HashUtil::Hash160(redeem_script);
 
@@ -1033,7 +1014,6 @@ Script ScriptUtil::CreateP2shLockingScript(const Script& redeem_script) {
 
 // OP_0 <hash160(pubkey)>
 Script ScriptUtil::CreateP2wpkhLockingScript(const ByteData160& pubkey_hash) {
-  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_0);
@@ -1044,7 +1024,6 @@ Script ScriptUtil::CreateP2wpkhLockingScript(const ByteData160& pubkey_hash) {
 
 // OP_0 <hash160(pubkey)>
 Script ScriptUtil::CreateP2wpkhLockingScript(const Pubkey& pubkey) {
-  // create pubkey hash
   // pubkey hash作成
   ByteData160 pubkey_hash = HashUtil::Hash160(pubkey);
 
@@ -1053,7 +1032,6 @@ Script ScriptUtil::CreateP2wpkhLockingScript(const Pubkey& pubkey) {
 
 // OP_0 <sha256(redeem_script)>
 Script ScriptUtil::CreateP2wshLockingScript(const ByteData256& script_hash) {
-  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_0);
@@ -1064,7 +1042,6 @@ Script ScriptUtil::CreateP2wshLockingScript(const ByteData256& script_hash) {
 
 // OP_0 <sha256(redeem_script)>
 Script ScriptUtil::CreateP2wshLockingScript(const Script& redeem_script) {
-  // create script hash
   // script hash作成
   ByteData256 script_hash = HashUtil::Sha256(redeem_script);
 
@@ -1116,7 +1093,6 @@ Script ScriptUtil::CreateMultisigRedeemScript(
   ScriptElement op_require_num(static_cast<int64_t>(require_signature_num));
   ScriptElement op_pubkey_num(static_cast<int64_t>(pubkeys.size()));
 
-  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(op_require_num.GetOpCode());
@@ -1140,7 +1116,6 @@ Script ScriptUtil::CreateMultisigRedeemScript(
 Script ScriptUtil::CreatePegoutLogkingScript(
     const BlockHash& genesisblock_hash, const Script& parent_locking_script,
     const Pubkey& btc_pubkey_bytes, const ByteData& whitelist_proof) {
-  // create script
   // script作成
   ScriptBuilder builder;
   builder.AppendOperator(ScriptOperator::OP_RETURN);
@@ -1154,6 +1129,109 @@ Script ScriptUtil::CreatePegoutLogkingScript(
   return locking_script;
 }
 #endif  // CFD_DISABLE_ELEMENTS
+
+std::vector<Pubkey> ScriptUtil::ExtractPubkeysFromMultisigScript(
+    const Script& multisig_script, uint32_t* require_num) {
+  std::vector<Pubkey> pubkeys;
+  const std::vector<ScriptElement> elements = multisig_script.GetElementList();
+
+  // find OP_CHECKMULTISIG or OP_CHECKMULTISIGVERIFY
+  IteratorWrapper<ScriptElement> itr = IteratorWrapper<ScriptElement>(
+      elements, "Invalid script element access", true);
+  // search OP_CHECKMULTISIG(or VERIFY)
+  while (itr.hasNext()) {
+    ScriptElement element = itr.next();
+    if (!element.IsOpCode()) {
+      continue;
+    }
+    if (element.GetOpCode() == ScriptOperator::OP_CHECKMULTISIG ||
+        element.GetOpCode() == ScriptOperator::OP_CHECKMULTISIGVERIFY) {
+      break;
+    }
+  }
+  // target opcode not found
+  if (!itr.hasNext()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Multisig opcode (OP_CHECKMULTISIG|VERIFY) not found"
+        " in redeem script: script={}",
+        multisig_script.ToString());
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "OP_CHCKMULTISIG(OP_CHECKMULTISIGVERIFY) not found"
+        " in redeem script.");
+  }
+
+  // get contain pubkey num
+  const ScriptElement& op_m = itr.next();
+  if (!op_m.IsNumber()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Invalid OP_CHECKMULTISIG(VERIFY) input in redeem script."
+        " Missing contain pubkey number.: script={}",
+        multisig_script.ToString());
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Invalid OP_CHCKMULTISIG(OP_CHECKMULTISIGVERIFY) input"
+        " in redeem script. Missing contain pubkey number.");
+  }
+
+  // set pubkey to vector(reverse data)
+  int64_t contain_pubkey_num = op_m.GetNumber();
+  for (int64_t i = 0; i < contain_pubkey_num; ++i) {
+    if (!itr.hasNext()) {
+      warn(
+          CFD_LOG_SOURCE,
+          "Not found enough pubkeys in redeem script.: "
+          "require_pubkey_num={}, script={}",
+          contain_pubkey_num, multisig_script.ToString());
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError,
+          "Not found enough pubkeys in redeem script.");
+    }
+
+    const ScriptElement& pubkey_element = itr.next();
+    // check script element type
+    if (!pubkey_element.IsBinary()) {
+      warn(
+          CFD_LOG_SOURCE,
+          "Invalid script element. Not binary element.: "
+          "ScriptElementType={}, data={}",
+          pubkey_element.GetType(), pubkey_element.ToString());
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError,
+          "Invalid ScriptElementType.(not binary)");
+    }
+
+    // push pubkey data
+    pubkeys.push_back(Pubkey(pubkey_element.GetBinaryData()));
+  }
+
+  // check opcode(require signature num)
+  ScriptElement require_num_element(ScriptType::kOpInvalidOpCode);
+  if (itr.hasNext()) {
+    require_num_element = itr.next();
+  }
+  if (!(require_num_element.IsNumber() && require_num_element.IsOpCode()) ||
+      (require_num_element.GetNumber() <= 0)) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Invalid OP_CHECKMULTISIG(VERIFY) input in redeem script."
+        " Missing require signature number.: script={}",
+        multisig_script.ToString());
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Invalid OP_CHCKMULTISIG(OP_CHECKMULTISIGVERIFY) input"
+        " in redeem script. Missing require signature number.");
+  }
+
+  if (require_num) {
+    *require_num = static_cast<uint32_t>(require_num_element.GetNumber());
+  }
+  // return reverse pubkey vector
+  std::reverse(std::begin(pubkeys), std::end(pubkeys));
+  return pubkeys;
+}
 
 }  // namespace core
 }  // namespace cfd

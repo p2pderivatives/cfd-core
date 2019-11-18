@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 #include <vector>
 
+#include "cfdcore/cfdcore_elements_address.h"
 #include "cfdcore/cfdcore_elements_transaction.h"
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_exception.h"
@@ -16,6 +17,7 @@ using cfd::core::ByteData;
 using cfd::core::ByteData256;
 using cfd::core::CfdError;
 using cfd::core::CfdException;
+using cfd::core::ElementsConfidentialAddress;
 using cfd::core::ConfidentialAssetId;
 using cfd::core::ConfidentialNonce;
 using cfd::core::ConfidentialTxOut;
@@ -145,6 +147,53 @@ TEST(ConfidentialTxOut, Constractor3) {
   EXPECT_EQ(txout_ref.GetValue().GetSatoshiValue(), 0);
 }
 
+TEST(ConfidentialTxOut, Constractor4) {
+  // ConfidentialAssetId, ConfidentialValue
+  Amount amount(Amount::CreateBySatoshiAmount(100000000));
+  ConfidentialTxOut txout(exp_asset, amount);
+  EXPECT_STREQ(txout.GetAsset().GetHex().c_str(), exp_asset.GetHex().c_str());
+  EXPECT_EQ(txout.GetConfidentialValue().GetAmount().GetSatoshiValue(),
+               amount.GetSatoshiValue());
+  EXPECT_STREQ(txout.GetLockingScript().GetHex().c_str(), "");
+  EXPECT_STREQ(txout.GetNonce().GetHex().c_str(), "");
+  EXPECT_STREQ(txout.GetRangeProof().GetHex().c_str(), "");
+  EXPECT_STREQ(txout.GetSurjectionProof().GetHex().c_str(), "");
+  EXPECT_EQ(txout.GetValue().GetSatoshiValue(), 0);
+}
+
+TEST(ConfidentialTxOut, Constractor5) {
+  // ConfidentialAssetId, ConfidentialValue
+  ElementsConfidentialAddress address("el1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqqve2xzutyaf7vjcap67f28q90uxec2ve95g3rpu5crapcmfr2l9xl5jzazvcpysz");
+  Amount amount(Amount::CreateBySatoshiAmount(100000000));
+  ConfidentialTxOut txout(address.GetUnblindedAddress(), exp_asset, amount);
+  EXPECT_STREQ(txout.GetAsset().GetHex().c_str(), exp_asset.GetHex().c_str());
+  EXPECT_EQ(txout.GetConfidentialValue().GetAmount().GetSatoshiValue(),
+               amount.GetSatoshiValue());
+  EXPECT_STREQ(txout.GetLockingScript().GetHex().c_str(),
+      "0020332a30b8b2753e64b1d0ebc951c057f0d9c29992d11118794c0fa1c6d2357ca6");
+  EXPECT_STREQ(txout.GetNonce().GetHex().c_str(), "");
+  EXPECT_STREQ(txout.GetRangeProof().GetHex().c_str(), "");
+  EXPECT_STREQ(txout.GetSurjectionProof().GetHex().c_str(), "");
+  EXPECT_EQ(txout.GetValue().GetSatoshiValue(), 0);
+}
+
+TEST(ConfidentialTxOut, Constractor6) {
+  // ConfidentialAssetId, ConfidentialValue
+  ElementsConfidentialAddress address("el1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqqve2xzutyaf7vjcap67f28q90uxec2ve95g3rpu5crapcmfr2l9xl5jzazvcpysz");
+  Amount amount(Amount::CreateBySatoshiAmount(100000000));
+  ConfidentialTxOut txout(address, exp_asset, amount);
+  EXPECT_STREQ(txout.GetAsset().GetHex().c_str(), exp_asset.GetHex().c_str());
+  EXPECT_EQ(txout.GetConfidentialValue().GetAmount().GetSatoshiValue(),
+               amount.GetSatoshiValue());
+  EXPECT_STREQ(txout.GetLockingScript().GetHex().c_str(),
+      "0020332a30b8b2753e64b1d0ebc951c057f0d9c29992d11118794c0fa1c6d2357ca6");
+  EXPECT_STREQ(txout.GetNonce().GetHex().c_str(),
+      "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800");
+  EXPECT_STREQ(txout.GetRangeProof().GetHex().c_str(), "");
+  EXPECT_STREQ(txout.GetSurjectionProof().GetHex().c_str(), "");
+  EXPECT_EQ(txout.GetValue().GetSatoshiValue(), 0);
+}
+
 TEST(ConfidentialTxOut, Setter) {
   ConfidentialTxOut txout;
 
@@ -232,6 +281,35 @@ TEST(ConfidentialTxOut, DecodeRangeProofInfoErrorTest) {
       EXPECT_EQ(cfd_exception.GetErrorCode(), CfdError::kCfdIllegalArgumentError);
       EXPECT_STREQ(cfd_exception.what(), "Secp256k1 empty range proof Error.");
     }
+  }
+}
+
+TEST(ConfidentialTxOut, CreateDestroyAmountTxOutTest) {  
+  ConfidentialTxOut txout;
+  ConfidentialAssetId asset("1234567890123456789012345678901234567890123456789012345678901234");
+  Amount amount = Amount::CreateBySatoshiAmount(980000000);
+  EXPECT_NO_THROW((txout = ConfidentialTxOut::CreateDestroyAmountTxOut(asset, amount)));
+  EXPECT_STREQ(txout.GetAsset().GetHex().c_str(), asset.GetHex().c_str());
+  EXPECT_EQ(txout.GetConfidentialValue().GetAmount().GetSatoshiValue(),
+            amount.GetSatoshiValue());
+  EXPECT_STREQ(txout.GetLockingScript().ToString().c_str(), "OP_RETURN");
+}
+
+TEST(ConfidentialTxOutReference, GetSerializeSize) {
+  {
+    int64_t satoshi = 1000000;
+    ConfidentialAssetId asset("1234567890123456789012345678901234567890123456789012345678901234");
+    ConfidentialTxOut txout(exp_script, asset,
+        ConfidentialValue(Amount::CreateBySatoshiAmount(satoshi)));
+    ConfidentialTxOutReference txout_ref(txout);
+
+    uint32_t wit_size = 0;
+    EXPECT_EQ(txout_ref.GetSerializeSize(false, &wit_size), 68);
+    EXPECT_EQ(wit_size, 2);
+
+    wit_size = 0;
+    EXPECT_EQ(txout_ref.GetSerializeSize(true, &wit_size), 3150);
+    EXPECT_EQ(wit_size, 3028);
   }
 }
 

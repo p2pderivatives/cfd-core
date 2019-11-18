@@ -1,9 +1,24 @@
 project(external_download NONE)
 
+# load file
+set(EXTERNAL_DEBUG_FILENAME  external_project_debug.config)
+set(DEBUG_VERSION_FILE  ${CMAKE_SOURCE_DIR}/${EXTERNAL_DEBUG_FILENAME})
+if(EXISTS ${DEBUG_VERSION_FILE})
+transform_makefile_srclist(${DEBUG_VERSION_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${EXTERNAL_DEBUG_FILENAME}.cmake")
+include(${CMAKE_CURRENT_BINARY_DIR}/${EXTERNAL_DEBUG_FILENAME}.cmake)
+endif()
+
 # libwally-core
+if(LIBWALLY_TARGET_VERSION)
+set(LIBWALLY_TARGET_TAG  ${LIBWALLY_TARGET_VERSION})
+message(STATUS "[external project debug] libwally-core target=${LIBWALLY_TARGET_VERSION}")
+else()
+set(LIBWALLY_TARGET_TAG  cmake_build)
+endif()
+
 set(TEMPLATE_PROJECT_NAME           libwally-core)
 set(TEMPLATE_PROJECT_GIT_REPOSITORY https://github.com/cryptogarageinc/libwally-core.git)
-set(TEMPLATE_PROJECT_GIT_TAG        cmake_build)
+set(TEMPLATE_PROJECT_GIT_TAG        ${LIBWALLY_TARGET_TAG})
 set(PROJECT_EXTERNAL  "${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/external")
 set(DIR_PATH "${CFD_ROOT_BINARY_DIR}/${TEMPLATE_PROJECT_NAME}")
 set(DL_PATH "${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/download")
@@ -39,9 +54,16 @@ endif()
 
 
 # googletest
+if(GTEST_TARGET_VERSION)
+set(GTEST_TARGET_TAG  ${GTEST_TARGET_VERSION})
+message(STATUS "[external project debug] google-test target=${GTEST_TARGET_VERSION}")
+else()
+set(GTEST_TARGET_TAG  release-1.8.1)
+endif()
+
 set(TEMPLATE_PROJECT_NAME           googletest)
 set(TEMPLATE_PROJECT_GIT_REPOSITORY https://github.com/google/googletest.git)
-set(TEMPLATE_PROJECT_GIT_TAG        release-1.8.1)
+set(TEMPLATE_PROJECT_GIT_TAG        ${GTEST_TARGET_TAG})
 set(PROJECT_EXTERNAL  "${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/external")
 set(DL_PATH "${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/download")
 

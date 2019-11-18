@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_amount.cpp
  *
- * @brief Class to show amount.  Amountを表現するクラス
+ * @brief Amountを表現するクラス
  *
  */
 #include <algorithm>
@@ -25,7 +25,6 @@ Amount::Amount() : amount_(0) {
 }
 
 Amount::Amount(int64_t amount) : amount_(amount) {
-  // Amount validation is done by CreateBySatoshiAmount
   // amountのvalidationは、CreateBySatoshiAmountなどで実施
 }
 
@@ -130,6 +129,24 @@ bool operator==(int64_t satoshi_amount, const Amount& amount) {
 bool operator!=(int64_t satoshi_amount, const Amount& amount) {
   return amount != satoshi_amount;
 }
+bool operator<(const Amount& lhs, const Amount& rhs) {
+  return (lhs.GetSatoshiValue() < rhs.GetSatoshiValue());
+}
+bool operator<(const int64_t lhs, const Amount& rhs) {
+  return (lhs < rhs.GetSatoshiValue());
+}
+bool operator<(const Amount& lhs, const int64_t rhs) {
+  return (lhs.GetSatoshiValue() < rhs);
+}
+bool operator>(const Amount& lhs, const Amount& rhs) { return (rhs < lhs); }
+bool operator>(const int64_t lhs, const Amount& rhs) { return (rhs < lhs); }
+bool operator>(const Amount& lhs, const int64_t rhs) { return (rhs < lhs); }
+bool operator<=(const Amount& lhs, const Amount& rhs) { return !(lhs > rhs); }
+bool operator<=(const int64_t lhs, const Amount& rhs) { return !(lhs > rhs); }
+bool operator<=(const Amount& lhs, const int64_t rhs) { return !(lhs > rhs); }
+bool operator>=(const Amount& lhs, const Amount& rhs) { return !(lhs < rhs); }
+bool operator>=(const int64_t lhs, const Amount& rhs) { return !(lhs < rhs); }
+bool operator>=(const Amount& lhs, const int64_t rhs) { return !(lhs < rhs); }
 Amount operator+(const Amount& left_amount, const Amount& right_amount) {
   return Amount::CreateBySatoshiAmount(
       left_amount.GetSatoshiValue() + right_amount.GetSatoshiValue());

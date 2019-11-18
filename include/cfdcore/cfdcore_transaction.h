@@ -40,6 +40,12 @@ class CFD_CORE_EXPORT TxOut : public AbstractTxOut {
    */
   TxOut(const Amount& value, const Script& locking_script);
   /**
+   * @brief コンストラクタ
+   * @param[in] value             amount value.
+   * @param[in] address           out address.
+   */
+  TxOut(const Amount& value, const Address& address);
+  /**
    * @brief デストラクタ
    */
   virtual ~TxOut() {
@@ -78,6 +84,23 @@ class CFD_CORE_EXPORT TxOutReference : public AbstractTxOutReference {
  */
 class CFD_CORE_EXPORT TxIn : public AbstractTxIn {
  public:
+  /**
+   * @brief 最小のTxInサイズ
+   * @details 対象サイズ：txid(64), vout(4), sequence(4), scriptLength(1(仮))
+   */
+  static constexpr const size_t kMinimumTxInSize = 41;
+
+  /**
+   * @brief TxInのサイズを見積もる。
+   * @param[in] addr_type       address type
+   * @param[in] redeem_script   redeem script
+   * @param[out] witness_stack_size   witness stack size
+   * @return TxInのサイズ
+   */
+  static uint32_t EstimateTxInSize(
+      AddressType addr_type, Script redeem_script = Script(),
+      uint32_t* witness_stack_size = nullptr);
+
   /**
    * @brief コンストラクタ.
    * @param[in] txid        txid

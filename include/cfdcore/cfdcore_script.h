@@ -993,6 +993,17 @@ class CFD_CORE_EXPORT ScriptUtil {
       const Pubkey &btc_pubkey_bytes, const ByteData &whitelist_proof);
 #endif  // CFD_DISABLE_ELEMENTS
 
+  /**
+   * @brief Get the set of public keys contained in a multisig script.
+   * @details if the redeem script contains multiple OP_CHECKMULTISIG(VERIFY),
+   * returns only the public keys required for the last one.
+   * @param[in] multisig_script the multisig redeem script.
+   * @param[out] require_num the multisig require number.
+   * @return an array of public keys.
+   */
+  static std::vector<Pubkey> ExtractPubkeysFromMultisigScript(
+      const Script &multisig_script, uint32_t *require_num = nullptr);
+
  private:
   ScriptUtil();
 };

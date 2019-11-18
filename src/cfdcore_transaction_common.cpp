@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_transaction_common.cpp
  *
- * @brief-eng implementation of Transaction related common classes
- * @brief-jp Transaction関連基底クラスの実装ファイルです。
+ * @brief Transaction関連基底クラスの実装ファイルです。
  */
 #include <limits>
 #include <string>
@@ -24,7 +23,6 @@ namespace core {
 using logger::warn;
 
 // -----------------------------------------------------------------------------
-// In-file functions (ported from libwally. Varint_to_bytes, varbuff_to_bytes)
 // ファイル内関数（libwallyから移植。varint_to_bytes, varbuff_to_bytes）
 // -----------------------------------------------------------------------------
 static constexpr uint8_t kViTag16 = 253;  //!< VarInt16
@@ -166,6 +164,12 @@ AbstractTxOut::AbstractTxOut(const Amount &value, const Script &locking_script)
   // do nothing
 }
 
+AbstractTxOut::AbstractTxOut(const Script &locking_script)
+    : value_(Amount::CreateBySatoshiAmount(0)),
+      locking_script_(locking_script) {
+  // do nothing
+}
+
 const Amount AbstractTxOut::GetValue() const { return value_; }
 
 const Script AbstractTxOut::GetLockingScript() const {
@@ -180,15 +184,18 @@ AbstractTxOutReference::AbstractTxOutReference(const AbstractTxOut &tx_out)
   // do nothing
 }
 
+uint32_t AbstractTxOutReference::GetSerializeSize() const {
+  size_t result = 8;  // Amount分
+  result += locking_script_.GetData().GetSerializeSize();
+  return static_cast<uint32_t>(result);
+}
+
 // -----------------------------------------------------------------------------
 // SignatureUtil
 // -----------------------------------------------------------------------------
 ByteData SignatureUtil::CreateWitnessProgramWPKH(const Pubkey &pubkey) {
   std::vector<uint8_t> buffer(kScriptHashP2pkhLength);
   size_t witness_prgram_length = 0;
-
-  // Set OP_DUP OP_HASH160 ~~~~ OP_EQUALVERIFY OP_CHECKSIG in
-  // → Set WALLY_SCRIPT_HASH160 and perform hashing at once
   // 中で OP_DUP OP_HASH160 ~~~~ OP_EQUALVERIFY OP_CHECKSIG をセット
   // →WALLY_SCRIPT_HASH160をセットして、ハッシュ化も一括実施させる
   const std::vector<uint8_t> &bytes = pubkey.GetData().GetBytes();
@@ -262,10 +269,6 @@ void AbstractTransaction::FreeWallyAddress(const void *wally_tx_pointer) {
 int32_t AbstractTransaction::GetVersion() const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
-
-  // Type is matched to bitcoin-core
-  // return reinterpret_cast <int32_t> (tx_pointer-> version);
-  // VC ++ errors and warnings appear, so change to pointer cast
   // 型はbitcoin-coreに合わせている
   // return reinterpret_cast<int32_t>(tx_pointer->version);
   // VC++でエラーやらWarningが出るので、ポインタキャストに変更
@@ -568,6 +571,14 @@ bool AbstractTransaction::IsCoinBase() const {
     }
   }
   return is_coinbase;
+}
+
+uint32_t AbstractTransaction::GetVsizeFromSize(
+    uint32_t no_witness_size, uint32_t witness_size) {
+  uint32_t weight = (no_witness_size * 4) + witness_size;
+  // 端数切り上げ
+  uint32_t vsize = (weight + 3) / 4;
+  return vsize;
 }
 
 bool AbstractTransaction::GetVariableInt(
