@@ -21,12 +21,18 @@ using cfd::core::ScriptBuilder;
 using cfd::core::ScriptOperator;
 using cfd::core::CfdException;
 using cfd::core::AddressFormatData;
+using cfd::core::GetBitcoinAddressFormatList;
 #ifndef CFD_DISABLE_ELEMENTS
 using cfd::core::GetElementsAddressFormatList;
 using cfd::core::ElementsConfidentialAddress;
 using cfd::core::ElementsNetType;
 using cfd::core::ElementsAddressType;
 #endif  // CFD_DISABLE_ELEMENTS
+
+TEST(Address, GetBitcoinAddressFormatList) {
+  std::vector<AddressFormatData> list = GetBitcoinAddressFormatList();
+  EXPECT_STREQ("bc", list[NetType::kMainnet].GetBech32Hrp().c_str());
+}
 
 TEST(Address, EmptyAddressTest) {
   Address empty_address;
@@ -506,6 +512,8 @@ TEST(Address, ElementsNoSegwitAddressFromHashTest) {
                address.GetHash().GetHex().c_str());
   EXPECT_STREQ("", address.GetPubkey().GetHex().c_str());
   EXPECT_STREQ("", address.GetScript().GetHex().c_str());
+  EXPECT_STREQ("76a914925d4028880bd0c9d68fbc7fc7dfee976698629c88ac",
+               address.GetLockingScript().GetHex().c_str());
 
   EXPECT_NO_THROW((address = Address(NetType::kCustomChain,
                    AddressType::kP2shAddress, script_hash, net_param)));
@@ -513,6 +521,8 @@ TEST(Address, ElementsNoSegwitAddressFromHashTest) {
                address.GetAddress().c_str());
   EXPECT_EQ(NetType::kCustomChain, address.GetNetType());
   EXPECT_EQ(AddressType::kP2shAddress, address.GetAddressType());
+  EXPECT_STREQ("a914be8f7ae2233fc122be82f2cf9fe3cc2c6196218a87",
+               address.GetLockingScript().GetHex().c_str());
 }
 
 TEST(Address, ElementsSegwitAddressFromHashTest) {
@@ -543,6 +553,8 @@ TEST(Address, ElementsSegwitAddressFromHashTest) {
                address.GetHash().GetHex().c_str());
   EXPECT_STREQ("", address.GetPubkey().GetHex().c_str());
   EXPECT_STREQ("", address.GetScript().GetHex().c_str());
+  EXPECT_STREQ("0014925d4028880bd0c9d68fbc7fc7dfee976698629c",
+               address.GetLockingScript().GetHex().c_str());
 
   EXPECT_NO_THROW((address = Address(NetType::kCustomChain,
                    WitnessVersion::kVersion0,
@@ -551,6 +563,8 @@ TEST(Address, ElementsSegwitAddressFromHashTest) {
                address.GetAddress().c_str());
   EXPECT_EQ(NetType::kCustomChain, address.GetNetType());
   EXPECT_EQ(AddressType::kP2wshAddress, address.GetAddressType());
+  EXPECT_STREQ("0020c62982ba62f90e2929b8830cc3c6dc0c38fe7766d178f217f0dbbd0bf2705201",
+               address.GetLockingScript().GetHex().c_str());
 }
 
 TEST(Address, ElementsNoSegwitAddressFromStringTest) {

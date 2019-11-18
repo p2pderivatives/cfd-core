@@ -96,13 +96,6 @@ ByteData WallyUtil::AddTweakPubkey(
       pubkey, ByteData(tweak.GetBytes()), is_tweak_check);
 }
 
-ByteData256 WallyUtil::AddTweakPrivkey(
-    const ByteData256& privkey, const ByteData256& tweak) {
-  struct secp256k1_context_struct* context = wally_get_secp_context();
-  Secp256k1 secp256k1(context);
-  return secp256k1.AddTweakPrivkeySecp256k1Ec(privkey, tweak);
-}
-
 std::vector<uint8_t> WallyUtil::CreateScriptDataFromBytes(
     const std::vector<uint8_t>& bytes, int32_t flags) {
   size_t write_max_size = bytes.size() + kMaxVarIntSize;

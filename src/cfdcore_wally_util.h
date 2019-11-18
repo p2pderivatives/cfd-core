@@ -65,15 +65,6 @@ class WallyUtil {
       bool is_tweak_check = false);
 
   /**
-   * @brief Privkey調整処理
-   * @param[in] privkey           Privkey
-   * @param[in] tweak             調整値
-   * @return 調整後のPrivkeyデータ
-   */
-  static ByteData256 AddTweakPrivkey(
-      const ByteData256& privkey, const ByteData256& tweak);
-
-  /**
    * @brief Scriptにpushするデータを生成する
    * @param[in] bytes 追加データ
    * @param[in] flags hashフラグ(@see wally_script_push_from_bytes)

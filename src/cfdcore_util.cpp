@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_util.cpp
  *
- * @brief-eng definition related to Utility classes
- * @brief-jp Utility関連クラス定義
+ * @brief Utility関連クラス定義
  */
 
 #include <iterator>
@@ -25,6 +24,13 @@ namespace core {
 using logger::info;
 using logger::warn;
 
+SigHashType::SigHashType()
+    : hash_algorithm_(SigHashAlgorithm::kSigHashAll),
+      is_anyone_can_pay_(false),
+      is_fork_id_(false) {
+  // nothing
+}
+
 SigHashType::SigHashType(
     SigHashAlgorithm algorithm, bool is_anyone_can_pay, bool is_fork_id)
     : hash_algorithm_(algorithm),
@@ -33,7 +39,14 @@ SigHashType::SigHashType(
   // nothing
 }
 
-uint32_t SigHashType::GetSigHashFlag() {
+SigHashType &SigHashType::operator=(const SigHashType &sighash_type) {
+  hash_algorithm_ = sighash_type.hash_algorithm_;
+  is_anyone_can_pay_ = sighash_type.is_anyone_can_pay_;
+  is_fork_id_ = sighash_type.is_fork_id_;
+  return *this;
+}
+
+uint32_t SigHashType::GetSigHashFlag() const {
   uint32_t flag = hash_algorithm_;
   if (is_anyone_can_pay_) {
     flag |= kSigHashAnyOneCanPay;
@@ -266,7 +279,7 @@ ByteData CryptoUtil::EncryptAes256(
   std::vector<uint8_t> input(data_size);
   std::vector<uint8_t> output(data_size);
 
-  // To fill the end with 0 / 末尾を0で埋めるため
+  // 末尾を0で埋めるため
   memcpy(
       input.data(), reinterpret_cast<const uint8_t *>(data.data()),
       data.size());
@@ -429,8 +442,8 @@ ByteData CryptoUtil::ConvertSignatureToDer(
 }
 
 /**
- * @brief Table info used for Base64encode / Base64encodeに用いるtable情報
- * @return Character string used in Base64 / Base64で利用する文字列
+ * @brief Base64encodeに用いるtable情報
+ * @return Base64で利用する文字列
  */
 static const std::string kBase64EncodeTable(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
@@ -697,6 +710,25 @@ std::vector<uint32_t> RandomNumberUtil::GetRandomIndexes(uint32_t length) {
   }
 
   return result;
+}
+
+bool RandomNumberUtil::GetRandomBool(std::vector<bool> *random_cache) {
+  static std::random_device rd;
+  static std::mt19937 engine(rd());
+  if (random_cache == nullptr) {
+    throw CfdException(kCfdIllegalArgumentError, "GetRandomBool error.");
+  }
+
+  if (random_cache->empty()) {
+    uint32_t random = engine();
+    for (int i = 0; i < 32; i++) {
+      bool value = (random >> i) & 1;
+      random_cache->push_back(value);
+    }
+  }
+  bool ret = random_cache->back();
+  random_cache->pop_back();
+  return ret;
 }
 
 //////////////////////////////////

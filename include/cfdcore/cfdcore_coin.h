@@ -56,7 +56,7 @@ class CFD_CORE_EXPORT Txid {
    * @param txid 比較対象のオブジェクト
    * @return true:一致/false:不一致
    */
-  bool Equals(const Txid& txid);
+  bool Equals(const Txid& txid) const;
 
  private:
   ByteData data_;  ///< byte data

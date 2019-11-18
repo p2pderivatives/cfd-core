@@ -817,9 +817,9 @@ INPUT                  = ../include/cfdcore \
                          ../src/include/cfdcore \
                          ../src \
                          ../src/univalue/include \
-                         ../external/libwally-core/include \
-                         ../external/libwally-core/src/secp256k1/include \
                          ../src/include/spdlog
+#                         ../external/libwally-core/include \
+#                         ../external/libwally-core/src/secp256k1/include \
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

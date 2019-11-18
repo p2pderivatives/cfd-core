@@ -2,7 +2,6 @@
 /**
  * @file cfdcore_elements_transaction.cpp
  *
- * @brief-eng implementation of Confidential Transaction classes
  * @brief Confidential Transaction関連クラスの実装ファイルです。
  */
 #ifndef CFD_DISABLE_ELEMENTS
@@ -16,8 +15,10 @@
 #include "cfdcore/cfdcore_elements_address.h"
 #include "cfdcore/cfdcore_elements_transaction.h"
 #include "cfdcore/cfdcore_exception.h"
+#include "cfdcore/cfdcore_hdwallet.h"
 #include "cfdcore/cfdcore_key.h"
 #include "cfdcore/cfdcore_logger.h"
+#include "cfdcore/cfdcore_transaction.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
 #include "wally_elements.h"      // NOLINT
@@ -31,51 +32,35 @@ using logger::info;
 using logger::warn;
 
 // -----------------------------------------------------------------------------
-// File constants / ファイル内定数
+// ファイル内定数
 // -----------------------------------------------------------------------------
-/// ElementsTransaction minimum size
-/// ElementsTransactionの最小サイズ
-static constexpr size_t kElementsTransactionMinimumSize = 11;
-/// Definition of ConfidentialCommitmentのVersion1(unblind)
 /// ConfidentialCommitmentのVersion1(unblind)定義
 static constexpr uint8_t kConfidentialVersion_1 = 1;
-/// Definition of No Witness Transaction version
 /// TransactionのWitness非対応バージョン定義
 static constexpr uint32_t kTransactionVersionNoWitness = 0x40000000;
-/// Size of asset at unblind
 /// Assetのunblind時のサイズ
 static constexpr size_t kAssetSize = ASSET_TAG_LEN;
-/// Size of asset at Nonce
 /// Nonceのunblind時のサイズ
 static constexpr size_t kNonceSize = 32;
-/// Size of blind factord
 /// blind factordのサイズ
 static constexpr size_t kBlindFactorSize = 32;
-/// Confidential size
 /// Confidentialサイズ
 static constexpr size_t kConfidentialDataSize = WALLY_TX_ASSET_CT_LEN;
-/// Size of issuance entropy
 /// issuance entropyのサイズ
 static constexpr size_t kEntropySize = 32;
 // @formatter:off
-/// Size of value at unblind
 /// Valueのunblind時のサイズ
 static constexpr size_t kConfidentialValueSize =
     WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN;  // NOLINT
-/// Size of value at ubline (no version byte)
 /// Valueのunblind時のサイズ(version byteなし)
 static constexpr size_t kAssetValueSize =
     WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN - 1;  // NOLINT
-/// Vount index value mask
 /// voutのIndex値マスク
 static constexpr uint32_t kTxInVoutMask = WALLY_TX_INDEX_MASK;
-/// Issuance flag for txin::feature
 /// txin::featureのIssuanceフラグ
 static constexpr uint8_t kTxInFeatureIssuance = WALLY_TX_IS_ISSUANCE;
-/// Pegin flag for txin::feature
 /// txin::featureのPeginフラグ
 static constexpr uint8_t kTxInFeaturePegin = WALLY_TX_IS_PEGIN;
-/// Empty value of ByteData256
 /// ByteData256の空データ
 static const ByteData256 kEmptyByteData256;
 // @formatter:on
@@ -88,10 +73,9 @@ ConfidentialNonce::ConfidentialNonce() : data_(), version_(0) {
 }
 
 ConfidentialNonce::ConfidentialNonce(const std::string &hex_string)
-    : data_(hex_string), version_(kConfidentialVersion_1) {
+    : data_(hex_string), version_(0) {
   switch (data_.GetDataSize()) {
     case 0:
-      // do nothing
       break;
     case kNonceSize: {
       std::vector<uint8_t> bytes;
@@ -105,6 +89,9 @@ ConfidentialNonce::ConfidentialNonce(const std::string &hex_string)
     case kConfidentialDataSize: {
       const std::vector<uint8_t> &data = data_.GetBytes();
       version_ = data[0];
+      if (version_ == 0) {
+        data_ = ByteData();
+      }
       break;
     }
     default:
@@ -132,8 +119,12 @@ ConfidentialNonce::ConfidentialNonce(const ByteData &byte_data)
     }
     case kConfidentialDataSize: {
       const std::vector<uint8_t> &data = byte_data.GetBytes();
-      data_ = byte_data;
       version_ = data[0];
+      if (version_ == 0) {
+        data_ = ByteData();
+      } else {
+        data_ = byte_data;
+      }
       break;
     }
     default:
@@ -145,6 +136,11 @@ ConfidentialNonce::ConfidentialNonce(const ByteData &byte_data)
   }
 }
 
+ConfidentialNonce::ConfidentialNonce(const Pubkey &pubkey)
+    : ConfidentialNonce(pubkey.GetData()) {
+  // do nothing
+}
+
 ByteData ConfidentialNonce::GetData() const { return data_; }
 
 std::string ConfidentialNonce::GetHex() const { return data_.GetHex(); }
@@ -152,6 +148,8 @@ std::string ConfidentialNonce::GetHex() const { return data_.GetHex(); }
 bool ConfidentialNonce::HasBlinding() const {
   return (version_ != 0) && (version_ != kConfidentialVersion_1);
 }
+
+bool ConfidentialNonce::IsEmpty() const { return (version_ == 0); }
 
 // -----------------------------------------------------------------------------
 // ConfidentialAssetId
@@ -180,8 +178,12 @@ ConfidentialAssetId::ConfidentialAssetId(const std::string &hex_string)
     case kConfidentialDataSize: {
       const std::vector<uint8_t> &data = data_.GetBytes();
       std::vector<uint8_t> buffer(data.cbegin() + 1, data.cend());
-      data_ = ByteData(buffer);
       version_ = data[0];
+      if (version_ == 0) {
+        data_ = ByteData();
+      } else {
+        data_ = ByteData(buffer);
+      }
       break;
     }
     default:
@@ -211,8 +213,10 @@ ConfidentialAssetId::ConfidentialAssetId(const ByteData &byte_data)
     case kConfidentialDataSize: {
       const std::vector<uint8_t> &data = byte_data.GetBytes();
       std::vector<uint8_t> buffer(data.cbegin() + 1, data.cend());
-      data_ = ByteData(buffer);
       version_ = data[0];
+      if (version_ != 0) {
+        data_ = ByteData(buffer);
+      }
       break;
     }
     default:
@@ -255,6 +259,8 @@ ByteData ConfidentialAssetId::GetUnblindedData() const {
   return GetData();
 }
 
+bool ConfidentialAssetId::IsEmpty() const { return (version_ == 0); }
+
 // -----------------------------------------------------------------------------
 // ConfidentialValue
 // -----------------------------------------------------------------------------
@@ -281,6 +287,9 @@ ConfidentialValue::ConfidentialValue(const std::string &hex_string)
     case kConfidentialValueSize: {
       const std::vector<uint8_t> &data = data_.GetBytes();
       version_ = data[0];
+      if (version_ == 0) {
+        data_ = ByteData();
+      }
       break;
     }
     default:
@@ -309,8 +318,12 @@ ConfidentialValue::ConfidentialValue(const ByteData &byte_data)
     case kConfidentialDataSize:
     case kConfidentialValueSize: {
       const std::vector<uint8_t> &data = byte_data.GetBytes();
-      data_ = byte_data;
       version_ = data[0];
+      if (version_ == 0) {
+        data_ = ByteData();
+      } else {
+        data_ = byte_data;
+      }
       break;
     }
     default:
@@ -411,6 +424,30 @@ std::string BlindFactor::GetHex() const {
 // -----------------------------------------------------------------------------
 // ConfidentialTxIn
 // -----------------------------------------------------------------------------
+ConfidentialTxIn::ConfidentialTxIn()
+    : AbstractTxIn(Txid(), 0, 0),
+      blinding_nonce_(),
+      asset_entropy_(),
+      issuance_amount_(),
+      inflation_keys_(),
+      issuance_amount_rangeproof_(),
+      inflation_keys_rangeproof_(),
+      pegin_witness_() {
+  // do nothing
+}
+
+ConfidentialTxIn::ConfidentialTxIn(const Txid &txid, uint32_t index)
+    : AbstractTxIn(txid, index, 0),
+      blinding_nonce_(),
+      asset_entropy_(),
+      issuance_amount_(),
+      inflation_keys_(),
+      issuance_amount_rangeproof_(),
+      inflation_keys_rangeproof_(),
+      pegin_witness_() {
+  // do nothing
+}
+
 ConfidentialTxIn::ConfidentialTxIn(
     const Txid &txid, uint32_t index, uint32_t sequence)
     : AbstractTxIn(txid, index, sequence),
@@ -507,6 +544,59 @@ ByteData256 ConfidentialTxIn::GetWitnessHash() const {
   return result;
 }
 
+uint32_t ConfidentialTxIn::EstimateTxInSize(
+    AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
+    Script fedpeg_script, bool is_issuance, bool is_blind,
+    uint32_t *witness_stack_size) {
+  // issuance時の追加サイズ: entity(32),hash(32),amount(8+1),key(8+1)
+  static constexpr const uint32_t kIssuanceAppendSize = 82;
+  // blind issuance時の追加サイズ: entity,hash,amount(33),key(33)
+  static constexpr const uint32_t kIssuanceBlindSize = 130;
+  // issuance rangeproof size
+  static constexpr const uint32_t kTxInRangeproof = 2893 + 3;
+  // pegin size:
+  // btc(9),asset(33),block(33),fedpegSize(-),txSize(3),txoutproof(152)
+  static constexpr const uint32_t kPeginWitnessSize = 230;
+  uint32_t witness_size = 0;
+  uint32_t size =
+      TxIn::EstimateTxInSize(addr_type, redeem_script, &witness_size);
+  size -= witness_size;  // non segwit size
+
+  if (is_issuance) {
+    if (is_blind) {
+      size += kIssuanceBlindSize;
+    } else {
+      size += kIssuanceAppendSize;
+    }
+  }
+
+  if ((pegin_btc_tx_size != 0) || is_issuance || (witness_size != 0)) {
+    if (witness_size == 0) {
+      witness_size += 1;  // witness size
+    }
+
+    if (pegin_btc_tx_size != 0) {
+      witness_size += pegin_btc_tx_size + kPeginWitnessSize;
+      if (!fedpeg_script.IsEmpty()) {
+        witness_size +=
+            static_cast<uint32_t>(fedpeg_script.GetData().GetSerializeSize());
+      }
+    }
+    witness_size += 1;  // pegin witness num
+
+    if (is_issuance && is_blind) {
+      witness_size += kTxInRangeproof * 2;
+    } else {
+      witness_size += 2;  // issuance rangeproof size
+    }
+  }
+
+  if (witness_stack_size) {
+    *witness_stack_size = witness_size;
+  }
+  return size + witness_size;
+}
+
 // -----------------------------------------------------------------------------
 // ConfidentialTxInReference
 // -----------------------------------------------------------------------------
@@ -579,6 +669,41 @@ ConfidentialTxOut::ConfidentialTxOut(
   // do nothing
 }
 
+ConfidentialTxOut::ConfidentialTxOut(
+    const ConfidentialAssetId &asset, const Amount &amount)
+    : AbstractTxOut(),
+      asset_(asset),
+      confidential_value_(ConfidentialValue(amount)),
+      nonce_(),
+      surjection_proof_(),
+      range_proof_() {
+  // do nothing
+}
+
+ConfidentialTxOut::ConfidentialTxOut(
+    const Address &address, const ConfidentialAssetId &asset,
+    const Amount &amount)
+    : AbstractTxOut(address.GetLockingScript()),
+      asset_(asset),
+      confidential_value_(ConfidentialValue(amount)),
+      nonce_(),
+      surjection_proof_(),
+      range_proof_() {
+  // do nothing
+}
+
+ConfidentialTxOut::ConfidentialTxOut(
+    const ElementsConfidentialAddress &confidential_address,
+    const ConfidentialAssetId &asset, const Amount &amount)
+    : AbstractTxOut(confidential_address.GetLockingScript()),
+      asset_(asset),
+      confidential_value_(ConfidentialValue(amount)),
+      nonce_(confidential_address.GetConfidentialKey()),
+      surjection_proof_(),
+      range_proof_() {
+  // do nothing
+}
+
 void ConfidentialTxOut::SetCommitment(
     const ConfidentialAssetId &asset,
     const ConfidentialValue &confidential_value,
@@ -602,6 +727,13 @@ ByteData256 ConfidentialTxOut::GetWitnessHash() const {
   return result;
 }
 
+ConfidentialTxOut ConfidentialTxOut::CreateDestroyAmountTxOut(
+    const ConfidentialAssetId &asset, const Amount &amount) {
+  ScriptBuilder builder;
+  builder.AppendOperator(ScriptOperator::OP_RETURN);
+  return ConfidentialTxOut(builder.Build(), asset, ConfidentialValue(amount));
+}
+
 const RangeProofInfo ConfidentialTxOut::DecodeRangeProofInfo(
     const ByteData &range_proof) {
   RangeProofInfo range_proof_info;
@@ -623,6 +755,43 @@ ConfidentialTxOutReference::ConfidentialTxOutReference(
       surjection_proof_(tx_out.GetSurjectionProof()),
       range_proof_(tx_out.GetRangeProof()) {
   // do nothing
+}
+
+uint32_t ConfidentialTxOutReference::GetSerializeSize(
+    bool is_blinded, uint32_t *witness_stack_size) const {
+  static constexpr const uint32_t kTxOutSurjection = 131 + 1;
+  static constexpr const uint32_t kTxOutRangeproof = 2893 + 3;
+  uint32_t result = 0;
+  uint32_t witness_size = 0;
+  bool is_blind = is_blinded || (!nonce_.IsEmpty());
+  if (is_blind && (!locking_script_.IsEmpty()) &&
+      (!locking_script_.IsPegoutScript())) {
+    result += kConfidentialDataSize;  // asset
+    result += kConfidentialDataSize;  // value
+    result += kConfidentialDataSize;  // nonce
+    result +=
+        static_cast<uint32_t>(locking_script_.GetData().GetSerializeSize());
+    witness_size += kTxOutSurjection;  // surjection proof
+    witness_size += kTxOutRangeproof;  // range proof
+  } else {
+    result += kConfidentialDataSize;   // asset
+    result += kConfidentialValueSize;  // value
+    if (locking_script_.IsEmpty()) {
+      result += 2;  // fee (nonce & lockingScript empty.)
+    } else {
+      result += 1;  // nonce
+      result +=
+          static_cast<uint32_t>(locking_script_.GetData().GetSerializeSize());
+    }
+    witness_size += 1;  // surjection proof
+    witness_size += 1;  // range proof
+  }
+
+  if (witness_stack_size) {
+    *witness_stack_size = witness_size;
+  }
+  result += witness_size;
+  return result;
 }
 
 // -----------------------------------------------------------------------------
@@ -663,8 +832,6 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
   std::vector<ConfidentialTxIn> vin_work;
   std::vector<ConfidentialTxOut> vout_work;
 
-  // It is assumed that tx information has been created.
-  // (If it is not created, it will cause inconsistency)
   // tx情報は作成済みである前提とする。(作成済みじゃないと不整合を起こす)
   struct wally_tx *tx_pointer = NULL;
   uint32_t flag = WALLY_TX_FLAG_USE_ELEMENTS;
@@ -758,8 +925,6 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
       vout_work.push_back(txout);
     }
 
-
-    // If the copy process is successful, release the old buffer
     // コピー処理が成功したら、旧バッファを解放
     if (original_address != NULL) {
       wally_tx_free(static_cast<struct wally_tx *>(original_address));
@@ -769,12 +934,12 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
     vin_ = vin_work;
     vout_ = vout_work;
   } catch (const CfdException &exception) {
-    // release on error / エラー時は解放
+    // エラー時は解放
     wally_tx_free(tx_pointer);
     wally_tx_pointer_ = original_address;
     throw exception;
   } catch (...) {
-    // release on error / エラー時は解放
+    // エラー時は解放
     wally_tx_free(tx_pointer);
     wally_tx_pointer_ = original_address;
     throw CfdException(kCfdUnknownError);
@@ -1297,15 +1462,15 @@ IssuanceParameter ConfidentialTransaction::CalculateIssuanceValue(
     return result;
   }
 
-  // calculate issue value / issue値の計算
+  // issue値の計算
   const BlindFactor entropy = CalculateAssetEntropy(txid, vout, contract_hash);
   result.entropy = entropy;
 
-  // calculate asset value / assetの計算
+  // assetの計算
   const ConfidentialAssetId asset = CalculateAsset(entropy);
   result.asset = asset;
 
-  // calculate token / tokenの計算
+  // tokenの計算
   const ConfidentialAssetId token =
       CalculateReissuanceToken(entropy, is_blind);
   result.token = token;
@@ -1575,7 +1740,7 @@ void ConfidentialTransaction::BlindTransaction(
         input_generators.insert(
             input_generators.end(), std::begin(asset_generator),
             std::end(asset_generator));
-        // empty factor / 空のfactor
+        // 空のfactor
         input_abfs.insert(
             input_abfs.end(), std::begin(empty_factor),
             std::end(empty_factor));
@@ -1604,7 +1769,7 @@ void ConfidentialTransaction::BlindTransaction(
         input_generators.insert(
             input_generators.end(), std::begin(token_generator),
             std::end(token_generator));
-        // empty factor / 空のfactor
+        // 空のfactor
         input_abfs.insert(
             input_abfs.end(), std::begin(empty_factor),
             std::end(empty_factor));
@@ -2138,7 +2303,7 @@ Privkey ConfidentialTransaction::GetIssuanceBlindingKey(
 ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
     Amount txin_value, bool is_witness) {
-  // Change Amount to ConfidentialValue / AmountをConfidentialValueに変換
+  // AmountをConfidentialValueに変換
   std::vector<uint8_t> value(WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
   int ret = wally_tx_confidential_value_from_satoshi(
       txin_value.GetSatoshiValue(), value.data(), value.size());
@@ -2162,8 +2327,7 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
   struct wally_tx *tx_pointer = NULL;
   int ret = WALLY_OK;
 
-  // Change AbstractTransaction to wally_tx
-  //  AbstractTransactionをwally_txに変換
+  // AbstractTransactionをwally_txに変換
   const std::vector<uint8_t> &tx_bytedata = GetData(HasWitness()).GetBytes();
   ret = wally_tx_from_bytes(
       tx_bytedata.data(), tx_bytedata.size(), GetWallyFlag(), &tx_pointer);
@@ -2172,7 +2336,7 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
     throw CfdException(kCfdIllegalArgumentError, "transaction data invalid.");
   }
 
-  // Calculate signature hash / signature hash算出
+  // signature hash算出
   try {
     uint32_t tx_flag = 0;
     if (is_witness) {
@@ -2240,7 +2404,7 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   std::vector<uint8_t> whitelist_bytes = whitelist.GetBytes();
   uint32_t whitelist_size = static_cast<uint32_t>(whitelist_bytes.size());
 
-  // TODO(k-matsuzawa): Function division study / 関数分割検討
+  // TODO(k-matsuzawa): 関数分割検討
   if ((whitelist_size == 0) ||
       ((whitelist_size % kWhitelistSingleSize) != 0)) {
     throw CfdException(kCfdIllegalArgumentError, "whitelist length error.");
@@ -2300,8 +2464,6 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
       text_array.push_back('\0');
       list.push_back(std::string(text_array.data()));
     }
-    // In the actual BIP32 analysis, it is necessary to confirm the strong key,
-    // but it is excluded because it is not used in pegout.
     // 実際のBIP32解析では強化鍵確認も必要だが、pegoutでは使わないので除外
     return list;
   };
@@ -2317,10 +2479,9 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   }
 
   // check descriptor
-  ExtKey xpub = GenerateExtPubkeyFromDescriptor(bitcoin_descriptor, prefix);
+  ExtPubkey xpub = GenerateExtPubkeyFromDescriptor(bitcoin_descriptor, prefix);
 
   std::string desc_str = bitcoin_descriptor;
-  // TODO: I will omit it, but a strict check is actually required.
   // TODO(k-matsuzawa): 一旦省略するが、実際は厳密なチェックが必要そう
   // FlatSigningProvider provider;
   // const auto descriptor = Parse(desc_str, provider);
@@ -2375,7 +2536,7 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   return result;
 }
 
-ExtKey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
+ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
     const std::string &bitcoin_descriptor, const ByteData &prefix) {
   static auto starts_with = [](const std::string &text,
                                const std::string &check) -> bool {
@@ -2391,12 +2552,11 @@ ExtKey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
          check));
   };
 
-  ExtKey xpub;
+  ExtPubkey xpub;
   try {
-    // specified key check (just base58check string)
     // 指定キーチェック (ただのbase58check文字列)
-    ExtKey check_key(bitcoin_descriptor);
-    if (check_key.GetPrefix().Equals(prefix)) {
+    ExtPubkey check_key(bitcoin_descriptor);
+    if (check_key.GetVersionData().Equals(prefix)) {
       xpub = check_key;
     }
   } catch (const CfdException &except) {
@@ -2426,11 +2586,11 @@ ExtKey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
       xpub_str = xpub_str.substr(xpub_str.find("]"), std::string::npos);
     }
     xpub_str = xpub_str.substr(0, xpub_str.find("/"));
-    xpub = ExtKey(xpub_str);
-    if (!xpub.GetPrefix().Equals(prefix)) {
+    xpub = ExtPubkey(xpub_str);
+    if (!xpub.GetVersionData().Equals(prefix)) {
       warn(
           CFD_LOG_SOURCE, "bitcoin_descriptor illegal prefix[{}].",
-          xpub.GetPrefix().GetHex());
+          xpub.GetVersionData().GetHex());
       throw CfdException(
           kCfdIllegalArgumentError, "bitcoin_descriptor illegal prefix.");
     }
@@ -2511,7 +2671,6 @@ void ConfidentialTransaction::SetElementsTxState() {
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   if (tx_pointer != nullptr) {
     size_t is_coinbase = 0;
-    // coinbase priority when coinbase is set
     // coinbase設定時はcoinbase優先
     int ret = wally_tx_is_coinbase(tx_pointer, &is_coinbase);
     if ((ret == WALLY_OK) && (is_coinbase == 0)) {
@@ -2568,12 +2727,6 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
         tx_pointer, flag, buffer.data(), buffer.size(), &txsize);
   }
   if (ret == WALLY_EINVAL) {
-
-    /* About conversion with object.
-     * In libwally, txin / txout does not allow empty data.
-     * Therefore, if txin / txout is empty, object to byte is an error.
-     * Therefore, it performs its own processing under certain circumstances.
-     */
     /* objectとの変換について。
      * libwallyでは、txin/txoutが空のデータを許容していない。
      * そのためtxin/txoutが空の場合はobject to byteはエラーとなる。
@@ -2584,10 +2737,7 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
       bool has_txin_witness = false;
       bool has_txin_rangeproof = false;
       bool has_txout_witness = false;
-      bool is_witness = false
-
-      // Necessary size calculation because wally_tx_get_length may be \
-      // an invalid value (reserved more)
+      bool is_witness = false;
       // wally_tx_get_lengthが不正値の場合があるため必要サイズ計算 (多めに確保)
       size_t need_size = sizeof(struct wally_tx);
       need_size += tx_pointer->num_inputs * sizeof(struct wally_tx_input);
@@ -2679,8 +2829,7 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
         const struct wally_tx_input *input = tx_pointer->inputs + i;
         memcpy(address_pointer, input->txhash, sizeof(input->txhash));
         address_pointer += sizeof(input->txhash);
-        // Separate handling is required for pegin and issue
-        // pegin, issue時には別途対応が必要
+        // pegin, issur時には別途対応が必要
         memcpy(address_pointer, &input->index, sizeof(input->index));
         address_pointer += sizeof(input->index);
         address_pointer = CopyVariableBuffer(
@@ -2788,7 +2937,7 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
         info(CFD_LOG_SOURCE, "set buffer size[{}]", size);
       }
     } else {
-      // Exception error / 例外エラー
+      // 例外エラー
       warn(
           CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}]. in/out={}/{}", ret,
           tx_pointer->num_inputs, tx_pointer->num_outputs);
