@@ -109,6 +109,15 @@ class CFD_CORE_EXPORT Pubkey {
    */
   static bool IsValid(const ByteData& byte_data);
 
+  /**
+   * @brief 指定された2つの公開鍵のHEX値を比較する.
+   * @param[in] source        source target
+   * @param[in] destination   destination target
+   * @retval true   大きい
+   * @retval false  小さい
+   */
+  static bool IsLarge(const Pubkey& source, const Pubkey& destination);
+
  private:
   /**
    * @brief ByteData of PublicKey
@@ -213,147 +222,6 @@ class CFD_CORE_EXPORT Privkey {
    * @retval false  不正フォーマット
    */
   static bool IsValid(const std::vector<uint8_t>& buffer);
-};
-
-/**
- * @brief 拡張Keyを表現するデータクラス
- */
-class CFD_CORE_EXPORT ExtKey {
- public:
-  /**
-   * @brief seed byte size (128bit)
-   */
-  static constexpr uint32_t kSeed128Size = 16;  // BIP32_ENTROPY_LEN_128
-  /**
-   * @brief seed byte size (256bit)
-   */
-  static constexpr uint32_t kSeed256Size = 32;  // BIP32_ENTROPY_LEN_256
-  /**
-   * @brief seed byte size (512bit)
-   */
-  static constexpr uint32_t kSeed512Size = 64;  // BIP32_ENTROPY_LEN_512
-  /**
-   * @brief bip32 serialize size
-   */
-  static constexpr uint32_t kSerializeSize = 78;  // BIP32_SERIALIZED_LEN
-  /**
-   * @brief mainnet pubkey prefix (BIP32_VER_MAIN_PUBLIC)
-   */
-  static constexpr uint32_t kPrefixMainnetPubkey = 0x0488b21e;
-  /**
-   * @brief mainnet privkey prefix (BIP32_VER_MAIN_PRIVATE)
-   */
-  static constexpr uint32_t kPrefixMainnetPrivkey = 0x0488ade4;
-  /**
-   * @brief testnet pubkey prefix (BIP32_VER_TEST_PUBLIC)
-   */
-  static constexpr uint32_t kPrefixTestnetPubkey = 0x043587c;
-  /**
-   * @brief testnet privkey prefix (BIP32_VER_TEST_PRIVATE)
-   */
-  static constexpr uint32_t kPrefixTestnetPrivkey = 0x04358394;
-
-  /**
-   * @brief デフォルトコンストラクタ
-   */
-  ExtKey();
-
-  /**
-   * @brief コンストラクタ
-   * @param[in] serialize_data  serialize data
-   */
-  explicit ExtKey(const ByteData& serialize_data);
-
-  /**
-   * @brief コンストラクタ
-   * @param[in] base58_data  base58 data
-   */
-  explicit ExtKey(const std::string& base58_data);
-
-  /**
-   * @brief コンストラクタ
-   * @param[in] seed      seed byte
-   * @param[in] prefix    prefix data
-   */
-  explicit ExtKey(const ByteData& seed, uint32_t prefix);
-
-  /**
-   * @brief privkeyの存在有無を取得する.
-   * @retval true   存在
-   * @retval false  未存在
-   */
-  bool IsPrivkey() const;
-
-  /**
-   * @brief 拡張keyのSerialize情報を取得する.
-   * @return serialize data
-   */
-  ByteData GetData() const;
-
-  /**
-   * @brief 拡張keyのBase58文字列を取得する.
-   * @return base58 string
-   */
-  std::string GetBase58String() const;
-
-  /**
-   * @brief prefix部を取得する.
-   * @return prefix data (4byte)
-   */
-  ByteData GetPrefix() const;
-
-  /**
-   * @brief 拡張keyのDepthを取得する.
-   * @return depth value
-   */
-  uint8_t GetDepth() const;
-
-  /**
-   * @brief Pubkeyインスタンスを取得する.
-   * @return Pubkeyインスタンス
-   */
-  Pubkey GetPubkey() const;
-
-  /**
-   * @brief Privkeyインスタンスを取得する.
-   * @return Privkeyインスタンス
-   */
-  Privkey GetPrivkey() const;
-
-  /**
-   * @brief Keyの設定状態が不正であるかを返却する.
-   * @retval true 状態が不正
-   * @retval false 状態は正常
-   */
-  bool IsInvalid() const;
-  /**
-   * @brief 派生Pubkeyを生成する。
-   * @param[in] child_num   child number
-   * @return child key
-   */
-  ExtKey DerivePubkey(uint32_t child_num) const;
-  /**
-   * @brief 派生Pubkeyを生成する過程で生成されたtweak値の合成値を取得する。
-   * @param[in] key_paths   child number list
-   * @return tweak sum
-   */
-  ByteData256 DerivePubTweak(const std::vector<uint32_t>& key_paths) const;
-
- private:
-  ByteData serialize_data_;  //!< serialize data
-  ByteData prefix_;          //!< prefix
-  uint8_t depth_ = 0;        //!< depth
-  uint32_t child_ = 0;       //!< child number
-  ByteData256 chaincode_;    //!< chain code
-  Pubkey pubkey_;            //!< public key
-  Privkey privkey_;          //!< private key
-
-  /**
-   * @brief 派生Pubkeyを生成する際のTweak値を取得する。
-   * @param[in] child_num   child number
-   * @return tweak
-   */
-  ByteData256 GetDerivePubkeyTweak(uint32_t child_num) const;
 };
 
 }  // namespace core

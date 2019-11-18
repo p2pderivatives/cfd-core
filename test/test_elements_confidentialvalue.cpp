@@ -65,6 +65,29 @@ TEST(ConfidentialValue, Constractor_hex33) {
   EXPECT_EQ(value.GetAmount().GetSatoshiValue(), 0);
 }
 
+TEST(ConfidentialValue, Constractor_hex9_version0) {
+  // 9byte
+  ConfidentialValue value("000000000005f5e100");
+  EXPECT_STREQ(value.GetHex().c_str(), "");
+  EXPECT_EQ(value.GetData().GetDataSize(), 0);
+  EXPECT_EQ(value.HasBlinding(), false);
+  int64_t satoshi = 0;
+  EXPECT_NO_THROW((satoshi = value.GetAmount().GetSatoshiValue()));
+  EXPECT_EQ(satoshi, 0);
+}
+
+TEST(ConfidentialValue, Constractor_hex33_version0) {
+  // 33byte
+  ConfidentialValue value(
+      "00b6e7605917e27f35690dcae922f664c8a3b057e2c6249db6cd304096aa87a226");
+  EXPECT_STREQ(value.GetHex().c_str(), "");
+  EXPECT_EQ(value.GetData().GetDataSize(), 0);
+  EXPECT_EQ(value.HasBlinding(), false);
+  int64_t satoshi = 0;
+  EXPECT_NO_THROW((satoshi = value.GetAmount().GetSatoshiValue()));
+  EXPECT_EQ(satoshi, 0);
+}
+
 TEST(ConfidentialValue, Constractor_hex_err) {
   // error
   EXPECT_THROW(ConfidentialValue value("001122"), CfdException);

@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_manager.h
  *
- * @brief-eng definition for cfd-core manager class
- * @brief-jp cfd-core管理クラス定義ファイルです。
+ * @brief cfd-core管理クラス定義ファイルです。
  *
  */
 #ifndef CFD_CORE_SRC_CFDCORE_MANAGER_H_
@@ -19,44 +18,41 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief cfdcore related class / cfdcore管理クラス。
+ * @brief cfdcore管理クラス。
  */
 class CfdCoreManager {
  public:
   /**
-   * @brief Construct / コンストラクタ。
+   * @brief コンストラクタ。
    */
   CfdCoreManager();
   /**
-   * @brief Destruct / デストラクタ。
+   * @brief デストラクタ。
    */
   virtual ~CfdCoreManager();
 
   /**
-   * @brief Initialization of cfd cord / cfdcoreを初期化する。
-   * @param[out] handle_address   cfdcore handle value.  cfdcoreハンドル値。
+   * @brief cfdcoreを初期化する。
+   * @param[out] handle_address   cfdcoreハンドル値。
    */
   void Initialize(CfdCoreHandle* handle_address);
   /**
-   * @brief Finalize cfdcore / cfdcoreを終了する。
-   * @param[in] handle      cfdcire handle value / cfdcoreハンドル値。
-   * @param[in] is_finish_process   boolean check if process is finished
-                                    プロセス終了時かどうか
+   * @brief cfdcoreを終了する。
+   * @param[in] handle      cfdcoreハンドル値。
+   * @param[in] is_finish_process   プロセス終了時かどうか
    */
   void Finalize(const CfdCoreHandle handle, bool is_finish_process);
   /**
-   * @brief-eng get values of supported LibraryFunction
-   * @brief-jp ライブラリがサポートしている機能の値を取得する。
-   * @return LibraryFunction bitflag.  LibraryFunctionのビットフラグ
+   * @brief ライブラリがサポートしている機能の値を取得する。
+   * @return LibraryFunctionのビットフラグ
    */
   uint64_t GetSupportedFunction();
 
  protected:
-  std::vector<int*> handle_list_;  ///< Handle list /  ハンドル一覧
-  bool initialized_;               ///< Initalized flag /  初期化済みフラグ
-  bool finalized_;                 ///< Finalized Flag /  終了済みフラグ
-  std::mutex mutex_;               ///< Exclusive control object /
-                                   ///< 排他制御用オブジェクト
+  std::vector<int*> handle_list_;  ///< ハンドル一覧
+  bool initialized_;               ///< 初期化済みフラグ
+  bool finalized_;                 ///< 終了済みフラグ
+  std::mutex mutex_;               ///< 排他制御用オブジェクト
 };
 
 }  // namespace core

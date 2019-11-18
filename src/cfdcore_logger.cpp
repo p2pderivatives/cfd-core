@@ -1,8 +1,7 @@
 // Copyright 2019 CryptoGarage
 /**
  * @file cfdcore_logger.cpp
- * @brief-eng implementation of logger
- * @brief-jp ログ機能を実装するファイルです。
+ * @brief ログ機能を実装するファイルです。
  */
 #include <iostream>
 #include <memory>
@@ -27,9 +26,9 @@
 #include "cfdcore/cfdcore_logger_interface.h"
 
 // -----------------------------------------------------------------------------
-// Public API / 公開API
+// 公開API
 // -----------------------------------------------------------------------------
-/// Logger instance / ロガーインスタンス
+/// ロガーインスタンス
 static cfd::core::logger::CfdLogger logger_instance;
 
 void cfd::core::InitializeLogger(void) { logger_instance.Initialize(); }
@@ -43,13 +42,13 @@ void cfd::core::SetLogger(void* function_address) {
 }
 
 // -----------------------------------------------------------------------------
-// Internal API / 内部API
+// 内部API
 // -----------------------------------------------------------------------------
 namespace cfd {
 namespace core {
 namespace logger {
 
-/// Debug Flag / デバッグフラグ
+/// デバッグフラグ
 #if defined(DEBUG) || defined(CFDCORE_DEBUG)
 static bool cfdcore_logger_is_debug = true;
 #else
@@ -82,7 +81,6 @@ cfd::core::CfdError cfd::core::logger::CfdLogger::Initialize(void) {
     is_initialized_ = true;
 
     if ((!is_extend_log_) && cfdcore_logger_is_debug) {
-      // TODO only used for debugging
       // TODO(k-matsuzawa) 現在はデバッグ時のみとする。
       std::string filepath = "./cfd_debug.log";
       log_level_ = kCfdLogLevelTrace;
@@ -90,8 +88,7 @@ cfd::core::CfdError cfd::core::logger::CfdLogger::Initialize(void) {
 
       is_use_default_logger_ = true;
       std::string cfd_log_name = "cfd";
-      spdlog::init_thread_pool(1024 * 128, 5);  // For Initalization
-                                                // 初期化処理（最初に実施）
+      spdlog::init_thread_pool(1024 * 128, 5);  // 初期化処理（最初に実施）
 #ifdef CFDCORE_LOG_CONSOLE
       auto stdout_sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
       std::vector<spdlog::sink_ptr> sinks{stdout_sink};
