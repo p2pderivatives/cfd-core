@@ -193,29 +193,6 @@ uint32_t AbstractTxOutReference::GetSerializeSize() const {
 // -----------------------------------------------------------------------------
 // SignatureUtil
 // -----------------------------------------------------------------------------
-ByteData SignatureUtil::CreateWitnessProgramWPKH(const Pubkey &pubkey) {
-  std::vector<uint8_t> buffer(kScriptHashP2pkhLength);
-  size_t witness_prgram_length = 0;
-  // 中で OP_DUP OP_HASH160 ~~~~ OP_EQUALVERIFY OP_CHECKSIG をセット
-  // →WALLY_SCRIPT_HASH160をセットして、ハッシュ化も一括実施させる
-  const std::vector<uint8_t> &bytes = pubkey.GetData().GetBytes();
-  uint32_t flag = WALLY_SCRIPT_HASH160;
-  int ret = wally_scriptpubkey_p2pkh_from_bytes(
-      bytes.data(), bytes.size(), flag, buffer.data(), buffer.size(),
-      &witness_prgram_length);
-  if (ret != WALLY_OK) {
-    warn(CFD_LOG_SOURCE, "wally_scriptpubkey_p2pkh_from_bytes NG[{}] ", ret);
-    throw CfdException(
-        kCfdIllegalArgumentError, "WitnessProgram(WPKH) create error.");
-  }
-
-  return ByteData(buffer);
-}
-
-ByteData SignatureUtil::CreateWitnessProgramWSH(const Script &witness_script) {
-  return witness_script.GetData();
-}
-
 ByteData SignatureUtil::CalculateEcSignature(
     const ByteData256 &signature_hash, const Privkey &private_key,
     bool has_grind_r) {
