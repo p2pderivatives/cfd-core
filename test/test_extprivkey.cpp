@@ -17,7 +17,7 @@ using cfd::core::NetType;
 static const uint32_t extprivkey_kVersionMainnetPrivkey = ExtPrivkey::kVersionMainnetPrivkey;
 static const uint32_t extprivkey_kVersionTestnetPrivkey = ExtPrivkey::kVersionTestnetPrivkey;
 static const uint32_t extprivkey_kVersionMainnetPubkey = ExtPubkey::kVersionMainnetPubkey;
-static const uint32_t extprivkey_kVersionTestnetPubkey = ExtPubkey::kVersionTestnetPubkey;
+// static const uint32_t extprivkey_kVersionTestnetPubkey = ExtPubkey::kVersionTestnetPubkey;
 
 TEST(ExtPrivkey, DefaultConstructorTest) {
   ExtPrivkey extkey = ExtPrivkey();
