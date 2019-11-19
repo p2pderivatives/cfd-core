@@ -41,22 +41,6 @@ typedef enum {
   kCfdDiskAccessError = 6        //!< ディスクアクセスエラー
 } CfdError;
 
-// @formatter:off
-/// @brief エラータイプ定義
-/// @return エラータイプとエラーメッセージのMap
-const std::map<CfdError, std::string> kErrorTypeMap(
-    {{kCfdSuccess, "successful_completion"},
-     {kCfdUnknownError, "unknown_error"},
-     {kCfdInternalError, "internal_error"},
-     {kCfdMemoryFullError, "memory_full"},
-     {kCfdIllegalArgumentError, "illegal_argument"},
-     {kCfdIllegalStateError, "illegal_state"},
-     {kCfdOutOfRangeError, "out_of_range"},
-     {kCfdInvalidSettingError, "invalid_setting"},
-     {kCfdConnectionError, "connection_error"},
-     {kCfdDiskAccessError, "disk_access_error"}});
-// @formatter:on
-
 /// @brief エラーメッセージ：不明なエラー
 const char kCfdUnknownErrorMessage[] = "Unknown error occurred.";
 
@@ -117,6 +101,17 @@ class CfdException : public std::exception {
    */
   virtual std::string GetErrorType() const _GLIBCXX_TXN_SAFE_DYN
       _GLIBCXX_USE_NOEXCEPT {
+    static const std::map<CfdError, std::string> kErrorTypeMap(
+        {{kCfdSuccess, "successful_completion"},
+         {kCfdUnknownError, "unknown_error"},
+         {kCfdInternalError, "internal_error"},
+         {kCfdMemoryFullError, "memory_full"},
+         {kCfdIllegalArgumentError, "illegal_argument"},
+         {kCfdIllegalStateError, "illegal_state"},
+         {kCfdOutOfRangeError, "out_of_range"},
+         {kCfdInvalidSettingError, "invalid_setting"},
+         {kCfdConnectionError, "connection_error"},
+         {kCfdDiskAccessError, "disk_access_error"}});
     return kErrorTypeMap.at(error_code_);
   }
 

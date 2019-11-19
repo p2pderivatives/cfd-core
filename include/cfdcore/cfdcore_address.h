@@ -119,6 +119,12 @@ class CFD_CORE_EXPORT AddressFormatData {
 };
 
 /**
+ * @brief Bitcoin のデフォルトのアドレスフォーマットリストを取得する.
+ * @return Bitcoinデフォルトのアドレスフォーマットリスト
+ */
+CFD_CORE_API std::vector<AddressFormatData> GetBitcoinAddressFormatList();
+
+/**
  * @typedef AddressType
  * @brief Address種別の定義
  */
@@ -155,12 +161,6 @@ enum WitnessVersion {
   kVersion15,         //!< version 15 (for future use)
   kVersion16          //!< version 16 (for future use)
 };
-
-/**
- * @brief Bitcoin のデフォルトのアドレスフォーマットリストを取得する.
- * @return Bitcoinデフォルトのアドレスフォーマットリスト
- */
-CFD_CORE_API std::vector<AddressFormatData> GetBitcoinAddressFormatList();
 
 /**
  * @class Address
