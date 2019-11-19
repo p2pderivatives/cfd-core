@@ -14,33 +14,6 @@ using cfd::core::Pubkey;
 using cfd::core::Script;
 using cfd::core::Privkey;
 
-TEST(SignatureUtil, CreateWitnessProgramWPKH) {
-  Pubkey pubkey(
-      "026e3ab12d8a898ac99e71bbca0843cf749009025381a2a109cf0d1c2bfd5f86b3");
-  ByteData witness;
-  EXPECT_NO_THROW(witness = SignatureUtil::CreateWitnessProgramWPKH(pubkey));
-  EXPECT_STREQ(witness.GetHex().c_str(),
-               "76a914ea4efcff6e8e16c21ba7fe9b4fd936bf286d095588ac");
-
-  ByteData err_witness;
-  EXPECT_THROW(err_witness = SignatureUtil::CreateWitnessProgramWPKH(Pubkey()),
-               CfdException);
-  EXPECT_STREQ(err_witness.GetHex().c_str(), "");
-}
-
-TEST(SignatureUtil, CreateWitnessProgramWSH) {
-  Script script("00143a9caef76595ff9a610f40c568b5623531520c39");
-  ByteData witness;
-  EXPECT_NO_THROW(witness = SignatureUtil::CreateWitnessProgramWSH(script));
-  EXPECT_STREQ(witness.GetHex().c_str(),
-               "00143a9caef76595ff9a610f40c568b5623531520c39");
-
-  ByteData err_witness;
-  EXPECT_NO_THROW(
-      err_witness = SignatureUtil::CreateWitnessProgramWSH(Script()));
-  EXPECT_STREQ(err_witness.GetHex().c_str(), "");
-}
-
 TEST(SignatureUtil, CalculateEcSignature) {
   ByteData256 sighash(
       "2a67f03e63a6a422125878b40b82da593be8d4efaafe88ee528af6e5a9955c6e");
