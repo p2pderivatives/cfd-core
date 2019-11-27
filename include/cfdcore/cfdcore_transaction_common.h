@@ -575,18 +575,6 @@ class CFD_CORE_EXPORT AbstractTransaction {
 class CFD_CORE_EXPORT SignatureUtil {
  public:
   /**
-   * @brief P2WPKHの witness program を生成する.
-   * @param[in] pubkey      公開鍵
-   * @return witness program
-   */
-  static ByteData CreateWitnessProgramWPKH(const Pubkey& pubkey);
-  /**
-   * @brief P2WSHの witness program を生成する.
-   * @param[in] witness_script    witness script.
-   * @return witness program
-   */
-  static ByteData CreateWitnessProgramWSH(const Script& witness_script);
-  /**
    * @brief 楕円曲線暗号を用いて、秘密鍵からsignatureを計算する.
    * @param[in] signature_hash  signatureハッシュ
    * @param[in] private_key     秘密鍵
