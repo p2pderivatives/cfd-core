@@ -60,9 +60,6 @@ npm install
 npm run cmake_all
 ```
 
-<!--
-NOTICE: CMAKE IS NOT SUPPORT YET UNDER WINDOWS OS
-
 ### Use CMake
 
 ```Shell
