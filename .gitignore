@@ -153,6 +153,7 @@ test-driver
 /test/test_wallet.trs
 /pc/*.pc
 !/pc/cfd-core.pc.in
+!/pc/cmake_uninstall.cmake.in
 
 external/*
 !external/CMakeLists.txt
