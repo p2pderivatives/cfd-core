@@ -37,7 +37,7 @@ xcode-select --install
 brew install cmake python node
 ```
 
-### Linux(Ubuntsu)
+### Linux(Ubuntu)
 
 ```Shell
 # install dependencies using APT package Manager
@@ -85,8 +85,6 @@ cmake --build build --config Release
 - `-DENABLE_DEBUG`: Enable debug loggings and log files. [ON/OFF] (default:OFF)
 - `-DENABLE_SHARED`: Enable building a shared library. [ON/OFF] (default:OFF)
 - `-DENABLE_TESTS`: Enable building a testing codes. If enables this option, builds testing framework submodules(google test) automatically. [ON/OFF] (default:ON)
-
--->
 
 ---
 
