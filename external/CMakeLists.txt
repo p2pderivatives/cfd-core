@@ -54,6 +54,7 @@ endif()
 
 
 # googletest
+if(ENABLE_TESTS)
 if(GTEST_TARGET_VERSION)
 set(GTEST_TARGET_TAG  ${GTEST_TARGET_VERSION})
 message(STATUS "[external project debug] google-test target=${GTEST_TARGET_VERSION}")
@@ -88,8 +89,10 @@ endif()
 # Prevent overriding the parent project's compiler/linker
 # settings on Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}
                  ${CFD_ROOT_BINARY_DIR}/${TEMPLATE_PROJECT_NAME}/build)
 set_property(GLOBAL PROPERTY ${TEMPLATE_PROJECT_NAME} 1)
 endif()
+endif() # MSVC OR ENABLE_TESTS
