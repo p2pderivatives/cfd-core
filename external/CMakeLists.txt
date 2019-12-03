@@ -54,7 +54,7 @@ endif()
 
 
 # googletest
-if(MSVC OR ENABLE_TESTS)
+if(ENABLE_TESTS)
 if(GTEST_TARGET_VERSION)
 set(GTEST_TARGET_TAG  ${GTEST_TARGET_VERSION})
 message(STATUS "[external project debug] google-test target=${GTEST_TARGET_VERSION}")
