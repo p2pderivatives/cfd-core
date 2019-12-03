@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "cfdcore/cfdcore_bytedata.h"
+#include "cfdcore/cfdcore_descriptor.h"
 #include "cfdcore/cfdcore_elements_address.h"
 #include "cfdcore/cfdcore_elements_transaction.h"
 #include "cfdcore/cfdcore_exception.h"
@@ -2392,8 +2393,8 @@ void ConfidentialTransaction::RandomSortTxOut() {
 PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
     const Pubkey &online_pubkey, const Privkey &master_online_key,
     const std::string &bitcoin_descriptor, uint32_t bip32_counter,
-    const ByteData &whitelist, NetType net_type,
-    const ByteData &pubkey_prefix) {
+    const ByteData &whitelist, NetType net_type, const ByteData &pubkey_prefix,
+    NetType elements_net_type) {
   static constexpr uint32_t kPegoutBip32CountMaximum = 1000000000;
   static constexpr uint32_t kWhitelistCountMaximum = 256;
   static constexpr uint32_t kPubkeySize = Pubkey::kCompressedPubkeySize;
@@ -2416,6 +2417,21 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   if ((!online_pubkey.IsValid()) || master_online_key.IsInvalid() ||
       (!master_online_key.GeneratePubkey().Equals(online_pubkey))) {
     throw CfdException(kCfdIllegalArgumentError, "Illegal online key error.");
+  }
+  bool is_liquidv1 = false;
+  switch (elements_net_type) {
+    case NetType::kMainnet:
+    case NetType::kTestnet:
+    case NetType::kRegtest:
+      throw CfdException(
+          kCfdIllegalArgumentError, "Illegal elements network type error.");
+    case NetType::kLiquidV1:
+      is_liquidv1 = true;
+      break;
+    case NetType::kElementsRegtest:
+    case NetType::kCustomChain:
+    default:
+      break;
   }
 
   // CreatePAKListFromExtensionSpace
@@ -2479,26 +2495,14 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   }
 
   // check descriptor
-  ExtPubkey xpub = GenerateExtPubkeyFromDescriptor(bitcoin_descriptor, prefix);
-
-  std::string desc_str = bitcoin_descriptor;
-  // TODO(k-matsuzawa): 一旦省略するが、実際は厳密なチェックが必要そう
+  ExtPubkey xpub;
+  ExtPubkey child_xpub;
+  GenerateExtPubkeyFromDescriptor(
+      bitcoin_descriptor, bip32_counter, prefix, is_liquidv1, &xpub,
+      &child_xpub);
   // FlatSigningProvider provider;
   // const auto descriptor = Parse(desc_str, provider);
   // if (!descriptor) desc_str = "pkh(" + xpub.GetBase58String() + "/0/*)";
-
-  // Strip last parenths(up to 2) and "/*" to let ParseKeyPath do its thing
-  desc_str.erase(
-      std::remove(desc_str.begin(), desc_str.end(), ')'), desc_str.end());
-  desc_str = desc_str.substr(0, desc_str.size() - 2);
-  // Since we know there are no key origin data, directly call inner parsing functions  // NOLINT
-  std::vector<uint32_t> key_path;
-  std::vector<std::string> split_list = split_function(desc_str, '/');
-  split_list.erase(split_list.begin());  // remove top data
-  for (const auto &text_data : split_list) {
-    key_path.push_back(std::stoul(text_data));
-  }
-  key_path.push_back(bip32_counter);
 
   // check whitelist
   uint32_t whitelist_index = 0;
@@ -2523,7 +2527,7 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   }
 
   // calc tweak
-  ByteData256 tweak_sum = xpub.DerivePubTweak(key_path);
+  ByteData256 tweak_sum = child_xpub.GetPubTweakSum();
   ByteData btcpubkeybytes =
       WallyUtil::AddTweakPubkey(offline_pubkey.GetData(), tweak_sum);
 
@@ -2536,8 +2540,10 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   return result;
 }
 
-ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
-    const std::string &bitcoin_descriptor, const ByteData &prefix) {
+void ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
+    const std::string &bitcoin_descriptor, uint32_t bip32_counter,
+    const ByteData &prefix, bool is_liquidv1, ExtPubkey *base_ext_pubkey,
+    ExtPubkey *ext_pubkey) {
   static auto starts_with = [](const std::string &text,
                                const std::string &check) -> bool {
     return (
@@ -2553,11 +2559,12 @@ ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
   };
 
   ExtPubkey xpub;
+  std::string desc_str = bitcoin_descriptor;
   try {
     // 指定キーチェック (ただのbase58check文字列)
     ExtPubkey check_key(bitcoin_descriptor);
     if (check_key.GetVersionData().Equals(prefix)) {
-      xpub = check_key;
+      desc_str = "pkh(" + bitcoin_descriptor + ")";  // create pkh descriptor
     }
   } catch (const CfdException &except) {
     info(
@@ -2566,37 +2573,78 @@ ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
     // other descriptor
   }
 
-  if (!xpub.GetPubkey().IsValid()) {
-    std::string xpub_str = "";
-    std::string desc = bitcoin_descriptor;
-    if (starts_with(desc, "sh(wpkh(") && ends_with(desc, "))")) {
-      xpub_str = desc.substr(8, desc.size() - 2);
-    } else if (starts_with(desc, "wpkh(") && ends_with(desc, ")")) {
-      xpub_str = desc.substr(5, desc.size() - 1);
-    } else if (starts_with(desc, "pkh(") && ends_with(desc, ")")) {
-      xpub_str = desc.substr(4, desc.size() - 1);
-    } else {
+  std::vector<std::string> arg_list_base;
+  arg_list_base.push_back(std::string(kArgumentBaseExtkey));
+  std::vector<std::string> arg_list;
+  arg_list.push_back(std::to_string(bip32_counter));
+  Descriptor desc = Descriptor::Parse(desc_str);
+  DescriptorScriptReference script_ref = desc.GetReference(&arg_list_base);
+  switch (script_ref.GetAddressType()) {
+    case AddressType::kP2pkhAddress:
+      break;
+    case AddressType::kP2wpkhAddress:
+    case AddressType::kP2shP2wpkhAddress:
+      if (is_liquidv1) {
+        warn(
+            CFD_LOG_SOURCE, "liquidv1 not supported address type[{}].",
+            script_ref.GetAddressType());
+        throw CfdException(
+            kCfdIllegalArgumentError,
+            "bitcoin_descriptor is not of any type supported: pkh(<xpub>)");
+      }
+      break;
+    default:
       warn(CFD_LOG_SOURCE, "bitcoin_descriptor invalid type.");
       throw CfdException(
           kCfdIllegalArgumentError,
           "bitcoin_descriptor is not of any type supported: pkh(<xpub>), "
           "sh(wpkh(<xpub>)), wpkh(<xpub>), or <xpub>.");
-    }
-    if (xpub_str.find("]") != std::string::npos) {
-      xpub_str = xpub_str.substr(xpub_str.find("]"), std::string::npos);
-    }
-    xpub_str = xpub_str.substr(0, xpub_str.find("/"));
-    xpub = ExtPubkey(xpub_str);
-    if (!xpub.GetVersionData().Equals(prefix)) {
-      warn(
-          CFD_LOG_SOURCE, "bitcoin_descriptor illegal prefix[{}].",
-          xpub.GetVersionData().GetHex());
-      throw CfdException(
-          kCfdIllegalArgumentError, "bitcoin_descriptor illegal prefix.");
-    }
   }
 
-  return xpub;
+  if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+    script_ref = script_ref.GetChild();
+  }
+  DescriptorKeyReference key_ref = script_ref.GetKeyList()[0];
+  if (!key_ref.HasExtPubkey()) {
+    warn(CFD_LOG_SOURCE, "bitcoin_descriptor invalid extkey format.");
+    throw CfdException(
+        kCfdIllegalArgumentError, "BitcoinDescriptor invalid extkey format.");
+  }
+  *base_ext_pubkey = key_ref.GetExtPubkey();
+  if (!base_ext_pubkey->GetVersionData().Equals(prefix)) {
+    warn(
+        CFD_LOG_SOURCE, "bitcoin_descriptor illegal prefix[{}].",
+        xpub.GetVersionData().GetHex());
+    throw CfdException(
+        kCfdIllegalArgumentError, "bitcoin_descriptor illegal prefix.");
+  }
+
+  // collect derive key
+  script_ref = desc.GetReference(&arg_list);
+  if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+    script_ref = script_ref.GetChild();
+  }
+  key_ref = script_ref.GetKeyList()[0];
+  *ext_pubkey = key_ref.GetExtPubkey();
+
+  // 階層指定なしのため、自動付与
+  if (ext_pubkey->ToString() == base_ext_pubkey->ToString()) {
+    std::string xpub_str = base_ext_pubkey->ToString() + "/0/*";
+    if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+      xpub_str = "sh(wpkh(" + xpub_str + "))";
+    } else if (script_ref.GetAddressType() == AddressType::kP2wpkhAddress) {
+      xpub_str = "wpkh(" + xpub_str + ")";
+    } else {
+      xpub_str = "pkh(" + xpub_str + ")";
+    }
+    desc = Descriptor::Parse(desc_str);
+    script_ref = desc.GetReference(&arg_list);
+    if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+      script_ref = script_ref.GetChild();
+    }
+    key_ref = script_ref.GetKeyList()[0];
+    *ext_pubkey = key_ref.GetExtPubkey();
+  }
 }
 
 ByteData256 ConfidentialTransaction::GetWitnessOnlyHash() const {

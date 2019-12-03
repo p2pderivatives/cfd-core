@@ -234,9 +234,23 @@ class CFD_CORE_EXPORT ExtPrivkey {
   explicit ExtPrivkey(const ByteData& serialize_data);
   /**
    * @brief コンストラクタ
+   * @param[in] serialize_data  serialize data
+   * @param[in] tweak_sum       tweak sum
+   */
+  explicit ExtPrivkey(
+      const ByteData& serialize_data, const ByteData256& tweak_sum);
+  /**
+   * @brief コンストラクタ
    * @param[in] base58_data  base58 data
    */
   explicit ExtPrivkey(const std::string& base58_data);
+  /**
+   * @brief コンストラクタ
+   * @param[in] base58_data  base58 data
+   * @param[in] tweak_sum    tweak sum
+   */
+  explicit ExtPrivkey(
+      const std::string& base58_data, const ByteData256& tweak_sum);
 
   /**
    * @brief 拡張keyのSerialize情報を取得する.
@@ -341,6 +355,11 @@ class CFD_CORE_EXPORT ExtPrivkey {
    * @return fingerprint data (4byte)
    */
   uint32_t GetFingerprint() const;
+  /**
+   * @brief 派生Pubkeyを生成する過程で生成されたtweak値の合成値を取得する。
+   * @return tweak sum
+   */
+  ByteData256 GetPubTweakSum() const;
 
  private:
   ByteData serialize_data_;   //!< serialize data
@@ -350,6 +369,7 @@ class CFD_CORE_EXPORT ExtPrivkey {
   uint32_t child_num_ = 0;    //!< child number
   ByteData256 chaincode_;     //!< chain code
   Privkey privkey_;           //!< private key
+  ByteData256 tweak_sum_;     //!< tweak sum
 };
 
 /**
@@ -387,6 +407,18 @@ class CFD_CORE_EXPORT ExtPubkey {
    * @param[in] base58_data  base58 data
    */
   explicit ExtPubkey(const std::string& base58_data);
+  /**
+   * @brief コンストラクタ
+   * @param[in] base58_data  base58 data
+   * @param[in] tweak_sum    tweak sum
+   */
+  explicit ExtPubkey(
+      const std::string& base58_data, const ByteData256& tweak_sum);
+  /**
+   * @brief コピーコンストラクタ
+   * @param[in] object  ExtPubkey object
+   */
+  // ExtPubkey& operator=(const ExtPubkey& object);
 
   /**
    * @brief 拡張keyのSerialize情報を取得する.

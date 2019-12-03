@@ -1311,6 +1311,8 @@ static const std::vector<GetPegoutPubkeyDataTestVector> kGetPegoutPubkeyDataTest
 };
 
 TEST(ConfidentialTransaction, GetPegoutPubkeyDataTest) {
+  cfd::core::CfdCoreHandle handle = nullptr;
+  cfd::core::Initialize(&handle);
   // liquid_pak
   Pubkey online_pubkey("02a71e193ce21075d0966be16724e41fff666366d7ac13e3616a329005da4024da");
   // liquid_pak_privkey
@@ -1324,10 +1326,19 @@ TEST(ConfidentialTransaction, GetPegoutPubkeyDataTest) {
   PegoutKeyData key_data;
 
   for (const auto& testdata : kGetPegoutPubkeyDataTestVector) {
+    try {
+      key_data = ConfidentialTransaction::GetPegoutPubkeyData(
+          online_pubkey, master_online_key, bitcoin_descriptor, bip32_counter,
+          whitelist, net_type, pubkey_prefix, NetType::kElementsRegtest);
+    } catch (const CfdException& except) {
+      EXPECT_STREQ("", except.what());
+    } catch (const std::exception& e_except) {
+      EXPECT_STREQ("", e_except.what());
+    }
     EXPECT_NO_THROW(
       (key_data = ConfidentialTransaction::GetPegoutPubkeyData(
           online_pubkey, master_online_key, bitcoin_descriptor, bip32_counter,
-          whitelist, net_type, pubkey_prefix)));
+          whitelist, net_type, pubkey_prefix, NetType::kElementsRegtest)));
     EXPECT_STREQ(
         key_data.btc_pubkey_bytes.GetHex().c_str(),
         testdata.btc_pubkey_bytes.c_str());

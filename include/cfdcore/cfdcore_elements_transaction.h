@@ -1331,13 +1331,16 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] whitelist           whitelist for block extension space
    * @param[in] net_type            network type
    * @param[in] pubkey_prefix       ext pubkey prefix (elements customize)
+   * @param[in] elements_net_type   elements network type.\
+   *                          (kLiquidV1, kElementsRegtest, kCustomChain)
    * @return pegout key data
    */
   static PegoutKeyData GetPegoutPubkeyData(
       const Pubkey& online_pubkey, const Privkey& master_online_key,
       const std::string& bitcoin_descriptor, uint32_t bip32_counter,
       const ByteData& whitelist, NetType net_type = NetType::kMainnet,
-      const ByteData& pubkey_prefix = ByteData("0488b21e"));
+      const ByteData& pubkey_prefix = ByteData("0488b21e"),
+      NetType elements_net_type = NetType::kLiquidV1);
 
  private:
   std::vector<ConfidentialTxIn> vin_;    ///< TxIn配列
@@ -1488,11 +1491,16 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   /**
    * @brief Descriptor情報から拡張Keyを生成する.
    * @param[in] bitcoin_descriptor    descriptor
+   * @param[in] bip32_counter         bip32 counter
    * @param[in] prefix                extend pubkey prefix
-   * @return extend key
+   * @param[in] is_liquidv1           using liquidV1 network flag
+   * @param[in] base_ext_pubkey       base extkey
+   * @param[in] ext_pubkey            extpubkey by bip32 counter
    */
-  static ExtPubkey GenerateExtPubkeyFromDescriptor(
-      const std::string& bitcoin_descriptor, const ByteData& prefix);
+  static void GenerateExtPubkeyFromDescriptor(
+      const std::string& bitcoin_descriptor, uint32_t bip32_counter,
+      const ByteData& prefix, bool is_liquidv1, ExtPubkey* base_ext_pubkey,
+      ExtPubkey* ext_pubkey);
 };
 
 }  // namespace core
