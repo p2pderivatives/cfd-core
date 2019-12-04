@@ -656,7 +656,7 @@ void Address::CalculateP2PKH(const ByteData160& hash_data, uint8_t prefix) {
 
   // On the 0 byte, prefix is P2PKH
   // - If arbitrary prefix is 0, invalid (p2pkh mainnet reserved value)
-  // - If arbtriary prefix is invalid and type value is valid, 
+  // - If arbtriary prefix is invalid and type value is valid,
   // 　refer bitcoin definition
   uint8_t addr_prefix = prefix;
   if ((addr_prefix == 0) && (kMainnet <= type_) && (type_ <= kRegtest)) {

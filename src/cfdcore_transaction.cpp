@@ -312,7 +312,8 @@ void Transaction::SetFromHex(const std::string &hex_string) {
           size_t size = address_pointer - start_address;
           uint64_t txout_num = 0;
           size_t num_size = 0;
-          // Subtract the size up to the txout area and the locktime from the txbuf size.
+          // Subtract the size up to the txout area and the locktime
+          // from the txbuf size.
           size_t buf_size = tx_buf.size() - size - sizeof(uint32_t);
           if (!GetVariableInt(
                   address_pointer, buf_size, &txout_num, &num_size)) {
