@@ -1333,6 +1333,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] pubkey_prefix       ext pubkey prefix (elements customize)
    * @param[in] elements_net_type   elements network type.\
    *                          (kLiquidV1, kElementsRegtest, kCustomChain)
+   * @param[in] descriptor_derive_address  descriptor derive address.
    * @return pegout key data
    */
   static PegoutKeyData GetPegoutPubkeyData(
@@ -1340,7 +1341,8 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const std::string& bitcoin_descriptor, uint32_t bip32_counter,
       const ByteData& whitelist, NetType net_type = NetType::kMainnet,
       const ByteData& pubkey_prefix = ByteData("0488b21e"),
-      NetType elements_net_type = NetType::kLiquidV1);
+      NetType elements_net_type = NetType::kLiquidV1,
+      Address* descriptor_derive_address = nullptr);
 
  private:
   std::vector<ConfidentialTxIn> vin_;    ///< TxIn配列
@@ -1493,14 +1495,16 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] bitcoin_descriptor    descriptor
    * @param[in] bip32_counter         bip32 counter
    * @param[in] prefix                extend pubkey prefix
-   * @param[in] is_liquidv1           using liquidV1 network flag
+   * @param[in] net_type              network type.
+   * @param[in] elements_net_type     elements network type.
    * @param[in] base_ext_pubkey       base extkey
-   * @param[in] ext_pubkey            extpubkey by bip32 counter
+   * @param[in] descriptor_derive_address   descriptor derive address
+   * @return extpubkey by bip32 counter
    */
-  static void GenerateExtPubkeyFromDescriptor(
+  static ExtPubkey GenerateExtPubkeyFromDescriptor(
       const std::string& bitcoin_descriptor, uint32_t bip32_counter,
-      const ByteData& prefix, bool is_liquidv1, ExtPubkey* base_ext_pubkey,
-      ExtPubkey* ext_pubkey);
+      const ByteData& prefix, NetType net_type, NetType elements_net_type,
+      ExtPubkey* base_ext_pubkey, Address* descriptor_derive_address);
 };
 
 }  // namespace core

@@ -584,20 +584,6 @@ ExtPubkey::ExtPubkey(
   tweak_sum_ = tweak_sum;
 }
 
-#if 0
-ExtPubkey& ExtPubkey::operator=(const ExtPubkey& object) {
-  serialize_data_ = object.serialize_data_;
-  version_ = object.version_;
-  fingerprint_ = object.fingerprint_;
-  depth_ = object.depth_;
-  child_num_ = object.child_num_;
-  chaincode_ = object.chaincode_;
-  pubkey_ = object.pubkey_;
-  tweak_sum_ = object.tweak_sum_;
-  return *this;
-}
-#endif
-
 ByteData ExtPubkey::GetData() const { return serialize_data_; }
 
 std::string ExtPubkey::ToString() const {

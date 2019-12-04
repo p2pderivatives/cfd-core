@@ -414,11 +414,6 @@ class CFD_CORE_EXPORT ExtPubkey {
    */
   explicit ExtPubkey(
       const std::string& base58_data, const ByteData256& tweak_sum);
-  /**
-   * @brief コピーコンストラクタ
-   * @param[in] object  ExtPubkey object
-   */
-  // ExtPubkey& operator=(const ExtPubkey& object);
 
   /**
    * @brief 拡張keyのSerialize情報を取得する.

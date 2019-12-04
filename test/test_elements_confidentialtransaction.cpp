@@ -2,12 +2,14 @@
 #include "gtest/gtest.h"
 #include <vector>
 
-#include "cfdcore/cfdcore_elements_transaction.h"
+#include "cfdcore/cfdcore_address.h"
 #include "cfdcore/cfdcore_common.h"
+#include "cfdcore/cfdcore_elements_transaction.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_key.h"
 #include "cfdcore/cfdcore_util.h"
 
+using cfd::core::Address;
 using cfd::core::CfdException;
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
@@ -1280,39 +1282,44 @@ TEST(ConfidentialTransaction, GetIssuanceBlindingKeyTest) {
 struct GetPegoutPubkeyDataTestVector {
   std::string btc_pubkey_bytes;
   std::string whitelist_proof;
+  std::string address;
 };
 
 // bip32_counter: 0 - 5
 static const std::vector<GetPegoutPubkeyDataTestVector> kGetPegoutPubkeyDataTestVector = {
   {
     "031edbc17e3c1e67bb7d4aaceede0b78e5b4bd69d1b38b1a7048f605d96f572ef1",
-    "01cac9aebddceb0cc8e869f43d080ab00895ce89c3127c85ffd221152c52d912134d7d3da862e36b66c63f39bb4e1920bcd74013ec9a97e3374678113251f6a12d"
+    "01cac9aebddceb0cc8e869f43d080ab00895ce89c3127c85ffd221152c52d912134d7d3da862e36b66c63f39bb4e1920bcd74013ec9a97e3374678113251f6a12d",
+    "2MtzmJDwuaD7RTnf6qQtpcTcjnHpS2h2P4i"
   },
   {
     "03b7b84f99dd7cb06da46f6153e1941f833e21ca8996e6b60b617d5b64f49f4fda",
-    "018c9474fce171fa9da1f850d45885a5693a29714dde563bb59324c34309f1d662bb2afcb05d6cc6e2f757c4992c254e4e7af6150fd09b2683cf002658edb5e9dc"
+    "018c9474fce171fa9da1f850d45885a5693a29714dde563bb59324c34309f1d662bb2afcb05d6cc6e2f757c4992c254e4e7af6150fd09b2683cf002658edb5e9dc",
+    "2MspyB1f1DTTFE26aFAz1eAdbRsgk8H3vNr"
   },
   {
     "02e291a761061b948de9c28025ad26bf2dc308a34230a3bd32fae2abc0afac2a64",
-    "01d508e9231475f40b5d48c8c26f7ee29d67cfc796ca9add9d28af572638e70dd158ed852a227c088683a28c9157964864895fc1dc7889758f4868f92d09ed6a05"
+    "01d508e9231475f40b5d48c8c26f7ee29d67cfc796ca9add9d28af572638e70dd158ed852a227c088683a28c9157964864895fc1dc7889758f4868f92d09ed6a05",
+    "2MsNAQ9UZjtrfJqcKn6fiKyidZsdx5zCsih"
   },
   {
     "0257fbcaa2078b6e99d4c66643224fd7418b148e17b64d6063353bc0b1201e7c0c",
-    "0168dbb3902e6a43bf740d9ae92396e8975e5958b3c42b7d38960741388bf5bad2a3995df93712c488682253b44b39935758d800b5e2e1e4256540b3d457d14adb"
+    "0168dbb3902e6a43bf740d9ae92396e8975e5958b3c42b7d38960741388bf5bad2a3995df93712c488682253b44b39935758d800b5e2e1e4256540b3d457d14adb",
+    "2MyMsCP6wcPYsnWwg4EJSSDPje3GyG9ZLgL"
   },
   {
     "03205749a6df5ef4ea4566fe1ebb001c3c59c69ba6f05f02e7dc985b7cc19d6c15",
-    "01aa16442b00148e25bfe7dd4c84273be1879a23a5607f5b7f26e0fbc3374aaf464e1341935df03bc13a9485b709d3b6b8e1cc9f5fdfd3f7a2f8eb69eec6b5cab9"
+    "01aa16442b00148e25bfe7dd4c84273be1879a23a5607f5b7f26e0fbc3374aaf464e1341935df03bc13a9485b709d3b6b8e1cc9f5fdfd3f7a2f8eb69eec6b5cab9",
+    "2NB7GRdYwyQ5r15uC2Jh7Xb49CKfGP3mFJJ"
   },
   {
     "03604f35e4918430282431f7b98a564b639ed5ee02f04d1e09052722455b32b0ff",
-    "01eedfbefb3f1d71f781cbdebba92ad97faa5b57977ec180771cbce6a3c9358c05f4e880a31fc33f97e72b164c05720de88d6ec9e96409980a11185fc8064e3e42"
+    "01eedfbefb3f1d71f781cbdebba92ad97faa5b57977ec180771cbce6a3c9358c05f4e880a31fc33f97e72b164c05720de88d6ec9e96409980a11185fc8064e3e42",
+    "2NBp8wTHaUZ7ttSdsn1GnphwjFFAtYniwKE"
   }
 };
 
 TEST(ConfidentialTransaction, GetPegoutPubkeyDataTest) {
-  cfd::core::CfdCoreHandle handle = nullptr;
-  cfd::core::Initialize(&handle);
   // liquid_pak
   Pubkey online_pubkey("02a71e193ce21075d0966be16724e41fff666366d7ac13e3616a329005da4024da");
   // liquid_pak_privkey
@@ -1325,26 +1332,21 @@ TEST(ConfidentialTransaction, GetPegoutPubkeyDataTest) {
   uint32_t bip32_counter = 0;
   PegoutKeyData key_data;
 
+  Address addr;
   for (const auto& testdata : kGetPegoutPubkeyDataTestVector) {
-    try {
-      key_data = ConfidentialTransaction::GetPegoutPubkeyData(
-          online_pubkey, master_online_key, bitcoin_descriptor, bip32_counter,
-          whitelist, net_type, pubkey_prefix, NetType::kElementsRegtest);
-    } catch (const CfdException& except) {
-      EXPECT_STREQ("", except.what());
-    } catch (const std::exception& e_except) {
-      EXPECT_STREQ("", e_except.what());
-    }
     EXPECT_NO_THROW(
       (key_data = ConfidentialTransaction::GetPegoutPubkeyData(
           online_pubkey, master_online_key, bitcoin_descriptor, bip32_counter,
-          whitelist, net_type, pubkey_prefix, NetType::kElementsRegtest)));
+          whitelist, net_type, pubkey_prefix, NetType::kElementsRegtest, &addr)));
     EXPECT_STREQ(
         key_data.btc_pubkey_bytes.GetHex().c_str(),
         testdata.btc_pubkey_bytes.c_str());
     EXPECT_STREQ(
         key_data.whitelist_proof.GetHex().c_str(),
         testdata.whitelist_proof.c_str());
+    EXPECT_STREQ(
+        addr.GetAddress().c_str(),
+        testdata.address.c_str());
     ++bip32_counter;
   }
 }

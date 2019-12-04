@@ -765,9 +765,9 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
     return;
   }
   if (name_.empty()) {
-    warn(CFD_LOG_SOURCE, "Failed to name field empty.");
+    warn(CFD_LOG_SOURCE, "Failed to name field empty. Analyze NG.");
     throw CfdException(
-        CfdError::kCfdIllegalArgumentError, "Empty name field.");
+        CfdError::kCfdIllegalArgumentError, "Failed to analyze descriptor.");
   }
 
   const DescriptorNodeScriptData* p_data = nullptr;
