@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_transaction_common.cpp
  *
- * @brief Transaction関連基底クラスの実装ファイルです。
+ * @brief \~japanese Transaction関連基底クラスの実装ファイルです。
+ *   \~english implementation of Transaction related common classes
  */
 #include <limits>
 #include <string>
@@ -23,7 +24,7 @@ namespace core {
 using logger::warn;
 
 // -----------------------------------------------------------------------------
-// ファイル内関数（libwallyから移植。varint_to_bytes, varbuff_to_bytes）
+// Internal constants (ported from libwally. Varint_to_bytes, varbuff_to_bytes)
 // -----------------------------------------------------------------------------
 static constexpr uint8_t kViTag16 = 253;  //!< VarInt16
 static constexpr uint8_t kViTag32 = 254;  //!< VarInt32
@@ -246,9 +247,9 @@ void AbstractTransaction::FreeWallyAddress(const void *wally_tx_pointer) {
 int32_t AbstractTransaction::GetVersion() const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
-  // 型はbitcoin-coreに合わせている
-  // return reinterpret_cast<int32_t>(tx_pointer->version);
-  // VC++でエラーやらWarningが出るので、ポインタキャストに変更
+  // Type is matched to bitcoin-core
+  // return reinterpret_cast<int32_t>(tx_pointer-> version);
+  // VC ++ errors and warnings appear, so change to pointer cast
   int32_t *p_version = reinterpret_cast<int32_t *>(&tx_pointer->version);
   return *p_version;
 }

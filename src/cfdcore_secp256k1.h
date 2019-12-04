@@ -1,7 +1,7 @@
 // Copyright 2019 CryptoGarage
 /**
  * @file cfdcore_secp256k1.h
- * @brief secp256k1 utility.
+ * @brief secp256k1 utilities.
  *
  */
 #ifndef CFD_CORE_SRC_CFDCORE_SECP256K1_H_
@@ -14,17 +14,27 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief secp256k1クラス.
+ * @brief \~japanese secp256k1クラス.
+ *   \~english secp256k1 class
  */
 class Secp256k1 {
  public:
   /**
+   * \~english
+   * @brief Construct
+   * @param[in] context Secp256k1 Context
+   * \~japanese
    * @brief コンストラクタ
    * @param[in] context Secp256k1コンテキスト
    */
   explicit Secp256k1(void* context);
 
   /**
+   * \~english 
+   * @brief function for join Pubkey
+   * @param[in] pubkey_list input list for Pubkey to join
+   * @return  data of combined Pubkey
+   * \~japanese
    * @brief Pubkey合成処理
    * @param[in] pubkey_list 合成するPubkeyリスト
    * @return 合成したPubkeyデータ
@@ -32,6 +42,13 @@ class Secp256k1 {
   ByteData CombinePubkeySecp256k1Ec(const std::vector<ByteData>& pubkey_list);
 
   /**
+   * \~english
+   * @brief function for adjusting Pubkey
+   * @param[in] pubkey            Pubkey
+   * @param[in] tweak             調整値
+   * @param[in] is_tweak_check    boolean check for pubkey adjustment
+   * @return  data of adjusted Pubkey data
+   * \~japanese
    * @brief Pubkey調整処理
    * @param[in] pubkey            Pubkey
    * @param[in] tweak             調整値
@@ -42,6 +59,11 @@ class Secp256k1 {
       const ByteData& pubkey, const ByteData& tweak, bool is_tweak_check);
 
   /**
+   * \~english
+   * @brief function for negate Pubkey
+   * @param[in] pubkey            Pubkey
+   * @return data of negated Pubkey
+   * \~japanese
    * @brief Pubkey negate処理
    * @param[in] pubkey            Pubkey
    * @return 加工後のPubkeyデータ
@@ -55,14 +77,16 @@ class Secp256k1 {
    * @param[out] mantissa     Number of bits covered by the proof
    * @param[out] min_value    the minimum value that commit could have
    * @param[out] max_value    the maximum value that commit could have
-   * @throws CfdException if invalid range_proof data passed.
+   * @throw CfdException if invalid range_proof data passed.
    */
   void RangeProofInfoSecp256k1(
       const ByteData& range_proof, int* exponent, int* mantissa,
       uint64_t* min_value, uint64_t* max_value);
 
   /**
-   * @brief Whitelist 証明情報生成処理
+   * @brief \~japanese Whitelist 証明情報生成処理
+   *   \~english Whitelist generation process for certificate info
+   * \~
    * @param[in] offline_pubkey    offline pubkey
    * @param[in] online_privkey    online private key
    * @param[in] tweak_sum         tweak sum data
@@ -78,7 +102,8 @@ class Secp256k1 {
 
  private:
   /**
-   * @brief Secp256k1コンテキスト
+   * @brief \~japanese Secp256k1コンテキスト
+   *   \~english Secp256k1 Context
    */
   void* secp256k1_context_;
 };

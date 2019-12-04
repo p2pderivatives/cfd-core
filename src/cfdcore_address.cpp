@@ -1,7 +1,9 @@
 // Copyright 2019 CryptoGarage
 /**
  * @file cfdcore_address.cpp
- *
+ * 
+ * @brief \~japanese Addressを表現するクラス
+ *   \~english Class to show address.
  */
 #include <algorithm>
 #include <map>
@@ -606,7 +608,7 @@ Address::Address(
 std::string Address::GetAddress() const { return address_; }
 
 void Address::CalculateP2SH(uint8_t prefix) {
-  // scriptのHashを作成
+  // create script hash.
   ByteData160 script_hash = HashUtil::Hash160(redeem_script_.GetData());
   CalculateP2SH(script_hash, prefix);
   hash_ = ByteData(script_hash.GetBytes());
@@ -615,7 +617,7 @@ void Address::CalculateP2SH(uint8_t prefix) {
 void Address::CalculateP2SH(const ByteData160& hash_data, uint8_t prefix) {
   std::vector<uint8_t> address_data = hash_data.GetBytes();
 
-  // 先頭にAddress Prefixを追加
+  // Add first to the list the Address Prefix
   uint8_t addr_prefix = prefix;
   if ((addr_prefix == 0) && (kMainnet <= type_) && (type_ <= kRegtest)) {
     addr_prefix = kBitcoinAddressFormatList[type_].GetP2shPrefix();
@@ -652,9 +654,10 @@ void Address::CalculateP2PKH(uint8_t prefix) {
 void Address::CalculateP2PKH(const ByteData160& hash_data, uint8_t prefix) {
   std::vector<uint8_t> pubkey_hash = hash_data.GetBytes();
 
-  // 0byte目にprefix P2PKH
-  // - 任意prefixが0は無効(p2pkhのmainnet予約値)
-  // - 任意prefixが無効かつtype値が夕刻ならbitcoinの定義を参照する
+  // On the 0 byte, prefix is P2PKH
+  // - If arbitrary prefix is 0, invalid (p2pkh mainnet reserved value)
+  // - If arbtriary prefix is invalid and type value is valid, 
+  // 　refer bitcoin definition
   uint8_t addr_prefix = prefix;
   if ((addr_prefix == 0) && (kMainnet <= type_) && (type_ <= kRegtest)) {
     addr_prefix = kBitcoinAddressFormatList[type_].GetP2pkhPrefix();
@@ -735,7 +738,7 @@ void Address::CalculateP2WPKH(const std::string& bech32_hrp) {
 
 void Address::CalculateP2WPKH(
     const ByteData160& hash_data, const std::string& bech32_hrp) {
-  // 0byte目にwitness_version, 1byte目にhashサイズ
+  // witness_version for 0 byte, hash size for 1 byte
   std::vector<uint8_t> pubkey_hash = hash_data.GetBytes();
   pubkey_hash.insert(pubkey_hash.begin(), HASH160_LEN);
   pubkey_hash.insert(pubkey_hash.begin(), witness_ver_);
@@ -780,7 +783,7 @@ void Address::DecodeAddress(
 
   if (network_parameters != nullptr) {
     for (const AddressFormatData& param : *network_parameters) {
-      // カスタムパラメータ
+      // Custom parameter
       if ((!param.GetBech32Hrp().empty()) &&
           (param.GetBech32Hrp().length() < bs58.length()) &&
           (StartsWith(bs58, param.GetBech32Hrp()))) {
@@ -803,7 +806,7 @@ void Address::DecodeAddress(
   size_t written = 0;
 
   if (!segwit_prefix.empty()) {
-    // Bech32アドレス
+    // Bech32 Address
     ret = wally_addr_segwit_to_bytes(
         bs58.data(), segwit_prefix.data(), 0, data_part.data(),
         data_part.size(), &written);
@@ -827,7 +830,7 @@ void Address::DecodeAddress(
       SetAddressType(kP2wshAddress);
     }
 
-    // 0byte:WitnessVersionと1byte:データ長を削除
+    // Delete 0byte:WitnessVersion and 1byte:data_part
     data_part.erase(data_part.begin(), data_part.begin() + 2);
 
   } else {
@@ -881,11 +884,11 @@ void Address::DecodeAddress(
     }
     witness_ver_ = kVersionNone;
 
-    // 0byte:prefixを削除
+    // Delete 0byte:prefix.
     data_part.erase(data_part.begin());
   }
 
-  // Hash設定
+  // Setting for Hash.
   hash_ = ByteData(data_part);
   SetNetType(format_data_);
   info(
