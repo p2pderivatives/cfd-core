@@ -329,6 +329,21 @@ class CFD_CORE_EXPORT ScriptOperator {
   // clang-format on
 
   /**
+   * @brief check valid.
+   * @param[in] message   text message
+   * @retval true valid
+   * @retval false invalid
+   */
+  static bool IsValid(const std::string &message);
+
+  /**
+   * @brief get object.
+   * @param[in] message   text message
+   * @return script operator.
+   */
+  static ScriptOperator Get(const std::string &message);
+
+  /**
    * @brief get data type.
    * @return script data type
    */
@@ -339,6 +354,11 @@ class CFD_CORE_EXPORT ScriptOperator {
    * @return string text
    */
   std::string ToString() const;
+  /**
+   * @brief get op_code string text.
+   * @return string text
+   */
+  std::string ToCodeString() const;
 
   /**
    * @brief check equal object.
@@ -368,6 +388,7 @@ class CFD_CORE_EXPORT ScriptOperator {
    * @return current object
    */
   ScriptOperator &operator=(const ScriptOperator &object);
+
   /**
    * @brief 等価比較オペレータ
    * @param[in] object     比較対象

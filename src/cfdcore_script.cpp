@@ -7,6 +7,7 @@
  */
 
 #include <algorithm>
+#include <cstdlib>
 #include <map>
 #include <memory>
 #include <set>
@@ -36,9 +37,9 @@ using logger::warn;
 // -----------------------------------------------------------------------------
 // operator object-enum mapping
 /// a map to search ScriptOperator using ScriptType.
-static std::map<ScriptType, const ScriptOperator*> g_operator_map;
+static std::map<ScriptType, ScriptOperator> g_operator_map;
 /// a map to search ScriptOperator using OP_CODE text.
-static std::map<std::string, const ScriptOperator*> g_operator_text_map;
+static std::map<std::string, ScriptOperator> g_operator_text_map;
 
 const ScriptOperator ScriptOperator::OP_0(kOp_0, "0");
 const ScriptOperator ScriptOperator::OP_FALSE(kOpFalse, "OP_FALSE");
@@ -206,8 +207,10 @@ ScriptOperator::ScriptOperator(ScriptType data_type, const std::string& text)
     }
   } else {
     if (g_operator_map.find(data_type_) == g_operator_map.end()) {
-      g_operator_map.emplace(data_type_, this);
-      g_operator_text_map.emplace(text_data_, this);
+      g_operator_map.emplace(data_type_, *this);
+    }
+    if (g_operator_text_map.find(text_data_) == g_operator_text_map.end()) {
+      g_operator_text_map.emplace(text_data_, *this);
     }
   }
 }
@@ -222,15 +225,68 @@ std::string ScriptOperator::ToString() const {
       decltype(g_operator_map)::const_iterator ite =
           g_operator_map.find(data_type_);
       if (ite != g_operator_map.end()) {
-        const ScriptOperator* ope = ite->second;
-        if (ope != nullptr) {
-          return ope->ToString();
-        }
+        return ite->second.ToString();
       }
     }
     return "UNKNOWN";
   }
   return text_data_;
+}
+
+std::string ScriptOperator::ToCodeString() const {
+  if (text_data_ == "0") {
+    return "OP_0";
+  } else if (text_data_ == "-1") {
+    return "OP_1NEGATE";
+  } else if (text_data_ == "1") {
+    return "OP_1";
+  } else if (
+      (data_type_ >= ScriptType::kOp_2) &&
+      (data_type_ <= ScriptType::kOp_16)) {
+    int num = static_cast<int>(data_type_);
+    num -= static_cast<int>(ScriptType::kOp_1);
+    num += 1;
+    return "OP_" + std::to_string(num);
+  }
+  return ToString();
+}
+
+bool ScriptOperator::IsValid(const std::string& message) {
+  if (message.empty()) return false;
+  if (g_operator_text_map.empty()) return false;
+  if ((message == "OP_0") || (message == "OP_1NEGATE")) {
+    return true;
+  } else if (message.length() >= 4) {
+    int num = std::atoi(message.substr(3).c_str());
+    std::string opcode_text = "OP_" + std::to_string(num);
+    if ((message == opcode_text) && (num >= 1) && (num <= 16)) {
+      return true;
+    }
+  }
+  return (g_operator_text_map.find(message) != g_operator_text_map.end());
+}
+
+ScriptOperator ScriptOperator::Get(const std::string& message) {
+  std::string search_text = message;
+  if (message == "OP_0") {
+    search_text = "0";
+  } else if (message == "OP_1NEGATE") {
+    search_text = "-1";
+  } else if (message.length() >= 4) {
+    int num = std::atoi(message.substr(3).c_str());
+    std::string num_str = std::to_string(num);
+    std::string opcode_text = "OP_" + num_str;
+    if ((message == opcode_text) && (num >= 1) && (num <= 16)) {
+      search_text = num_str;
+    }
+  }
+  decltype(g_operator_text_map)::const_iterator ite =
+      g_operator_text_map.find(search_text);
+  if (ite == g_operator_text_map.end()) {
+    warn(CFD_LOG_SOURCE, "target op_code not found.");
+    throw InvalidScriptException("target op_code not found.");
+  }
+  return ite->second;
 }
 
 ScriptOperator::ScriptOperator(const ScriptOperator& object)
@@ -326,11 +382,8 @@ ScriptElement::ScriptElement(int64_t value)
     if (!g_operator_map.empty()) {
       decltype(g_operator_map)::const_iterator ite = g_operator_map.find(key);
       if (ite != g_operator_map.end()) {
-        const ScriptOperator* p_operator = ite->second;
-        if (p_operator != NULL) {
-          op_code_ = *p_operator;
-          is_find = true;
-        }
+        op_code_ = ite->second;
+        is_find = true;
       }
     }
     if (!is_find) {
@@ -606,7 +659,7 @@ void Script::SetStackData(const ByteData& bytedata) {
         decltype(g_operator_map)::const_iterator ite =
             g_operator_map.find(type);
         if (ite != g_operator_map.end()) {
-          ScriptElement script_element = ScriptElement(*ite->second);
+          ScriptElement script_element = ScriptElement(ite->second);
           script_stack_.push_back(script_element);
 
           // 数値型はbytedataとして格納されているため、bytedataとしてdecode後に

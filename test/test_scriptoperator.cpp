@@ -69,6 +69,8 @@ TEST(ScriptOperator, operator_5) {
   EXPECT_FALSE(script_op <= ScriptOperator::OP_1);
   EXPECT_TRUE(script_op <= ScriptOperator::OP_12);
   EXPECT_TRUE(script_op <= ScriptOperator::OP_LEFT);
+  EXPECT_STREQ(script_op.ToString().c_str(), "12");
+  EXPECT_STREQ(script_op.ToCodeString().c_str(), "OP_12");
 }
 
 TEST(ScriptOperator, operator_6) {
@@ -78,6 +80,8 @@ TEST(ScriptOperator, operator_6) {
   EXPECT_FALSE(script_op > ScriptOperator::OP_3);
   EXPECT_TRUE(script_op > ScriptOperator::OP_0);
   EXPECT_TRUE(script_op > ScriptOperator::OP_1NEGATE);
+  EXPECT_STREQ(script_op.ToString().c_str(), "3");
+  EXPECT_STREQ(script_op.ToCodeString().c_str(), "OP_3");
 }
 
 TEST(ScriptOperator, operator_7) {
@@ -87,5 +91,49 @@ TEST(ScriptOperator, operator_7) {
   EXPECT_TRUE(script_op >= ScriptOperator::OP_3);
   EXPECT_TRUE(script_op >= ScriptOperator::OP_0);
   EXPECT_TRUE(script_op >= ScriptOperator::OP_PUSHDATA4);
+}
+
+TEST(ScriptOperator, ToCodeString) {
+  EXPECT_STREQ(ScriptOperator::OP_MIN.ToCodeString().c_str(), "OP_MIN");
+  EXPECT_STREQ(ScriptOperator::OP_3.ToCodeString().c_str(), "OP_3");
+  EXPECT_STREQ(ScriptOperator::OP_0.ToCodeString().c_str(), "OP_0");
+  EXPECT_STREQ(ScriptOperator::OP_1.ToCodeString().c_str(), "OP_1");
+  EXPECT_STREQ(ScriptOperator::OP_16.ToCodeString().c_str(), "OP_16");
+  EXPECT_STREQ(ScriptOperator::OP_TRUE.ToCodeString().c_str(), "OP_TRUE");
+  EXPECT_STREQ(ScriptOperator::OP_FALSE.ToCodeString().c_str(), "OP_FALSE");
+  EXPECT_STREQ(ScriptOperator::OP_1NEGATE.ToCodeString().c_str(), "OP_1NEGATE");
+}
+
+TEST(ScriptOperator, IsValid) {
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_MIN"));
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_3"));
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_0"));
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_1"));
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_16"));
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_TRUE"));
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_FALSE"));
+  EXPECT_TRUE(ScriptOperator::IsValid("OP_1NEGATE"));
+  EXPECT_FALSE(ScriptOperator::IsValid("OP_xxxx"));
+}
+
+TEST(ScriptOperator, GetOperator) {
+  ScriptOperator ope;
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_MIN"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_MIN");
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_3"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_3");
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_0"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_0");
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_1"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_1");
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_16"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_16");
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_TRUE"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_TRUE");
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_FALSE"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_FALSE");
+  EXPECT_NO_THROW(ope = ScriptOperator::Get("OP_1NEGATE"));
+  EXPECT_STREQ(ope.ToCodeString().c_str(), "OP_1NEGATE");
+  EXPECT_THROW((ope = ScriptOperator::Get("OP_xxxx")), CfdException);
 }
 
