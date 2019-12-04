@@ -2506,20 +2506,6 @@ ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
     const std::string &bitcoin_descriptor, uint32_t bip32_counter,
     const ByteData &prefix, NetType net_type, NetType elements_net_type,
     ExtPubkey *base_ext_pubkey, Address *descriptor_derive_address) {
-  static auto starts_with = [](const std::string &text,
-                               const std::string &check) -> bool {
-    return (
-        (text.length() >= check.length()) &&
-        (text.substr(0, check.length()) == check));
-  };
-  static auto ends_with = [](const std::string &text,
-                             const std::string &check) -> bool {
-    return (
-        (text.length() >= check.length()) &&
-        (text.substr(text.length() - check.length(), check.length()) ==
-         check));
-  };
-
   bool is_liquidv1 = false;
   switch (elements_net_type) {
     case NetType::kMainnet:
