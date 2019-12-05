@@ -383,8 +383,15 @@ ExtPrivkey::ExtPrivkey(const ByteData& seed, NetType network_type) {
       &privkey_, nullptr, &fingerprint_);
 }
 
-ExtPrivkey::ExtPrivkey(const ByteData& serialize_data) {
+ExtPrivkey::ExtPrivkey(const ByteData& serialize_data)
+    : ExtPrivkey(serialize_data, ByteData256()) {
+  // do nothing
+}
+
+ExtPrivkey::ExtPrivkey(
+    const ByteData& serialize_data, const ByteData256& tweak_sum) {
   // unserialize
+  tweak_sum_ = tweak_sum;
   serialize_data_ = serialize_data;
   std::vector<uint8_t> data = serialize_data.GetBytes();
   AnalyzeBip32KeyData(
@@ -392,12 +399,19 @@ ExtPrivkey::ExtPrivkey(const ByteData& serialize_data) {
       &privkey_, nullptr, &fingerprint_);
 }
 
-ExtPrivkey::ExtPrivkey(const std::string& base58_data) {
+ExtPrivkey::ExtPrivkey(const std::string& base58_data)
+    : ExtPrivkey(base58_data, ByteData256()) {
+  // do nothing
+}
+
+ExtPrivkey::ExtPrivkey(
+    const std::string& base58_data, const ByteData256& tweak_sum) {
   std::vector<uint8_t> data;
   AnalyzeBip32KeyData(
       nullptr, &base58_data, &data, &version_, &depth_, &child_num_,
       &chaincode_, &privkey_, nullptr, &fingerprint_);
   serialize_data_ = ByteData(data);
+  tweak_sum_ = tweak_sum;
 }
 
 ByteData ExtPrivkey::GetData() const { return serialize_data_; }
@@ -426,9 +440,16 @@ ExtPrivkey ExtPrivkey::DerivePrivkey(const std::vector<uint32_t>& path) const {
         CfdError::kCfdIllegalArgumentError, "ExtPrivkey unserialize error.");
   }
 
+#ifndef CFD_DISABLE_ELEMENTS
+  // write pub_key_tweak_sum to ext_key
+  memcpy(
+      extkey.pub_key_tweak_sum, tweak_sum_.GetBytes().data(),
+      sizeof(extkey.pub_key_tweak_sum));
+#endif  // CFD_DISABLE_ELEMENTS
   uint32_t flag = BIP32_FLAG_KEY_PRIVATE;
   ret = bip32_key_from_parent_path(
-      &extkey, path.data(), path.size(), flag, &child_key);
+      &extkey, path.data(), path.size(), flag | BIP32_FLAG_KEY_TWEAK_SUM,
+      &child_key);
   if (ret != WALLY_OK) {
     warn(CFD_LOG_SOURCE, "bip32_key_from_parent_path error. ret={}", ret);
     throw CfdException(
@@ -442,7 +463,15 @@ ExtPrivkey ExtPrivkey::DerivePrivkey(const std::vector<uint32_t>& path) const {
     throw CfdException(
         CfdError::kCfdIllegalArgumentError, "ExtPrivkey serialize error.");
   }
-  return ExtPrivkey(ByteData(data));
+
+  ByteData256 tweak_sum_data;
+#ifndef CFD_DISABLE_ELEMENTS
+  // collect pub_key_tweak_sum from ext_key
+  std::vector<uint8_t> tweak_sum(sizeof(extkey.pub_key_tweak_sum));
+  memcpy(tweak_sum.data(), extkey.pub_key_tweak_sum, tweak_sum.size());
+  tweak_sum_data = ByteData256(tweak_sum);
+#endif  // CFD_DISABLE_ELEMENTS
+  return ExtPrivkey(ByteData(data), tweak_sum_data);
 }
 
 ExtPrivkey ExtPrivkey::DerivePrivkey(const std::string& string_path) const {
@@ -476,7 +505,8 @@ ExtPubkey ExtPrivkey::GetExtPubkey() const {
         CfdError::kCfdIllegalArgumentError,
         "ExtPrivkey Pubkey serialize error.");
   }
-  return ExtPubkey(ByteData(data));
+
+  return ExtPubkey(ByteData(data), tweak_sum_);
 }
 
 ExtPubkey ExtPrivkey::DerivePubkey(uint32_t child_num) const {
@@ -515,6 +545,8 @@ ByteData ExtPrivkey::GetVersionData() const {
 
 uint32_t ExtPrivkey::GetFingerprint() const { return fingerprint_; }
 
+ByteData256 ExtPrivkey::GetPubTweakSum() const { return tweak_sum_; }
+
 // ----------------------------------------------------------------------------
 // ExtPubkey
 // ----------------------------------------------------------------------------
@@ -538,12 +570,19 @@ ExtPubkey::ExtPubkey(
       nullptr, &pubkey_, &fingerprint_);
 }
 
-ExtPubkey::ExtPubkey(const std::string& base58_data) {
+ExtPubkey::ExtPubkey(const std::string& base58_data)
+    : ExtPubkey(base58_data, ByteData256()) {
+  // do nothing
+}
+
+ExtPubkey::ExtPubkey(
+    const std::string& base58_data, const ByteData256& tweak_sum) {
   std::vector<uint8_t> data;
   AnalyzeBip32KeyData(
       nullptr, &base58_data, &data, &version_, &depth_, &child_num_,
       &chaincode_, nullptr, &pubkey_, &fingerprint_);
   serialize_data_ = ByteData(data);
+  tweak_sum_ = tweak_sum;
 }
 
 ByteData ExtPubkey::GetData() const { return serialize_data_; }
@@ -572,6 +611,12 @@ ExtPubkey ExtPubkey::DerivePubkey(const std::vector<uint32_t>& path) const {
         CfdError::kCfdIllegalArgumentError, "ExtPubkey unserialize error.");
   }
 
+#ifndef CFD_DISABLE_ELEMENTS
+  // write pub_key_tweak_sum to ext_key
+  memcpy(
+      extkey.pub_key_tweak_sum, tweak_sum_.GetBytes().data(),
+      sizeof(extkey.pub_key_tweak_sum));
+#endif  // CFD_DISABLE_ELEMENTS
   uint32_t flag = BIP32_FLAG_KEY_PUBLIC;
   ret = bip32_key_from_parent_path(
       &extkey, path.data(), path.size(), flag | BIP32_FLAG_KEY_TWEAK_SUM,
@@ -603,6 +648,7 @@ ExtPubkey ExtPubkey::DerivePubkey(const std::vector<uint32_t>& path) const {
 
   ByteData256 tweak_sum_data;
 #ifndef CFD_DISABLE_ELEMENTS
+  // collect pub_key_tweak_sum from ext_key
   std::vector<uint8_t> tweak_sum(sizeof(child_key.pub_key_tweak_sum));
   memcpy(tweak_sum.data(), child_key.pub_key_tweak_sum, tweak_sum.size());
   tweak_sum_data = ByteData256(tweak_sum);

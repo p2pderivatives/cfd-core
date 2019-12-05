@@ -53,13 +53,6 @@ class CFD_CORE_EXPORT ContractHashUtil {
 
  private:
   /**
-   * @brief multisig scriptかどうかをチェックする。
-   * @param[in] script   script
-   * @retval true   multisig script
-   * @retval false  other script
-   */
-  static bool CheckMultisigScript(const Script& script);
-  /**
    * @brief liquidV1 watchman script形式かどうかをチェックする。
    * @param[in] script   script
    * @retval true   liquidV1 watchman script format

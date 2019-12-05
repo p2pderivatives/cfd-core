@@ -24,6 +24,9 @@
 namespace cfd {
 namespace core {
 
+//! base extkey collect argument
+constexpr const char* const kArgumentBaseExtkey = "base";
+
 /**
  * @brief DescriptorNode の種別定義.
  */
@@ -139,7 +142,8 @@ class CFD_CORE_EXPORT DescriptorKeyReference {
  private:
   DescriptorKeyType key_type_;  //!< node key type
   Pubkey pubkey_;               //!< pubkey
-  std::string key_info_;        //!< key string data
+  ExtPrivkey extprivkey_;       //!< ext privkey
+  ExtPubkey extpubkey_;         //!< ext pubkey
   std::string argument_;        //!< argument
 };
 
@@ -398,6 +402,8 @@ class CFD_CORE_EXPORT DescriptorNode {
   std::string name_;                              //!< node name
   std::string value_;                             //!< node value
   std::string key_info_;                          //!< key information
+  std::string base_extkey_;                       //!< extkey base
+  std::string tweak_sum_;                         //!< extpubkey tweak sum
   uint32_t number_ = 0;                           //!< number value
   std::vector<DescriptorNode> child_node_;        //!< child nodes
   std::string checksum_;                          //!< checksum
