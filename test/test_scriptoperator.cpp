@@ -38,6 +38,7 @@ TEST(ScriptOperator, operator_1) {
   EXPECT_STREQ(script_op.ToString().c_str(), "OP_1ADD");
   EXPECT_FALSE(script_op.Equals(ScriptOperator::OP_XOR));
   EXPECT_TRUE(script_op.Equals(ScriptOperator::OP_1ADD));
+  EXPECT_FALSE(script_op.IsPushOperator());
 }
 
 TEST(ScriptOperator, operator_2) {
@@ -45,6 +46,7 @@ TEST(ScriptOperator, operator_2) {
 
   EXPECT_FALSE(script_op == ScriptOperator::OP_WITHIN);
   EXPECT_TRUE(script_op == ScriptOperator::OP_ROLL);
+  EXPECT_FALSE(script_op.IsPushOperator());
 }
 
 TEST(ScriptOperator, operator_3) {
@@ -52,6 +54,7 @@ TEST(ScriptOperator, operator_3) {
 
   EXPECT_FALSE(script_op != ScriptOperator::OP_NEGATE);
   EXPECT_TRUE(script_op != ScriptOperator::OP_SHA1);
+  EXPECT_FALSE(script_op.IsPushOperator());
 }
 
 TEST(ScriptOperator, operator_4) {
@@ -61,6 +64,7 @@ TEST(ScriptOperator, operator_4) {
   EXPECT_FALSE(script_op < ScriptOperator::OP_12);
   EXPECT_TRUE(script_op < ScriptOperator::OP_15);
   EXPECT_TRUE(script_op < ScriptOperator::OP_NOP);
+  EXPECT_TRUE(script_op.IsPushOperator());
 }
 
 TEST(ScriptOperator, operator_5) {
@@ -71,6 +75,7 @@ TEST(ScriptOperator, operator_5) {
   EXPECT_TRUE(script_op <= ScriptOperator::OP_LEFT);
   EXPECT_STREQ(script_op.ToString().c_str(), "12");
   EXPECT_STREQ(script_op.ToCodeString().c_str(), "OP_12");
+  EXPECT_TRUE(script_op.IsPushOperator());
 }
 
 TEST(ScriptOperator, operator_6) {
@@ -82,6 +87,7 @@ TEST(ScriptOperator, operator_6) {
   EXPECT_TRUE(script_op > ScriptOperator::OP_1NEGATE);
   EXPECT_STREQ(script_op.ToString().c_str(), "3");
   EXPECT_STREQ(script_op.ToCodeString().c_str(), "OP_3");
+  EXPECT_TRUE(script_op.IsPushOperator());
 }
 
 TEST(ScriptOperator, operator_7) {
@@ -91,6 +97,7 @@ TEST(ScriptOperator, operator_7) {
   EXPECT_TRUE(script_op >= ScriptOperator::OP_3);
   EXPECT_TRUE(script_op >= ScriptOperator::OP_0);
   EXPECT_TRUE(script_op >= ScriptOperator::OP_PUSHDATA4);
+  EXPECT_TRUE(script_op.IsPushOperator());
 }
 
 TEST(ScriptOperator, ToCodeString) {

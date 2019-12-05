@@ -251,6 +251,15 @@ std::string ScriptOperator::ToCodeString() const {
   return ToString();
 }
 
+bool ScriptOperator::IsPushOperator() const {
+  // OP_RESESRVEDもPush命令扱いとする（bitcoincore）
+  if ((data_type_ >= ScriptType::kOp_0) &&
+      (data_type_ <= ScriptType::kOp_16)) {
+    return true;
+  }
+  return false;
+}
+
 bool ScriptOperator::IsValid(const std::string& message) {
   if (message.empty()) return false;
   if (g_operator_text_map.empty()) return false;
@@ -800,8 +809,7 @@ bool Script::IsPushOnly() const {
   bool is_push_only = true;
   for (const ScriptElement& element : script_stack_) {
     if (element.IsOpCode()) {
-      // OP_RESESRVEDもPush命令扱いとする（bitcoincore）
-      if (element.GetOpCode().GetDataType() > ScriptType::kOp_16) {
+      if (!element.GetOpCode().IsPushOperator()) {
         is_push_only = false;
         break;
       }

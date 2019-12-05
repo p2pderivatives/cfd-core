@@ -361,6 +361,13 @@ class CFD_CORE_EXPORT ScriptOperator {
   std::string ToCodeString() const;
 
   /**
+   * @brief Check if the script is push operator.
+   * @retval true   push operator.
+   * @retval false  contain other operator.
+   */
+  bool IsPushOperator() const;
+
+  /**
    * @brief check equal object.
    * @param[in] object     check target,
    * @retval true   equal
