@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_elements_script.cpp
  *
- * @brief Elements対応したScriptクラス定義
+ * @brief \~japanese Elements対応したScriptクラス定義
+ *   \~english definition of script class that supports Elements
  */
 #ifndef CFD_DISABLE_ELEMENTS
 
@@ -131,7 +132,7 @@ bool ContractHashUtil::CheckLiquidV1Watchman(const Script& script) {
     IteratorWrapper<ScriptElement> ite(list, "Check LiquidV1 Watchman NG");
     if (ite.next().GetOpCode() != ScriptOperator::OP_DEPTH) {
       // warn(CFD_LOG_SOURCE, "LiquidV1 watchman script fail.");
-      // スクリプトの先頭から異なるならログ出さない
+      // Does not log if it is different from the beginning of the script
       return false;
     }
 
