@@ -2,8 +2,8 @@
 /**
  * @file cfdcore_coin.cpp
  *
- * @brief Coin(UTXO)関連クラス
- *
+ * @brief \~japanese Coin(UTXO)関連クラス
+ *   \~english Classes related to Coin(UTXO)
  */
 #include <string>
 #include <vector>

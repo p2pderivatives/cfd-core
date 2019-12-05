@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_descriptor.cpp
  *
- * @brief Output Descriptor関連クラス実装
+ * @brief \~japanese Output Descriptor関連クラス実装
+ *   \~english implemations of related to Output Descriptor
  */
 #include <algorithm>
 #include <map>
