@@ -1333,7 +1333,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] pubkey_prefix       ext pubkey prefix (elements customize)
    * @param[in] elements_net_type   elements network type.\
    *                          (kLiquidV1, kElementsRegtest, kCustomChain)
-   * @param[in] descriptor_derive_address  descriptor derive address.
+   * @param[out] descriptor_derive_address  descriptor derive address.
    * @return pegout key data
    */
   static PegoutKeyData GetPegoutPubkeyData(
@@ -1497,8 +1497,8 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] prefix                extend pubkey prefix
    * @param[in] net_type              network type.
    * @param[in] elements_net_type     elements network type.
-   * @param[in] base_ext_pubkey       base extkey
-   * @param[in] descriptor_derive_address   descriptor derive address
+   * @param[out] base_ext_pubkey       base extkey
+   * @param[out] descriptor_derive_address   descriptor derive address
    * @return extpubkey by bip32 counter
    */
   static ExtPubkey GenerateExtPubkeyFromDescriptor(
