@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_util.cpp
  *
- * @brief Utility関連クラス定義
+ * @brief \~japanese Utility関連クラス定義
+ *   \~english definition related to Utility classes
  */
 
 #include <iterator>
@@ -279,7 +280,7 @@ ByteData CryptoUtil::EncryptAes256(
   std::vector<uint8_t> input(data_size);
   std::vector<uint8_t> output(data_size);
 
-  // 末尾を0で埋めるため
+  // To fill the end with 0
   memcpy(
       input.data(), reinterpret_cast<const uint8_t *>(data.data()),
       data.size());
@@ -442,6 +443,10 @@ ByteData CryptoUtil::ConvertSignatureToDer(
 }
 
 /**
+ * \~english
+ * @brief Table info used for Base64encode
+ * @return Character string used in Base64
+ * \~japanese
  * @brief Base64encodeに用いるtable情報
  * @return Base64で利用する文字列
  */
