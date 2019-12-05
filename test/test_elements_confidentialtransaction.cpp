@@ -1351,4 +1351,38 @@ TEST(ConfidentialTransaction, GetPegoutPubkeyDataTest) {
   }
 }
 
+TEST(ConfidentialTransaction, GetPegoutPubkeyDataPkhNoCounterTest) {
+  // liquid_pak
+  Pubkey online_pubkey("02a71e193ce21075d0966be16724e41fff666366d7ac13e3616a329005da4024da");
+  // liquid_pak_privkey
+  Privkey master_online_key = Privkey::FromWif(
+      "cPoefvB147bYpWCf9JqRBVMXENt4isSBAn91RYeiBh1jUp3ThhKN", NetType::kTestnet, true);
+  std::string bitcoin_descriptor = "tpubDBwZbsX7C1m4tfHxHSFBvvuasqMxzMvSNM5yuAWz6kAfCATAgegvrtGdnxkqfr8wwRZi5d9fJHXqE8EFTSogTXd3xVx3GUFy9Xcg8dufREz";
+  ByteData whitelist("020061b08c4c80dc04aaa0b44018d2c4bcdb0d9c0992fb4fddf9d2fb096a5164c002a71e193ce21075d0966be16724e41fff666366d7ac13e3616a329005da4024da");
+  NetType net_type = NetType::kTestnet;
+  ByteData pubkey_prefix = ByteData("043587cf");
+  uint32_t bip32_counter = 0;
+  PegoutKeyData key_data;
+
+  Address addr;
+  GetPegoutPubkeyDataTestVector testdata = {
+    "02b5e6f1c3b0d16cf15e9496dc2de977207947339bf50bded0f52af2e62f8dc648",
+    "013fea92fc45099da667c69b60a5a3bca592ce5d61e84ab452d0984336091ee55f361475055d2bde0fa0eb339996c107b552ea5877d6508abeb3883642bc738704",
+    "mx7egZtzUWR8aVviQnpKJCoaT4ytSiQjxL"
+  };
+  EXPECT_NO_THROW(
+    (key_data = ConfidentialTransaction::GetPegoutPubkeyData(
+        online_pubkey, master_online_key, bitcoin_descriptor, bip32_counter,
+        whitelist, net_type, pubkey_prefix, NetType::kElementsRegtest, &addr)));
+  EXPECT_STREQ(
+      key_data.btc_pubkey_bytes.GetHex().c_str(),
+      testdata.btc_pubkey_bytes.c_str());
+  EXPECT_STREQ(
+      key_data.whitelist_proof.GetHex().c_str(),
+      testdata.whitelist_proof.c_str());
+  EXPECT_STREQ(
+      addr.GetAddress().c_str(),
+      testdata.address.c_str());
+}
+
 #endif  // CFD_DISABLE_ELEMENTS

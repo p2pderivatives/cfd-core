@@ -2606,7 +2606,7 @@ ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
     } else {
       xpub_str = "pkh(" + xpub_str + ")";
     }
-    desc = Descriptor::Parse(desc_str);
+    desc = Descriptor::Parse(xpub_str);
     derive_script = desc.GetReference(&arg_list);
     script_ref = derive_script;
     if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
