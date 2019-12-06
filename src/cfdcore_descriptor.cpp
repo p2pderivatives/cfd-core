@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_descriptor.cpp
  *
- * @brief Output Descriptor関連クラス実装
+ * @brief \~japanese Output Descriptor関連クラス実装
+ *   \~english implemations of related to Output Descriptor
  */
 #include <algorithm>
 #include <map>
@@ -63,29 +64,28 @@ DescriptorKeyReference::DescriptorKeyReference()
     : key_type_(DescriptorKeyType::kDescriptorKeyNull) {}
 
 DescriptorKeyReference::DescriptorKeyReference(const Pubkey& pubkey)
-    : key_type_(DescriptorKeyType::kDescriptorKeyPublic),
-      pubkey_(pubkey),
-      key_info_(pubkey.GetHex()) {}
+    : key_type_(DescriptorKeyType::kDescriptorKeyPublic), pubkey_(pubkey) {}
 
 DescriptorKeyReference::DescriptorKeyReference(
     const ExtPrivkey& ext_privkey, const std::string* arg)
     : key_type_(DescriptorKeyType::kDescriptorKeyBip32Priv),
       pubkey_(ext_privkey.GetExtPubkey().GetPubkey()),
-      key_info_(ext_privkey.ToString()),
+      extprivkey_(ext_privkey),
       argument_((arg) ? *arg : "") {}
 
 DescriptorKeyReference::DescriptorKeyReference(
     const ExtPubkey& ext_pubkey, const std::string* arg)
     : key_type_(DescriptorKeyType::kDescriptorKeyBip32),
       pubkey_(ext_pubkey.GetPubkey()),
-      key_info_(ext_pubkey.ToString()),
+      extpubkey_(ext_pubkey),
       argument_((arg) ? *arg : "") {}
 
 DescriptorKeyReference& DescriptorKeyReference::operator=(
     const DescriptorKeyReference& object) {
   key_type_ = object.key_type_;
   pubkey_ = object.pubkey_;
-  key_info_ = object.key_info_;
+  extprivkey_ = object.extprivkey_;
+  extpubkey_ = object.extpubkey_;
   argument_ = object.argument_;
   return *this;
 }
@@ -111,7 +111,7 @@ bool DescriptorKeyReference::HasExtPrivkey() const {
 
 ExtPrivkey DescriptorKeyReference::GetExtPrivkey() const {
   if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv) {
-    return ExtPrivkey(key_info_);
+    return extprivkey_;
   }
   warn(CFD_LOG_SOURCE, "Failed to GetExtPrivkey. unsupported key type.");
   throw CfdException(
@@ -121,10 +121,10 @@ ExtPrivkey DescriptorKeyReference::GetExtPrivkey() const {
 
 ExtPubkey DescriptorKeyReference::GetExtPubkey() const {
   if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32) {
-    return ExtPubkey(key_info_);
+    return extpubkey_;
   }
   if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv) {
-    return ExtPrivkey(key_info_).GetExtPubkey();
+    return extprivkey_.GetExtPubkey();
   }
   warn(CFD_LOG_SOURCE, "Failed to GetExtPubkey. unsupported key type.");
   throw CfdException(
@@ -683,8 +683,10 @@ void DescriptorNode::AnalyzeKey() {
     info(CFD_LOG_SOURCE, "key = {}, path = {}", key, path);
     if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv) {
       ExtPrivkey xpriv(key);
+      base_extkey_ = key;
       if (!path.empty()) xpriv = xpriv.DerivePrivkey(path);
       key_info_ = xpriv.ToString();
+      tweak_sum_ = xpriv.GetPubTweakSum().GetHex();
     } else if (hardened) {
       warn(
           CFD_LOG_SOURCE, "Failed to extPubkey. hardened is extPrivkey only.");
@@ -693,8 +695,10 @@ void DescriptorNode::AnalyzeKey() {
           "Failed to extPubkey. hardened is extPrivkey only.");
     } else {
       xpub = ExtPubkey(key);
+      base_extkey_ = key;
       if (!path.empty()) xpub = xpub.DerivePubkey(path);
       key_info_ = xpub.ToString();
+      tweak_sum_ = xpub.GetPubTweakSum().GetHex();
     }
   } else {
     key_type_ = DescriptorKeyType::kDescriptorKeyPublic;
@@ -762,9 +766,9 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
     return;
   }
   if (name_.empty()) {
-    warn(CFD_LOG_SOURCE, "Failed to name field empty.");
+    warn(CFD_LOG_SOURCE, "Failed to name field empty. Analyze NG.");
     throw CfdException(
-        CfdError::kCfdIllegalArgumentError, "Empty name field.");
+        CfdError::kCfdIllegalArgumentError, "Failed to analyze descriptor.");
   }
 
   const DescriptorNodeScriptData* p_data = nullptr;
@@ -1038,6 +1042,7 @@ DescriptorKeyReference DescriptorNode::GetKeyReferences(
     std::vector<std::string>* array_argument) const {
   DescriptorKeyReference result;
   Pubkey pubkey;
+  std::string using_key = key_info_;
   if (key_type_ == DescriptorKeyType::kDescriptorKeyPublic) {
     pubkey = Pubkey(key_info_);
     result = DescriptorKeyReference(pubkey);
@@ -1046,18 +1051,25 @@ DescriptorKeyReference DescriptorNode::GetKeyReferences(
       (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv)) {
     std::string arg_value;
     std::string* arg_pointer = nullptr;
-    if (need_arg_num_ == 0) {
+    uint32_t need_arg_num = need_arg_num_;
+    if (need_arg_num == 0) {
       // 指定キー。強化鍵の場合、xprv/tprvの必要あり。
-    } else if ((!array_argument) || array_argument->empty()) {
+    } else if ((array_argument == nullptr) || array_argument->empty()) {
       warn(CFD_LOG_SOURCE, "Failed to generate pubkey from hdkey.");
       throw CfdException(
           CfdError::kCfdIllegalArgumentError,
           "Failed to generate pubkey from hdkey.");
+    } else if (
+        (array_argument != nullptr) && (!array_argument->empty()) &&
+        (array_argument->at(0) == std::string(kArgumentBaseExtkey))) {
+      // baseを取得する
+      using_key = base_extkey_;
+      need_arg_num = 0;
     } else {
       // 動的キー生成。強化鍵の場合、xprv/tprvの必要あり。
       // array_argumentがnullptrの場合、仮で0を設定する。（生成テスト用）
       arg_value = "0";
-      if (array_argument) {
+      if (array_argument != nullptr) {
         arg_value = array_argument->back();
         array_argument->pop_back();
       }
@@ -1065,16 +1077,18 @@ DescriptorKeyReference DescriptorNode::GetKeyReferences(
     }
 
     ExtPubkey xpub;
+    ByteData256 tweak_sum;
+    if (!tweak_sum_.empty()) tweak_sum = ByteData256(tweak_sum_);
     if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv) {
-      ExtPrivkey xpriv(key_info_);
-      if (need_arg_num_ != 0) {
+      ExtPrivkey xpriv(using_key, tweak_sum);
+      if (need_arg_num != 0) {
         xpriv = xpriv.DerivePrivkey(arg_value);
       }
       xpub = xpriv.GetExtPubkey();
       result = DescriptorKeyReference(xpriv, arg_pointer);
     } else {
-      xpub = ExtPubkey(key_info_);
-      if (need_arg_num_ != 0) {
+      xpub = ExtPubkey(using_key, tweak_sum);
+      if (need_arg_num != 0) {
         xpub = xpub.DerivePubkey(arg_value);
       }
       result = DescriptorKeyReference(xpub, arg_pointer);
@@ -1092,7 +1106,7 @@ DescriptorKeyReference DescriptorNode::GetKeyReferences(
   if (!pubkey.IsValid()) {
     warn(
         CFD_LOG_SOURCE, "Failed to pubkey. type={}-{}, key_info={}",
-        node_type_, key_type_, key_info_);
+        node_type_, key_type_, using_key);
     throw CfdException(
         CfdError::kCfdIllegalArgumentError, "Invalid pubkey data.");
   }

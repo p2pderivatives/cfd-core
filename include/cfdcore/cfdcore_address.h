@@ -3,7 +3,6 @@
  * @file cfdcore_address.h
  *
  * @brief Addressクラス定義
- *
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ADDRESS_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ADDRESS_H_
@@ -46,7 +45,8 @@ constexpr const char* const kPrefixBlindBech32Hrp = "blech32";
 
 /**
  * @class AddressFormatData
- * @brief Address format dataクラス
+ * @brief \~japanese Address format dataクラス
+ *   \~english class for showing format data of address
  */
 class CFD_CORE_EXPORT AddressFormatData {
  public:
@@ -538,8 +538,13 @@ class CFD_CORE_EXPORT Address {
   void SetAddressType(AddressType addr_type);
 
   /**
-   * @brief Address format data一覧から指定NetTypeの情報を取得する.
+   * \~english
+   * @brief Get AddressFormatData with NetType from format list.
    * @param[in] network_parameters  Address format data list
+   * \~japanese
+   * @brief Address format data一覧から指定NetTypeの情報を取得する.
+   * @param[in] network_parameters  AddressFormatData一覧
+   * \~
    * @param[in] type                NetType
    * @return Address format data
    */

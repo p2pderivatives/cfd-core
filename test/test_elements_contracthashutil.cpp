@@ -61,24 +61,44 @@ TEST(ContractHashUtil, GetContractScriptOpTrue) {
 }
 
 // @formatter:off
-const std::vector<std::string> fedpeg_fail_test_vectors = {
-  "512003c96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14351ae",
-  "5321030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14351ae",
-  "5121030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352ae",
-  "5221030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352ae",
-  "21032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db21030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352ae",
-  "5221032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db21030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a143ae",
-  "5221032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db21030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352",
+struct CfdCoreTest_FedpegScriptData {
+  std::string fedpeg_script;
+  std::string contract_script;
+};
+static const std::vector<CfdCoreTest_FedpegScriptData> fedpeg_fail_test_vectors = {
+  {
+    "512003c96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14351ae",
+    "512003c96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14351ae"
+  }, {
+    "5321030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14351ae",
+    "532102710f06a4fcdb7341b6410524dd920759d7d467ee76f525e586892f9ab63deff651ae"
+  }, {
+    "5121030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352ae",
+    "512102710f06a4fcdb7341b6410524dd920759d7d467ee76f525e586892f9ab63deff652ae"
+  }, {
+    "5221030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352ae",
+    "522102710f06a4fcdb7341b6410524dd920759d7d467ee76f525e586892f9ab63deff652ae"
+  }, {
+    "21032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db21030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352ae",
+    "2102aaf888b7e9fe586491887f65afd4d9c08f2791a74e6d60d3ebdac3d359cc26392102710f06a4fcdb7341b6410524dd920759d7d467ee76f525e586892f9ab63deff652ae"
+  }, {
+    "5221032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db21030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a143ae",
+    "522102aaf888b7e9fe586491887f65afd4d9c08f2791a74e6d60d3ebdac3d359cc26392102710f06a4fcdb7341b6410524dd920759d7d467ee76f525e586892f9ab63deff6ae"
+  }, {
+    "5221032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db21030dc96ba9b0dcce41a4b683164af15c045f0b169da1d1e234611a8cfc3195a14352",
+    "522102aaf888b7e9fe586491887f65afd4d9c08f2791a74e6d60d3ebdac3d359cc26392102710f06a4fcdb7341b6410524dd920759d7d467ee76f525e586892f9ab63deff652"
+  }
 };
 // @formatter:on
 
 TEST(ContractHashUtil, GetContractScriptFailFedpegScript) {
   Script claim_script("0014fd1cd5452a43ca210ba7153d64227dc32acf6dbb");
   Script script;
-  for (std::string fedpeg_script : fedpeg_fail_test_vectors) {
-    EXPECT_THROW(
+  for (const auto& script_data : fedpeg_fail_test_vectors) {
+    EXPECT_NO_THROW(
         (script = ContractHashUtil::GetContractScript(claim_script,
-            Script(fedpeg_script))), CfdException);
+            Script(script_data.fedpeg_script))));
+    EXPECT_STREQ(script.GetHex().c_str(), script_data.contract_script.c_str());
   }
 }
 

@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_elements_transaction.cpp
  *
- * @brief Confidential Transaction関連クラスの実装ファイルです。
+ * @brief \~japanese Confidential Transaction関連クラスの実装ファイルです。
+ *   \~english implementation of Confidential Transaction classes
  */
 #ifndef CFD_DISABLE_ELEMENTS
 
@@ -12,6 +13,7 @@
 #include <vector>
 
 #include "cfdcore/cfdcore_bytedata.h"
+#include "cfdcore/cfdcore_descriptor.h"
 #include "cfdcore/cfdcore_elements_address.h"
 #include "cfdcore/cfdcore_elements_transaction.h"
 #include "cfdcore/cfdcore_exception.h"
@@ -32,36 +34,36 @@ using logger::info;
 using logger::warn;
 
 // -----------------------------------------------------------------------------
-// ファイル内定数
+// File constants
 // -----------------------------------------------------------------------------
-/// ConfidentialCommitmentのVersion1(unblind)定義
+/// Definition of ConfidentialCommitment Version1(unblind)
 static constexpr uint8_t kConfidentialVersion_1 = 1;
-/// TransactionのWitness非対応バージョン定義
+/// Definition of No Witness Transaction version
 static constexpr uint32_t kTransactionVersionNoWitness = 0x40000000;
-/// Assetのunblind時のサイズ
+/// Size of asset at unblind
 static constexpr size_t kAssetSize = ASSET_TAG_LEN;
-/// Nonceのunblind時のサイズ
+/// Size of asset at Nonce
 static constexpr size_t kNonceSize = 32;
-/// blind factordのサイズ
+/// Size of blind factor
 static constexpr size_t kBlindFactorSize = 32;
-/// Confidentialサイズ
+/// Size of ConfidentialData
 static constexpr size_t kConfidentialDataSize = WALLY_TX_ASSET_CT_LEN;
-/// issuance entropyのサイズ
+/// Size of issuance entropy
 static constexpr size_t kEntropySize = 32;
 // @formatter:off
-/// Valueのunblind時のサイズ
+/// Size of value at unblind
 static constexpr size_t kConfidentialValueSize =
     WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN;  // NOLINT
-/// Valueのunblind時のサイズ(version byteなし)
+/// Size of value at ubline (no version byte)
 static constexpr size_t kAssetValueSize =
     WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN - 1;  // NOLINT
-/// voutのIndex値マスク
+/// Vount index value mask
 static constexpr uint32_t kTxInVoutMask = WALLY_TX_INDEX_MASK;
-/// txin::featureのIssuanceフラグ
+/// Issuance flag for txin::feature
 static constexpr uint8_t kTxInFeatureIssuance = WALLY_TX_IS_ISSUANCE;
-/// txin::featureのPeginフラグ
+/// Pegin flag for txin::feature
 static constexpr uint8_t kTxInFeaturePegin = WALLY_TX_IS_PEGIN;
-/// ByteData256の空データ
+/// Empty data of ByteData256
 static const ByteData256 kEmptyByteData256;
 // @formatter:on
 
@@ -832,7 +834,8 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
   std::vector<ConfidentialTxIn> vin_work;
   std::vector<ConfidentialTxOut> vout_work;
 
-  // tx情報は作成済みである前提とする。(作成済みじゃないと不整合を起こす)
+  // It is assumed that tx information has been created.
+  // (If it is not created, it will cause inconsistency)
   struct wally_tx *tx_pointer = NULL;
   uint32_t flag = WALLY_TX_FLAG_USE_ELEMENTS;
   int ret = wally_tx_from_hex(hex_string.c_str(), flag, &tx_pointer);
@@ -851,7 +854,7 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
       std::vector<uint8_t> script_buf(
           txin_item->script, txin_item->script + txin_item->script_len);
       Script unlocking_script = Script(ByteData(script_buf));
-      /* 一旦除外
+      /* Temporarily comment out
       if (!unlocking_script.IsPushOnly()) {
         warn(CFD_LOG_SOURCE, "IsPushOnly() false.");
         throw CfdException(
@@ -925,7 +928,7 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
       vout_work.push_back(txout);
     }
 
-    // コピー処理が成功したら、旧バッファを解放
+    // If the copy process is successful, release the old buffer
     if (original_address != NULL) {
       wally_tx_free(static_cast<struct wally_tx *>(original_address));
       vin_.clear();
@@ -934,12 +937,12 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
     vin_ = vin_work;
     vout_ = vout_work;
   } catch (const CfdException &exception) {
-    // エラー時は解放
+    // free on error
     wally_tx_free(tx_pointer);
     wally_tx_pointer_ = original_address;
     throw exception;
   } catch (...) {
-    // エラー時は解放
+    // free on error
     wally_tx_free(tx_pointer);
     wally_tx_pointer_ = original_address;
     throw CfdException(kCfdUnknownError);
@@ -1462,15 +1465,15 @@ IssuanceParameter ConfidentialTransaction::CalculateIssuanceValue(
     return result;
   }
 
-  // issue値の計算
+  // calculate issue value
   const BlindFactor entropy = CalculateAssetEntropy(txid, vout, contract_hash);
   result.entropy = entropy;
 
-  // assetの計算
+  // calculate asset value
   const ConfidentialAssetId asset = CalculateAsset(entropy);
   result.asset = asset;
 
-  // tokenの計算
+  // calculate token
   const ConfidentialAssetId token =
       CalculateReissuanceToken(entropy, is_blind);
   result.token = token;
@@ -1740,7 +1743,7 @@ void ConfidentialTransaction::BlindTransaction(
         input_generators.insert(
             input_generators.end(), std::begin(asset_generator),
             std::end(asset_generator));
-        // 空のfactor
+        // empty factor
         input_abfs.insert(
             input_abfs.end(), std::begin(empty_factor),
             std::end(empty_factor));
@@ -1769,7 +1772,7 @@ void ConfidentialTransaction::BlindTransaction(
         input_generators.insert(
             input_generators.end(), std::begin(token_generator),
             std::end(token_generator));
-        // 空のfactor
+        // empty factor
         input_abfs.insert(
             input_abfs.end(), std::begin(empty_factor),
             std::end(empty_factor));
@@ -2303,7 +2306,7 @@ Privkey ConfidentialTransaction::GetIssuanceBlindingKey(
 ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
     Amount txin_value, bool is_witness) {
-  // AmountをConfidentialValueに変換
+  // Change Amount to ConfidentialValue
   std::vector<uint8_t> value(WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
   int ret = wally_tx_confidential_value_from_satoshi(
       txin_value.GetSatoshiValue(), value.data(), value.size());
@@ -2327,7 +2330,7 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
   struct wally_tx *tx_pointer = NULL;
   int ret = WALLY_OK;
 
-  // AbstractTransactionをwally_txに変換
+  // Change AbstractTransaction to wally_tx
   const std::vector<uint8_t> &tx_bytedata = GetData(HasWitness()).GetBytes();
   ret = wally_tx_from_bytes(
       tx_bytedata.data(), tx_bytedata.size(), GetWallyFlag(), &tx_pointer);
@@ -2336,7 +2339,7 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
     throw CfdException(kCfdIllegalArgumentError, "transaction data invalid.");
   }
 
-  // signature hash算出
+  // Calculate signature hash
   try {
     uint32_t tx_flag = 0;
     if (is_witness) {
@@ -2392,8 +2395,8 @@ void ConfidentialTransaction::RandomSortTxOut() {
 PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
     const Pubkey &online_pubkey, const Privkey &master_online_key,
     const std::string &bitcoin_descriptor, uint32_t bip32_counter,
-    const ByteData &whitelist, NetType net_type,
-    const ByteData &pubkey_prefix) {
+    const ByteData &whitelist, NetType net_type, const ByteData &pubkey_prefix,
+    NetType elements_net_type, Address *descriptor_derive_address) {
   static constexpr uint32_t kPegoutBip32CountMaximum = 1000000000;
   static constexpr uint32_t kWhitelistCountMaximum = 256;
   static constexpr uint32_t kPubkeySize = Pubkey::kCompressedPubkeySize;
@@ -2404,7 +2407,6 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   std::vector<uint8_t> whitelist_bytes = whitelist.GetBytes();
   uint32_t whitelist_size = static_cast<uint32_t>(whitelist_bytes.size());
 
-  // TODO(k-matsuzawa): 関数分割検討
   if ((whitelist_size == 0) ||
       ((whitelist_size % kWhitelistSingleSize) != 0)) {
     throw CfdException(kCfdIllegalArgumentError, "whitelist length error.");
@@ -2445,29 +2447,6 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
         "Illegal whitelist key. (" + std::string(except.what()) + ")");
   }
 
-  static auto split_function =
-      [](const std::string &text,
-         const char separator) -> std::vector<std::string> {
-    std::vector<std::string> list;
-    std::vector<char> text_array;
-    const char *p_data = text.data();
-    for (size_t offset = 0; offset < text.size(); ++offset) {
-      if (p_data[offset] == separator) {
-        text_array.push_back('\0');
-        list.push_back(std::string(text_array.data()));
-        text_array.clear();
-      } else {
-        text_array.push_back(p_data[offset]);
-      }
-    }
-    if (!text_array.empty()) {
-      text_array.push_back('\0');
-      list.push_back(std::string(text_array.data()));
-    }
-    // 実際のBIP32解析では強化鍵確認も必要だが、pegoutでは使わないので除外
-    return list;
-  };
-
   ByteData prefix = pubkey_prefix;
   if ((net_type == NetType::kTestnet) || ((net_type == NetType::kRegtest))) {
     prefix = ByteData("043587cf");
@@ -2479,26 +2458,13 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   }
 
   // check descriptor
-  ExtPubkey xpub = GenerateExtPubkeyFromDescriptor(bitcoin_descriptor, prefix);
-
-  std::string desc_str = bitcoin_descriptor;
-  // TODO(k-matsuzawa): 一旦省略するが、実際は厳密なチェックが必要そう
+  ExtPubkey xpub;
+  ExtPubkey child_xpub = GenerateExtPubkeyFromDescriptor(
+      bitcoin_descriptor, bip32_counter, prefix, net_type, elements_net_type,
+      &xpub, descriptor_derive_address);
   // FlatSigningProvider provider;
   // const auto descriptor = Parse(desc_str, provider);
   // if (!descriptor) desc_str = "pkh(" + xpub.GetBase58String() + "/0/*)";
-
-  // Strip last parenths(up to 2) and "/*" to let ParseKeyPath do its thing
-  desc_str.erase(
-      std::remove(desc_str.begin(), desc_str.end(), ')'), desc_str.end());
-  desc_str = desc_str.substr(0, desc_str.size() - 2);
-  // Since we know there are no key origin data, directly call inner parsing functions  // NOLINT
-  std::vector<uint32_t> key_path;
-  std::vector<std::string> split_list = split_function(desc_str, '/');
-  split_list.erase(split_list.begin());  // remove top data
-  for (const auto &text_data : split_list) {
-    key_path.push_back(std::stoul(text_data));
-  }
-  key_path.push_back(bip32_counter);
 
   // check whitelist
   uint32_t whitelist_index = 0;
@@ -2512,6 +2478,7 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
     }
   }
   if (!is_find) {
+    warn(CFD_LOG_SOURCE, "online_pubkey not exists.");
     throw CfdException(kCfdIllegalArgumentError, "online_pubkey not exists.");
   }
 
@@ -2519,11 +2486,12 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   ByteData offline_pubkey_negate =
       WallyUtil::NegatePubkey(offline_pubkey.GetData());
   if (!offline_keys[whitelist_index].Equals(offline_pubkey_negate)) {
+    warn(CFD_LOG_SOURCE, "offline_pubkey not exists.");
     throw CfdException(kCfdIllegalArgumentError, "offline_pubkey not exists.");
   }
 
   // calc tweak
-  ByteData256 tweak_sum = xpub.DerivePubTweak(key_path);
+  ByteData256 tweak_sum = child_xpub.GetPubTweakSum();
   ByteData btcpubkeybytes =
       WallyUtil::AddTweakPubkey(offline_pubkey.GetData(), tweak_sum);
 
@@ -2537,27 +2505,33 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
 }
 
 ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
-    const std::string &bitcoin_descriptor, const ByteData &prefix) {
-  static auto starts_with = [](const std::string &text,
-                               const std::string &check) -> bool {
-    return (
-        (text.length() >= check.length()) &&
-        (text.substr(0, check.length()) == check));
-  };
-  static auto ends_with = [](const std::string &text,
-                             const std::string &check) -> bool {
-    return (
-        (text.length() >= check.length()) &&
-        (text.substr(text.length() - check.length(), check.length()) ==
-         check));
-  };
+    const std::string &bitcoin_descriptor, uint32_t bip32_counter,
+    const ByteData &prefix, NetType net_type, NetType elements_net_type,
+    ExtPubkey *base_ext_pubkey, Address *descriptor_derive_address) {
+  bool is_liquidv1 = false;
+  switch (elements_net_type) {
+    case NetType::kMainnet:
+    case NetType::kTestnet:
+    case NetType::kRegtest:
+      throw CfdException(
+          kCfdIllegalArgumentError, "Illegal elements network type error.");
+    case NetType::kLiquidV1:
+      is_liquidv1 = true;
+      break;
+    case NetType::kElementsRegtest:
+    case NetType::kCustomChain:
+    default:
+      break;
+  }
 
+  ExtPubkey child_xpub;
   ExtPubkey xpub;
+  std::string desc_str = bitcoin_descriptor;
   try {
-    // 指定キーチェック (ただのbase58check文字列)
+    // check extkey (not output descriptor)
     ExtPubkey check_key(bitcoin_descriptor);
     if (check_key.GetVersionData().Equals(prefix)) {
-      xpub = check_key;
+      desc_str = "pkh(" + bitcoin_descriptor + ")";  // create pkh descriptor
     }
   } catch (const CfdException &except) {
     info(
@@ -2566,37 +2540,86 @@ ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
     // other descriptor
   }
 
-  if (!xpub.GetPubkey().IsValid()) {
-    std::string xpub_str = "";
-    std::string desc = bitcoin_descriptor;
-    if (starts_with(desc, "sh(wpkh(") && ends_with(desc, "))")) {
-      xpub_str = desc.substr(8, desc.size() - 2);
-    } else if (starts_with(desc, "wpkh(") && ends_with(desc, ")")) {
-      xpub_str = desc.substr(5, desc.size() - 1);
-    } else if (starts_with(desc, "pkh(") && ends_with(desc, ")")) {
-      xpub_str = desc.substr(4, desc.size() - 1);
-    } else {
+  std::vector<std::string> arg_list_base;
+  arg_list_base.push_back(std::string(kArgumentBaseExtkey));
+  std::vector<std::string> arg_list;
+  arg_list.push_back(std::to_string(bip32_counter));
+  Descriptor desc = Descriptor::Parse(desc_str);
+  DescriptorScriptReference script_ref = desc.GetReference(&arg_list_base);
+  switch (script_ref.GetAddressType()) {
+    case AddressType::kP2pkhAddress:
+      break;
+    case AddressType::kP2wpkhAddress:
+    case AddressType::kP2shP2wpkhAddress:
+      if (is_liquidv1) {
+        warn(
+            CFD_LOG_SOURCE, "liquidv1 not supported address type[{}].",
+            script_ref.GetAddressType());
+        throw CfdException(
+            kCfdIllegalArgumentError,
+            "bitcoin_descriptor is not of any type supported: pkh(<xpub>)");
+      }
+      break;
+    default:
       warn(CFD_LOG_SOURCE, "bitcoin_descriptor invalid type.");
       throw CfdException(
           kCfdIllegalArgumentError,
           "bitcoin_descriptor is not of any type supported: pkh(<xpub>), "
           "sh(wpkh(<xpub>)), wpkh(<xpub>), or <xpub>.");
-    }
-    if (xpub_str.find("]") != std::string::npos) {
-      xpub_str = xpub_str.substr(xpub_str.find("]"), std::string::npos);
-    }
-    xpub_str = xpub_str.substr(0, xpub_str.find("/"));
-    xpub = ExtPubkey(xpub_str);
-    if (!xpub.GetVersionData().Equals(prefix)) {
-      warn(
-          CFD_LOG_SOURCE, "bitcoin_descriptor illegal prefix[{}].",
-          xpub.GetVersionData().GetHex());
-      throw CfdException(
-          kCfdIllegalArgumentError, "bitcoin_descriptor illegal prefix.");
-    }
   }
 
-  return xpub;
+  if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+    script_ref = script_ref.GetChild();
+  }
+  DescriptorKeyReference key_ref = script_ref.GetKeyList()[0];
+  if (!key_ref.HasExtPubkey()) {
+    warn(CFD_LOG_SOURCE, "bitcoin_descriptor invalid extkey format.");
+    throw CfdException(
+        kCfdIllegalArgumentError, "BitcoinDescriptor invalid extkey format.");
+  }
+  *base_ext_pubkey = key_ref.GetExtPubkey();
+  if (!base_ext_pubkey->GetVersionData().Equals(prefix)) {
+    warn(
+        CFD_LOG_SOURCE, "bitcoin_descriptor illegal prefix[{}].",
+        xpub.GetVersionData().GetHex());
+    throw CfdException(
+        kCfdIllegalArgumentError, "bitcoin_descriptor illegal prefix.");
+  }
+
+  // collect derive key
+  DescriptorScriptReference derive_script;
+  derive_script = desc.GetReference(&arg_list);
+  script_ref = derive_script;
+  if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+    script_ref = script_ref.GetChild();
+  }
+  key_ref = script_ref.GetKeyList()[0];
+  child_xpub = key_ref.GetExtPubkey();
+
+  // If it is the same as base, add a default path.
+  if (child_xpub.ToString() == base_ext_pubkey->ToString()) {
+    std::string xpub_str = base_ext_pubkey->ToString() + "/0/*";
+    if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+      xpub_str = "sh(wpkh(" + xpub_str + "))";
+    } else if (script_ref.GetAddressType() == AddressType::kP2wpkhAddress) {
+      xpub_str = "wpkh(" + xpub_str + ")";
+    } else {
+      xpub_str = "pkh(" + xpub_str + ")";
+    }
+    desc = Descriptor::Parse(xpub_str);
+    derive_script = desc.GetReference(&arg_list);
+    script_ref = derive_script;
+    if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+      script_ref = script_ref.GetChild();
+    }
+    key_ref = script_ref.GetKeyList()[0];
+    child_xpub = key_ref.GetExtPubkey();
+  }
+
+  if (descriptor_derive_address != nullptr) {
+    *descriptor_derive_address = derive_script.GenerateAddress(net_type);
+  }
+  return child_xpub;
 }
 
 ByteData256 ConfidentialTransaction::GetWitnessOnlyHash() const {
@@ -2671,7 +2694,7 @@ void ConfidentialTransaction::SetElementsTxState() {
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   if (tx_pointer != nullptr) {
     size_t is_coinbase = 0;
-    // coinbase設定時はcoinbase優先
+    // coinbase priority when coinbase is set
     int ret = wally_tx_is_coinbase(tx_pointer, &is_coinbase);
     if ((ret == WALLY_OK) && (is_coinbase == 0)) {
       for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
@@ -2727,10 +2750,10 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
         tx_pointer, flag, buffer.data(), buffer.size(), &txsize);
   }
   if (ret == WALLY_EINVAL) {
-    /* objectとの変換について。
-     * libwallyでは、txin/txoutが空のデータを許容していない。
-     * そのためtxin/txoutが空の場合はobject to byteはエラーとなる。
-     * よって特定状況下では独自の処理を実行する。
+    /* About conversion with object.
+     * In libwally, txin / txout does not allow empty data.
+     * Therefore, if txin / txout is empty, object to byte is an error.
+     * Therefore, it performs its own processing under certain circumstances.
      */
     if ((tx_pointer->num_inputs == 0) || (tx_pointer->num_outputs == 0)) {
       info(CFD_LOG_SOURCE, "wally_tx_get_length size[{}]", size);
@@ -2738,7 +2761,8 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
       bool has_txin_rangeproof = false;
       bool has_txout_witness = false;
       bool is_witness = false;
-      // wally_tx_get_lengthが不正値の場合があるため必要サイズ計算 (多めに確保)
+      // Necessary size calculation because wally_tx_get_length may be
+      // an invalid value (reserved more)
       size_t need_size = sizeof(struct wally_tx);
       need_size += tx_pointer->num_inputs * sizeof(struct wally_tx_input);
       need_size += tx_pointer->num_outputs * sizeof(struct wally_tx_output);
@@ -2829,7 +2853,7 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
         const struct wally_tx_input *input = tx_pointer->inputs + i;
         memcpy(address_pointer, input->txhash, sizeof(input->txhash));
         address_pointer += sizeof(input->txhash);
-        // pegin, issur時には別途対応が必要
+        // Separate handling is required for pegin and issue
         memcpy(address_pointer, &input->index, sizeof(input->index));
         address_pointer += sizeof(input->index);
         address_pointer = CopyVariableBuffer(
@@ -2937,7 +2961,6 @@ ByteData ConfidentialTransaction::GetData(bool has_witness) const {
         info(CFD_LOG_SOURCE, "set buffer size[{}]", size);
       }
     } else {
-      // 例外エラー
       warn(
           CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}]. in/out={}/{}", ret,
           tx_pointer->num_inputs, tx_pointer->num_outputs);

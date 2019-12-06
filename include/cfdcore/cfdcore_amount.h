@@ -37,18 +37,30 @@ static constexpr int64_t kMaxAmount = 21000000 * kCoinBase;
 class CFD_CORE_EXPORT Amount {
  public:
   /**
+   * \~japanese
    * @brief satoshi単位のAmountからAmountインスタンスを生成する.
    * @param[in] amount satoshi単位のAmount
    * @return Amountインスタンス
    * @exception CfdException 不正な値が渡された場合
+   * \~english
+   * @brief Create Amount instance by amount satoshi units
+   * @param[in] amount amount in satoshi units
+   * @return instance of Amount class
+   * @exception CfdException if invalid value passed
    */
   static Amount CreateBySatoshiAmount(int64_t amount);
 
   /**
-   * @brief bitcoin単位のAmountからAmountインスタンスを生成する.
+   * \~japanese
+   * @brief bitcoin単位のAmountからAmountインスタンスを生成する
    * @param[in] coin_amount bitcoin単位のAmount
    * @return Amountインスタンス
    * @exception CfdException 不正な値が渡された場合
+   * \~english
+   * @brief Create Amount instance by amount bitcoin units
+   * @param[in] coin_amount amount in bitcoin units
+   * @return instance of Amount class
+   * @exception CfdException if invalid value passed
    */
   static Amount CreateByCoinAmount(double coin_amount);
 

@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_manager.cpp
  *
- * @brief cfdcore管理クラスの実装ファイルです。
+ * @brief \~japanese cfdcore管理クラスの実装ファイルです。
+ *   \~english implementation for cfdcore manager class
  */
 #include "wally_core.h"  // NOLINT
 
@@ -18,7 +19,7 @@ namespace core {
 
 using logger::info;
 
-/// cfdcoreインスタンス
+/// instance for CfdCoreManager
 static CfdCoreManager core_instance;
 
 // -----------------------------------------------------------------------------
@@ -48,13 +49,14 @@ void CfdCoreManager::Initialize(CfdCoreHandle* handle_address) {
   }
 
   {
-    // 排他制御開始
+    // Start of exclusive control
     std::lock_guard<std::mutex> lock(mutex_);
     if ((!initialized_) && handle_list_.empty()) {
-      // 初期化処理実施
+      // Perform initialization processing.
       InitializeLogger();
 
-      // libwallyは引数以外でのエラーが発生しない構造のため、呼び出すだけとする。
+      // Since libwally does not produce errors other than its arguments,
+      // will only call the function.
       wally_init(0);
 #if 0
       int wally_ret = wally_init(0);
@@ -68,8 +70,9 @@ void CfdCoreManager::Initialize(CfdCoreHandle* handle_address) {
       int hidapi_ret = hid_init();
       if (hidapi_ret != 0) {
         error(CFD_LOG_SOURCE, "hid_init error.");
-        // HIDAPIエラー時については、エラーを無視するべきか？
-        // →coreはスルーして、wallet側で別途確認してもらうようにする。
+        // TBD:
+        // With the error of HIDAPI, should error be ignored?
+        // → Pass thru core, check separately the wallet side.
         // throw CfdException(kCfdInternalError, "hid_init error.");
       }
 #endif
@@ -77,7 +80,7 @@ void CfdCoreManager::Initialize(CfdCoreHandle* handle_address) {
       initialized_ = true;
     }
 
-    // ハンドル生成＆登録
+    // Generation and registration of handle
     int* handle = new int[1];
     handle_list_.push_back(handle);
     *handle_address = static_cast<void*>(handle);
@@ -88,7 +91,7 @@ void CfdCoreManager::Initialize(CfdCoreHandle* handle_address) {
 void CfdCoreManager::Finalize(
     const CfdCoreHandle handle, bool is_finish_process) {
   if (initialized_ && (!handle_list_.empty())) {
-    // 排他制御開始
+    // Start of exclusive control
     std::lock_guard<std::mutex> lock(mutex_);
 
     std::vector<int*>::iterator ite;
@@ -104,7 +107,7 @@ void CfdCoreManager::Finalize(
     }
 
     if (handle_list_.empty()) {
-      // 終了処理実施
+      // Perform end processing
       FinalizeLogger(is_finish_process);
       wally_cleanup(0);
 #if 0

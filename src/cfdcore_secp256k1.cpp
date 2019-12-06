@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_secp256k1.cpp
  *
- * @brief secp256k1関連クラス定義
+ * @brief \~english definition for secp256k1 related classes
+ *   \~japanese secp256k1関連クラス定義
  */
 
 #include <vector>
@@ -46,7 +47,7 @@ ByteData Secp256k1::CombinePubkeySecp256k1Ec(
   int ret;
 
   for (size_t i = 0; i < pubkey_list.size(); ++i) {
-    // ByteDataをsecp256k1_pubkey型に変換
+    // Change ByteData to secp256k1_pubkey format
     ret = secp256k1_ec_pubkey_parse(
         context, &key_array[i], pubkey_list[i].GetBytes().data(),
         pubkey_list[i].GetBytes().size());
@@ -59,7 +60,7 @@ ByteData Secp256k1::CombinePubkeySecp256k1Ec(
     ptr_array[i] = &key_array[i];
   }
 
-  // Pubkeyを合成
+  // Join Pubkey
   secp256k1_pubkey combine_key;
   ret = secp256k1_ec_pubkey_combine(
       context, &combine_key, ptr_array.data(), key_array.size());
@@ -71,7 +72,7 @@ ByteData Secp256k1::CombinePubkeySecp256k1Ec(
 
   std::vector<uint8_t> byte_data(65);
   size_t byte_size = byte_data.size();
-  // ByteDataに変換
+  // Format ByteData
   ret = secp256k1_ec_pubkey_serialize(
       context, byte_data.data(), &byte_size, &combine_key,
       SECP256K1_EC_COMPRESSED);

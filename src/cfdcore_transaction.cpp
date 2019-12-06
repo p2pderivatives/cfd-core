@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_transaction.cpp
  *
- * @brief Transaction関連クラスの実装ファイルです。
+ * @brief \~japanese Transaction関連クラスの実装ファイルです。
+ *   \~english implementation of Transaction related class
  */
 #include <limits>
 #include <string>
@@ -23,9 +24,9 @@ using logger::info;
 using logger::warn;
 
 // -----------------------------------------------------------------------------
-// ファイル内定数
+// File constants
 // -----------------------------------------------------------------------------
-/// Transactionの最小Hexサイズ
+/// Minimum Hex size of Transaction
 static constexpr size_t kTransactionMinimumHexSize =
     AbstractTransaction::kTransactionMinimumSize * 2;
 
@@ -203,7 +204,7 @@ bool Transaction::CheckTxOutBuffer(
       const uint8_t *work_address = &address_pointer[offset];
       size_t limit = data_size - offset;
       size_t total = 0;
-      // value分のチェック
+      // check for value
       if (limit <= sizeof(int64_t)) {
         is_error = true;
         break;
@@ -213,7 +214,7 @@ bool Transaction::CheckTxOutBuffer(
       work_address += sizeof(uint64_t);
       limit -= sizeof(uint64_t);
       total += sizeof(uint64_t);
-      // locking scriptのチェック
+      // Check locking script
       uint64_t script_size = 0;
       size_t vnum_size = 0;
       if (!GetVariableInt(work_address, limit, &script_size, &vnum_size)) {
@@ -227,7 +228,7 @@ bool Transaction::CheckTxOutBuffer(
       total += vnum_size + script_size;
       offset += total;
 
-      // TxOut情報コピー
+      // Copy of TxOut
       if (tx_pointer != NULL) {
         int ret = wally_tx_add_raw_output(
             static_cast<struct wally_tx *>(tx_pointer), amount, work_address,
@@ -260,14 +261,16 @@ void Transaction::SetFromHex(const std::string &hex_string) {
   std::vector<TxIn> vin_work;
   std::vector<TxOut> vout_work;
 
-  // tx情報は作成済みである前提とする。(作成済みじゃないと不整合を起こす)
+  // It is assumed that tx information has been created.
+  // (If it is not created, it will cause inconsistency)
   struct wally_tx *tx_pointer = NULL;
   int ret = wally_tx_from_hex(hex_string.c_str(), 0, &tx_pointer);
   if (ret == WALLY_OK) {
     if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0) &&
         (hex_string.size() > kTransactionMinimumHexSize)) {
-      // txinが0かつtxoutが1の時に生じる解析不正状態と判断して、例外ルートに入れ込む
-      // (libwallyがwitness txと誤認する)
+      // Judged as an invalid analysis condition when txin is 0 and txout is 1,
+      // and enters the exception route
+      // (libwally misidentifies as witness tx)
       wally_tx_free(tx_pointer);
       tx_pointer = NULL;
       ret = WALLY_EINVAL;
@@ -279,21 +282,21 @@ void Transaction::SetFromHex(const std::string &hex_string) {
     const std::vector<uint8_t> &tx_buf = tx_byte.GetBytes();
     const uint8_t *address_pointer = tx_buf.data();
 
-    // 最小サイズであれば、解析実施
+    // If the minimum size, perform analysis
     if (hex_string.size() >= kTransactionMinimumHexSize) {
       uint32_t version = 0;
       uint32_t lock_time = 0;
       memcpy(&version, address_pointer, sizeof(version));
       address_pointer += sizeof(version);
       if (*address_pointer != 0) {
-        // markerが1か、txinが1以上。
-        // libwallyで解析可能なタイプなので、不正データとして処理
+        // marker is 1 or txin is greater than 1
+        // Since type can be analyzed with libwally, treated as invalid data.
       } else {
-        // txinが0か、markerが0
+        // txin is 0 or marker is 0
         ++address_pointer;
         if ((*address_pointer == 0) &&
             (hex_string.size() == kTransactionMinimumHexSize)) {
-          // txoutが0
+          // txout is 0
           ++address_pointer;
           memcpy(&lock_time, address_pointer, sizeof(lock_time));
           ret = wally_tx_init_alloc(version, lock_time, 0, 0, &tx_pointer);
@@ -304,22 +307,23 @@ void Transaction::SetFromHex(const std::string &hex_string) {
           }
           info(CFD_LOG_SOURCE, "call wally_tx_init_alloc");
         } else {
-          // 残サイズをチェックし、txinが0かつtxoutが1以上なのかどうかチェック
+          // Check remaining size and check if txin is 0 and txout is 1 or more
           const uint8_t *start_address = tx_buf.data();
           size_t size = address_pointer - start_address;
           uint64_t txout_num = 0;
           size_t num_size = 0;
-          // txbufのサイズから、txout領域前までのサイズとlocktime分を差し引く
+          // Subtract the size up to the txout area and the locktime
+          // from the txbuf size.
           size_t buf_size = tx_buf.size() - size - sizeof(uint32_t);
           if (!GetVariableInt(
                   address_pointer, buf_size, &txout_num, &num_size)) {
-            // 不正
+            // Invalid
           } else if (!CheckTxOutBuffer(
                          address_pointer, buf_size, txout_num, num_size)) {
-            // 不正
+            // Invalid
           } else {
             // txout OK
-            // locktimeコピー
+            // locktime copy
             const uint8_t *work_address = address_pointer + buf_size;
             memcpy(&lock_time, work_address, sizeof(lock_time));
             ret = wally_tx_init_alloc(version, lock_time, 0, 0, &tx_pointer);
@@ -331,7 +335,7 @@ void Transaction::SetFromHex(const std::string &hex_string) {
             }
             info(CFD_LOG_SOURCE, "call wally_tx_init_alloc");
             append_txout = true;
-            // 改めてTxOutにデータ追加
+            // Add data to TxOut again
             CheckTxOutBuffer(
                 address_pointer, buf_size, txout_num, num_size, tx_pointer,
                 &vout_work);
@@ -356,7 +360,7 @@ void Transaction::SetFromHex(const std::string &hex_string) {
       std::vector<uint8_t> script_buf(
           txin_item->script, txin_item->script + txin_item->script_len);
       Script unlocking_script = Script(ByteData(script_buf));
-      /* 一旦除外
+      /* Temporarily comment out
       if (!unlocking_script.IsPushOnly()) {
         warn(CFD_LOG_SOURCE, "IsPushOnly() false.");
         throw CfdException(
@@ -394,7 +398,7 @@ void Transaction::SetFromHex(const std::string &hex_string) {
         vout_work.push_back(txout);
       }
     }
-    // コピー処理が成功したら、旧バッファを解放
+    // If the copy process is successful, free the old buffer
     if (original_address != NULL) {
       wally_tx_free(static_cast<struct wally_tx *>(original_address));
       vin_.clear();
@@ -403,12 +407,12 @@ void Transaction::SetFromHex(const std::string &hex_string) {
     vin_ = vin_work;
     vout_ = vout_work;
   } catch (const CfdException &exception) {
-    // エラー時は解放
+    // free on error
     wally_tx_free(tx_pointer);
     wally_tx_pointer_ = original_address;
     throw exception;
   } catch (...) {
-    // エラー時は解放
+    // free on error
     wally_tx_free(tx_pointer);
     wally_tx_pointer_ = original_address;
     throw CfdException(kCfdUnknownError);
@@ -424,7 +428,7 @@ uint32_t Transaction::GetTotalSize() const {
   size_t length = 0;
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
-  // input/output共に0個の場合、libwallyがElementsTransactionと誤認してしまう。
+  // If both input / output are 0, libwally misidentifies as ElementsTransaction
   if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0)) {
     length = static_cast<size_t>(kTransactionMinimumSize);
   } else {
@@ -437,7 +441,7 @@ uint32_t Transaction::GetVsize() const {
   size_t vsize = 0;
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
-  // input/output共に0個の場合、libwallyがElementsTransactionと誤認してしまう。
+  // If both input / output are 0, libwally misidentifies as ElementsTransaction
   if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0)) {
     vsize = static_cast<size_t>(kTransactionMinimumSize);
   } else {
@@ -450,7 +454,7 @@ uint32_t Transaction::GetWeight() const {
   size_t weight = 0;
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
-  // input/output共に0個の場合、libwallyがElementsTransactionと誤認してしまう。
+  // If both input / output are 0, libwally misidentifies as ElementsTransaction
   if ((tx_pointer->num_inputs == 0) && (tx_pointer->num_outputs == 0)) {
     weight = static_cast<size_t>(kTransactionMinimumSize) * 4;
   } else {
@@ -645,7 +649,8 @@ ByteData256 Transaction::GetSignatureHash(
   struct wally_tx *tx_pointer = NULL;
   int ret = WALLY_OK;
 
-  // tx情報は作成済みである前提とする。(作成済みじゃないと不整合を起こす)
+  // It is assumed that tx information has been created.
+  // (If it is not created, it will cause inconsistency)
   const std::vector<uint8_t> &tx_bytedata = GetData(HasWitness()).GetBytes();
   ret = wally_tx_from_bytes(
       tx_bytedata.data(), tx_bytedata.size(), 0, &tx_pointer);
@@ -667,7 +672,8 @@ ByteData256 Transaction::GetSignatureHash(
           buffer.data(), buffer.size());
       wally_tx_free(tx_pointer);
     } catch (...) {
-      wally_tx_free(tx_pointer);  // 例外時は別途解放(warn()で例外出る可能性)
+      wally_tx_free(tx_pointer);  // Separately released in case of exception
+                                  // (possibility of exception by warn ())
       warn(CFD_LOG_SOURCE, "wally_tx_get_btc_signature_hash cause exception.");
       ret = WALLY_ERROR;
     }
@@ -714,14 +720,15 @@ ByteData Transaction::GetData(bool has_witness) const {
         tx_pointer, flag, buffer.data(), buffer.size(), &size);
   }
   if (ret == WALLY_EINVAL) {
-    /* TODO objectとの変換について。
-     * libwallyでは、txin/txoutが空のデータを許容していない。
-     * そのためtxin/txoutが空の場合はobject to byteはエラーとなる。
-     * よって特定状況下では独自の処理を実行する。
+    /* TODO: About conversion to the object.
+     * In libwally, txin / txout does not allow empty data.
+     * Therefore, if txin / txout is empty, object to byte is an error.
+     * Therefore, it performs its own processing under certain circumstances.
      */
     if ((tx_pointer->num_inputs == 0) || (tx_pointer->num_outputs == 0)) {
       info(CFD_LOG_SOURCE, "wally_tx_get_length size[{}]", size);
-      // wally_tx_get_lengthが不正値の場合があるため必要サイズ計算 (多めに確保)
+      // Necessary size calculation because wally_tx_get_length may be
+      // an invalid value (reserved more)
       size_t need_size = sizeof(struct wally_tx);
       need_size += tx_pointer->num_inputs * sizeof(struct wally_tx_input);
       need_size += tx_pointer->num_outputs * sizeof(struct wally_tx_output);
@@ -815,7 +822,7 @@ ByteData Transaction::GetData(bool has_witness) const {
         info(CFD_LOG_SOURCE, "set buffer size[{}]", size);
       }
     } else {
-      // 例外エラー
+      // Exception
       warn(CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}].", ret);
       throw CfdException(kCfdIllegalStateError, "tx hex convert error.");
     }

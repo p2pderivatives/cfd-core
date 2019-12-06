@@ -2,7 +2,8 @@
 /**
  * @file cfdcore_key.cpp
  *
- * @brief Pubkey/Privkey関連クラス定義
+ * @brief \~japanese Pubkey/Privkey関連クラス定義
+ *   \~english definition for Pubkey/Privkey class
  */
 
 #include <string>
