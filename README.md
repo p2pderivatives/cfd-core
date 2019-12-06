@@ -118,7 +118,7 @@ npm cmake_install
 ```Shell
 cd build && sudo make install
 
-(Using ninja:)
+(Using ninja)
 cd build && sudo ninja install
 ```
 
@@ -128,7 +128,7 @@ cmake version is 3.15 or higher: `cmake --install build`
 ```Shell
 cd build && sudo make uninstall
 
-(Using ninja:)
+(Using ninja)
 cd build && sudo ninja uninstall
 ```
 
