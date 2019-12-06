@@ -2,6 +2,8 @@
 /**
  * @file cfdcore_bytedata.cpp
  *
+ * @brief \~japanese ByteData関連クラス実装
+ *   \~english implimentation of ByteData class
  */
 #include <limits>
 #include <string>
@@ -75,6 +77,11 @@ ByteData ByteData::Serialize() const {
   return ByteData(SerializeFromBuffer(data_));
 }
 
+size_t ByteData::GetSerializeSize() const {
+  ByteData size_buffer = GetVariableInt(data_.size());
+  return size_buffer.GetDataSize() + data_.size();
+}
+
 ByteData ByteData::GetVariableInt(uint64_t v) {
   std::vector<uint8_t> size_byte;
   if (v <= kViMax8) {
@@ -97,6 +104,10 @@ ByteData ByteData::GetVariableInt(uint64_t v) {
   }
 
   return ByteData(size_byte);
+}
+
+bool ByteData::IsLarge(const ByteData& source, const ByteData& destination) {
+  return source.data_ < destination.data_;
 }
 
 //////////////////////////////////

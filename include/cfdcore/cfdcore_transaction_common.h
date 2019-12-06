@@ -258,6 +258,11 @@ class CFD_CORE_EXPORT AbstractTxOut {
    */
   AbstractTxOut(const Amount& value, const Script& locking_script);
   /**
+   * @brief コンストラクタ
+   * @param[in] locking_script    locking script.
+   */
+  explicit AbstractTxOut(const Script& locking_script);
+  /**
    * @brief デストラクタ
    */
   virtual ~AbstractTxOut() {
@@ -307,6 +312,12 @@ class CFD_CORE_EXPORT AbstractTxOutReference {
    * @return locking script
    */
   const Script GetLockingScript() const { return locking_script_; }
+
+  /**
+   * @brief シリアライズ済みのサイズを取得する.
+   * @return serialized size
+   */
+  uint32_t GetSerializeSize() const;
 
  protected:
   Amount value_;           ///< 金額
@@ -418,6 +429,15 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @return libwally用フラグ
    */
   virtual uint32_t GetWallyFlag() const = 0;
+
+  /**
+   * @brief size情報からvsizeを取得する。
+   * @param[in] no_witness_size   非witness領域サイズ
+   * @param[in] witness_size      witness領域サイズ
+   * @return vsize
+   */
+  static uint32_t GetVsizeFromSize(
+      uint32_t no_witness_size, uint32_t witness_size);
 
  protected:
   void* wally_tx_pointer_;  ///< libwally tx構造体アドレス
@@ -554,18 +574,6 @@ class CFD_CORE_EXPORT AbstractTransaction {
  */
 class CFD_CORE_EXPORT SignatureUtil {
  public:
-  /**
-   * @brief P2WPKHの witness program を生成する.
-   * @param[in] pubkey      公開鍵
-   * @return witness program
-   */
-  static ByteData CreateWitnessProgramWPKH(const Pubkey& pubkey);
-  /**
-   * @brief P2WSHの witness program を生成する.
-   * @param[in] witness_script    witness script.
-   * @return witness program
-   */
-  static ByteData CreateWitnessProgramWSH(const Script& witness_script);
   /**
    * @brief 楕円曲線暗号を用いて、秘密鍵からsignatureを計算する.
    * @param[in] signature_hash  signatureハッシュ

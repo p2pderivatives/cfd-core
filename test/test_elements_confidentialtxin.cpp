@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "cfdcore/cfdcore_elements_transaction.h"
+#include "cfdcore/cfdcore_address.h"
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_bytedata.h"
@@ -10,6 +11,7 @@
 #include "cfdcore/cfdcore_coin.h"
 #include "cfdcore/cfdcore_util.h"
 
+using cfd::core::AddressType;
 using cfd::core::CfdException;
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
@@ -54,6 +56,12 @@ static ScriptWitness GetExpectPeginWitnessStack() {
   exp_pegin_witness.AddWitnessStack(ByteData("02000000014578ddc14da3e19445b6e7b4c61d4af711d29e2703161aa9c11e4e6b0ea08843010000006b483045022100eea27e89c3cf2867393263bece040f34c03e0cddfa93a1a18c0d2e4322a37df7022074273c0ab3836affba53737c83673ca6c0d69bffdf722b4accfd7c0a9b2ea4e60121020bfcdbda850cd250c3995dfdb426dc40a9c8a5b378be2bf39f6b0642a783daf2feffffff02281d2418010000001976a914b56872c7b363bfb3f5af84d071ff282cf2abfe3988ac00e1f5050000000017a9141d4796c6e855ae00acecb0c20f65dd8bbeffb1ec87d1000000"));
   exp_pegin_witness.AddWitnessStack(ByteData("03000030ffba1d575800bf37a1ee1962dee7e153c18bcfc93cd013e7c297d5363b36cc2d63d5c4a9fdc746b9d3f4f62995d611c34ee9740ff2b5193ce458fdac6d173800ec402e5affff7f200500000002000000027ce06590120cf8c2bef7726200f0fa655940cadcf62708d7dc9f8f2a417c890b81af4d4299758e7e7a0daa6e7e3d3ec37f97df4ef2392ae5e6d286fc5e7e01d90105"));
   return exp_pegin_witness;
+}
+
+TEST(ConfidentialTxIn, ConstractorEmpty) {
+  ConfidentialTxIn txin1;
+  EXPECT_EQ(txin1.GetVout(), 0);
+  EXPECT_EQ(txin1.GetSequence(), 0);
 }
 
 TEST(ConfidentialTxIn, Constractor1) {
@@ -115,6 +123,13 @@ TEST(ConfidentialTxIn, Constractor2) {
   }
   EXPECT_STREQ(txin3.GetWitnessHash().GetHex().c_str(),
     "c91991b67af0a40f5d200ba356b02afd3ae2c37174d0d79707a6bd6f9c69ce8c");
+}
+
+TEST(ConfidentialTxIn, Constractor3) {
+  ConfidentialTxIn txin1(exp_txid, exp_index);
+  EXPECT_EQ(txin1.GetVout(), exp_index);
+  EXPECT_EQ(txin1.GetSequence(), 0);
+  EXPECT_STREQ(txin1.GetTxid().GetHex().c_str(), exp_txid.GetHex().c_str());
 }
 
 TEST(ConfidentialTxIn, SetIssuance) {
@@ -205,6 +220,44 @@ TEST(ConfidentialTxIn, RemovePeginWitnessStackAll) {
   EXPECT_EQ(txin.GetPeginWitnessStackNum(), 0);
   EXPECT_STREQ(txin.GetWitnessHash().GetHex().c_str(),
     "17f0c9b759a09c56116151cca94f18340acc3a782b2062cee3c41333b2dc63fe");
+}
+
+struct TestEstimateConfidentialTxInSizeVector {
+  AddressType addr_type;
+  uint32_t size;
+  uint32_t witness_size;
+  Script redeem_script;
+  uint32_t pegin_btc_tx;
+  Script fedpeg_script;
+  bool is_issuance;
+  bool is_blind;
+};
+
+TEST(ConfidentialTxIn, EstimateTxInSize) {
+  static const std::vector<TestEstimateConfidentialTxInSizeVector> test_vector = {
+    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false},
+    {AddressType::kP2shAddress, 138, 0, exp_script, 0, Script(), false, false},
+    {AddressType::kP2shP2wpkhAddress, 174, 111, Script(), 0, Script(), false, false},
+    {AddressType::kP2shP2wshAddress, 154, 79, Script("51"), 0, Script(), false, false},
+    {AddressType::kP2wpkhAddress, 152, 111, Script(), 0, Script(), false, false},
+    {AddressType::kP2wshAddress, 141, 100, exp_script, 0, Script(), false, false},
+    // pegin
+    {AddressType::kP2wpkhAddress, 610, 569, Script(), 226, Script("51"), false, false},
+    // issue
+    {AddressType::kP2wpkhAddress, 234, 111, Script(), 0, Script(), true, false},
+    {AddressType::kP2wpkhAddress, 6072, 5901, Script(), 0, Script(), true, true},
+  };
+
+  for (const auto& test_data : test_vector) {
+    uint32_t size = 0;
+    uint32_t wit_size = 0;
+    EXPECT_NO_THROW((size = ConfidentialTxIn::EstimateTxInSize(
+        test_data.addr_type, test_data.redeem_script, test_data.pegin_btc_tx,
+        test_data.fedpeg_script, test_data.is_issuance, test_data.is_blind,
+        &wit_size)));
+    EXPECT_EQ(size, test_data.size);
+    EXPECT_EQ(wit_size, test_data.witness_size);
+  }
 }
 
 TEST(ConfidentialTxInReference, Constractor) {

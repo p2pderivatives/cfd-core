@@ -66,6 +66,8 @@ TEST(ElementsConfidentialAddress, P2pkhAddress) {
       ElementsConfidentialAddress::IsConfidentialAddress(address.GetAddress()));
   EXPECT_EQ(ElementsNetType::kLiquidV1, address.GetNetType());
   EXPECT_EQ(ElementsAddressType::kP2pkhAddress, address.GetAddressType());
+  EXPECT_STREQ("76a914925d4028880bd0c9d68fbc7fc7dfee976698629c88ac",
+               address.GetLockingScript().GetHex().c_str());
 
   unblind_addr = Address(ElementsNetType::kElementsRegtest, pubkey, GetElementsAddressFormatList());
   EXPECT_NO_THROW((address = ElementsConfidentialAddress(unblind_addr, key)));
@@ -83,6 +85,8 @@ TEST(ElementsConfidentialAddress, P2pkhAddress) {
       ElementsConfidentialAddress::IsConfidentialAddress(address.GetAddress()));
   EXPECT_EQ(ElementsNetType::kElementsRegtest, address.GetNetType());
   EXPECT_EQ(ElementsAddressType::kP2pkhAddress, address.GetAddressType());
+  EXPECT_STREQ("76a914925d4028880bd0c9d68fbc7fc7dfee976698629c88ac",
+               address.GetLockingScript().GetHex().c_str());
 
   // uncompress pubkey
   ConfidentialKey uc_key =
@@ -438,6 +442,8 @@ TEST(ElementsConfidentialAddress, P2wpkhAddressFromString) {
       ElementsConfidentialAddress::IsConfidentialAddress(address.GetAddress()));
   EXPECT_EQ(ElementsNetType::kElementsRegtest, address.GetNetType());
   EXPECT_EQ(ElementsAddressType::kP2wpkhAddress, address.GetAddressType());
+  EXPECT_STREQ("0014850f21411282f246e644b922a0a98a66cfffdcbc",
+               address.GetLockingScript().GetHex().c_str());
 }
 
 TEST(ElementsConfidentialAddress, P2wshAddressFromString) {
@@ -461,6 +467,8 @@ TEST(ElementsConfidentialAddress, P2wshAddressFromString) {
       ElementsConfidentialAddress::IsConfidentialAddress(address.GetAddress()));
   EXPECT_EQ(ElementsNetType::kElementsRegtest, address.GetNetType());
   EXPECT_EQ(ElementsAddressType::kP2wshAddress, address.GetAddressType());
+  EXPECT_STREQ("0020332a30b8b2753e64b1d0ebc951c057f0d9c29992d11118794c0fa1c6d2357ca6",
+               address.GetLockingScript().GetHex().c_str());
 }
 
 TEST(ElementsConfidentialAddress, P2wpkhAddressToConfidential) {

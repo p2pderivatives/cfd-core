@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "cfdcore/cfdcore_elements_address.h"
+#include "cfdcore/cfdcore_hdwallet.h"
 #include "cfdcore/cfdcore_transaction_common.h"
 
 namespace cfd {
@@ -41,6 +42,11 @@ class CFD_CORE_EXPORT ConfidentialNonce {
    */
   explicit ConfidentialNonce(const ByteData& byte_data);
   /**
+   * @brief コンストラクタ.
+   * @param[in] pubkey          pubkey.
+   */
+  explicit ConfidentialNonce(const Pubkey& pubkey);
+  /**
    * @brief デストラクタ.
    */
   virtual ~ConfidentialNonce() {
@@ -63,6 +69,12 @@ class CFD_CORE_EXPORT ConfidentialNonce {
    * @retval false unblind
    */
   bool HasBlinding() const;
+  /**
+   * @brief 空かどうかを取得する.
+   * @retval true  empty
+   * @retval false exist value
+   */
+  bool IsEmpty() const;
 
  private:
   ByteData data_;    //!< byte data
@@ -118,6 +130,12 @@ class CFD_CORE_EXPORT ConfidentialAssetId {
    * @return byte array data.
    */
   ByteData GetUnblindedData() const;
+  /**
+   * @brief 空かどうかを取得する.
+   * @retval true  empty
+   * @retval false exist value
+   */
+  bool IsEmpty() const;
 
  private:
   ByteData data_;    //!< byte data
@@ -253,6 +271,33 @@ class CFD_CORE_EXPORT BlindFactor {
  */
 class CFD_CORE_EXPORT ConfidentialTxIn : public AbstractTxIn {
  public:
+  /**
+   * @brief TxInのサイズを見積もる。
+   * @param[in] addr_type           address type
+   * @param[in] redeem_script       redeem script
+   * @param[in] pegin_btc_tx_size   pegin bitcoin transaction size
+   * @param[in] fedpeg_script       fedpeg script
+   * @param[in] is_issuance         issuance/reissuance transaction
+   * @param[in] is_blind            blind transaction (for issuance/reissuance)
+   * @param[out] witness_stack_size   witness stack size
+   * @return TxInのサイズ
+   */
+  static uint32_t EstimateTxInSize(
+      AddressType addr_type, Script redeem_script = Script(),
+      uint32_t pegin_btc_tx_size = 0, Script fedpeg_script = Script(),
+      bool is_issuance = false, bool is_blind = false,
+      uint32_t* witness_stack_size = nullptr);
+
+  /**
+   * @brief コンストラクタ.
+   */
+  ConfidentialTxIn();
+  /**
+   * @brief コンストラクタ.
+   * @param[in] txid        txid
+   * @param[in] index       txidのトランザクションのTxOutのIndex情報(vout)
+   */
+  ConfidentialTxIn(const Txid& txid, uint32_t index);
   /**
    * @brief コンストラクタ.
    * @param[in] txid        txid
@@ -535,6 +580,32 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
       const ConfidentialAssetId& asset,
       const ConfidentialValue& confidential_value);
   /**
+   * @brief コンストラクタ.
+   *
+   * fee追加用.
+   * @param[in] asset               asset.
+   * @param[in] amount              amount.
+   */
+  ConfidentialTxOut(const ConfidentialAssetId& asset, const Amount& amount);
+  /**
+   * @brief コンストラクタ.
+   * @param[in] address             address.
+   * @param[in] asset               asset.
+   * @param[in] amount              amount.
+   */
+  ConfidentialTxOut(
+      const Address& address, const ConfidentialAssetId& asset,
+      const Amount& amount);
+  /**
+   * @brief コンストラクタ.
+   * @param[in] confidential_address  confidential address.
+   * @param[in] asset                 asset.
+   * @param[in] amount                amount.
+   */
+  ConfidentialTxOut(
+      const ElementsConfidentialAddress& confidential_address,
+      const ConfidentialAssetId& asset, const Amount& amount);
+  /**
    * @brief デストラクタ
    */
   virtual ~ConfidentialTxOut() {
@@ -598,6 +669,15 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
    * @return witness hash
    */
   ByteData256 GetWitnessHash() const;
+
+  /**
+   * @brief Create ConfidentialTxOut object for the destroy amount.
+   * @param[in] asset               destroy asset.
+   * @param[in] amount              destroy amount.
+   * @return ConfidentialTxOut object.
+   */
+  static ConfidentialTxOut CreateDestroyAmountTxOut(
+      const ConfidentialAssetId& asset, const Amount& amount);
 
   /**
    * @brief Decode range-proof and extract information.
@@ -673,6 +753,14 @@ class CFD_CORE_EXPORT ConfidentialTxOutReference
    * @return range proof
    */
   ByteData GetRangeProof() const { return range_proof_; }
+  /**
+   * @brief シリアライズ済みのサイズを取得する.
+   * @param[in] is_blinded    blind済みかどうか
+   * @param[out] witness_stack_size   witness stack size
+   * @return serialized size
+   */
+  uint32_t GetSerializeSize(
+      bool is_blinded = true, uint32_t* witness_stack_size = nullptr) const;
 
  private:
   ConfidentialAssetId asset_;             //!< confidential asset
@@ -727,6 +815,9 @@ struct PegoutKeyData {
  */
 class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
  public:
+  /// ElementsTransactionの最小サイズ
+  static constexpr size_t kElementsTransactionMinimumSize = 11;
+
   /**
    * @brief コンストラクタ.
    *
@@ -1240,13 +1331,18 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] whitelist           whitelist for block extension space
    * @param[in] net_type            network type
    * @param[in] pubkey_prefix       ext pubkey prefix (elements customize)
+   * @param[in] elements_net_type   elements network type.\
+   *                          (kLiquidV1, kElementsRegtest, kCustomChain)
+   * @param[out] descriptor_derive_address  descriptor derive address.
    * @return pegout key data
    */
   static PegoutKeyData GetPegoutPubkeyData(
       const Pubkey& online_pubkey, const Privkey& master_online_key,
       const std::string& bitcoin_descriptor, uint32_t bip32_counter,
       const ByteData& whitelist, NetType net_type = NetType::kMainnet,
-      const ByteData& pubkey_prefix = ByteData("0488b21e"));
+      const ByteData& pubkey_prefix = ByteData("0488b21e"),
+      NetType elements_net_type = NetType::kLiquidV1,
+      Address* descriptor_derive_address = nullptr);
 
  private:
   std::vector<ConfidentialTxIn> vin_;    ///< TxIn配列
@@ -1397,11 +1493,18 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   /**
    * @brief Descriptor情報から拡張Keyを生成する.
    * @param[in] bitcoin_descriptor    descriptor
+   * @param[in] bip32_counter         bip32 counter
    * @param[in] prefix                extend pubkey prefix
-   * @return extend key
+   * @param[in] net_type              network type.
+   * @param[in] elements_net_type     elements network type.
+   * @param[out] base_ext_pubkey       base extkey
+   * @param[out] descriptor_derive_address   descriptor derive address
+   * @return extpubkey by bip32 counter
    */
-  static ExtKey GenerateExtPubkeyFromDescriptor(
-      const std::string& bitcoin_descriptor, const ByteData& prefix);
+  static ExtPubkey GenerateExtPubkeyFromDescriptor(
+      const std::string& bitcoin_descriptor, uint32_t bip32_counter,
+      const ByteData& prefix, NetType net_type, NetType elements_net_type,
+      ExtPubkey* base_ext_pubkey, Address* descriptor_derive_address);
 };
 
 }  // namespace core

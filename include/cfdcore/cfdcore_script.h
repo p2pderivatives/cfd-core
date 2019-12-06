@@ -329,6 +329,21 @@ class CFD_CORE_EXPORT ScriptOperator {
   // clang-format on
 
   /**
+   * @brief check valid.
+   * @param[in] message   text message
+   * @retval true valid
+   * @retval false invalid
+   */
+  static bool IsValid(const std::string &message);
+
+  /**
+   * @brief get object.
+   * @param[in] message   text message
+   * @return script operator.
+   */
+  static ScriptOperator Get(const std::string &message);
+
+  /**
    * @brief get data type.
    * @return script data type
    */
@@ -339,6 +354,18 @@ class CFD_CORE_EXPORT ScriptOperator {
    * @return string text
    */
   std::string ToString() const;
+  /**
+   * @brief get op_code string text.
+   * @return string text
+   */
+  std::string ToCodeString() const;
+
+  /**
+   * @brief Check if the script is push operator.
+   * @retval true   push operator.
+   * @retval false  contain other operator.
+   */
+  bool IsPushOperator() const;
 
   /**
    * @brief check equal object.
@@ -368,6 +395,7 @@ class CFD_CORE_EXPORT ScriptOperator {
    * @return current object
    */
   ScriptOperator &operator=(const ScriptOperator &object);
+
   /**
    * @brief 等価比較オペレータ
    * @param[in] object     比較対象
@@ -992,6 +1020,17 @@ class CFD_CORE_EXPORT ScriptUtil {
       const BlockHash &genesisblock_hash, const Script &parent_locking_script,
       const Pubkey &btc_pubkey_bytes, const ByteData &whitelist_proof);
 #endif  // CFD_DISABLE_ELEMENTS
+
+  /**
+   * @brief Get the set of public keys contained in a multisig script.
+   * @details if the redeem script contains multiple OP_CHECKMULTISIG(VERIFY),
+   * returns only the public keys required for the last one.
+   * @param[in] multisig_script the multisig redeem script.
+   * @param[out] require_num the multisig require number.
+   * @return an array of public keys.
+   */
+  static std::vector<Pubkey> ExtractPubkeysFromMultisigScript(
+      const Script &multisig_script, uint32_t *require_num = nullptr);
 
  private:
   ScriptUtil();

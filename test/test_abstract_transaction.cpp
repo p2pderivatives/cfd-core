@@ -337,3 +337,6 @@ TEST(AbstractTransaction, IsCoinBase) {
   EXPECT_FALSE(is_coinbase);
 }
 
+TEST(AbstractTransaction, GetVsizeFromSize) {
+  EXPECT_EQ(2, AbstractTransaction::GetVsizeFromSize(1, 4));
+}

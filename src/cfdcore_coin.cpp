@@ -2,8 +2,8 @@
 /**
  * @file cfdcore_coin.cpp
  *
- * @brief Classes related to Coin(UTXO) / Coin(UTXO)関連クラス
- *
+ * @brief \~japanese Coin(UTXO)関連クラス
+ *   \~english Classes related to Coin(UTXO)
  */
 #include <string>
 #include <vector>
@@ -48,7 +48,7 @@ const std::string Txid::GetHex() const {
 
 const ByteData Txid::GetData() const { return data_; }
 
-bool Txid::Equals(const Txid& txid) {
+bool Txid::Equals(const Txid& txid) const {
   if (data_.Equals(txid.data_)) {
     return true;
   }

@@ -94,10 +94,13 @@ TEST(ByteData, Serialize) {
   };
 
   ByteData serialized;
+  ByteData data;
   decltype(test_vector)::const_iterator citr = test_vector.cbegin();
   while (citr != test_vector.cend()) {
-    EXPECT_NO_THROW(serialized = ByteData(citr->first).Serialize());
+    EXPECT_NO_THROW(data = ByteData(citr->first));
+    EXPECT_NO_THROW(serialized = data.Serialize());
     EXPECT_STREQ(serialized.GetHex().c_str(), ByteData(citr->second).GetHex().c_str());
+    EXPECT_EQ(data.GetSerializeSize(), serialized.GetDataSize());
     ++citr;
   }
 }
