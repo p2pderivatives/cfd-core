@@ -818,6 +818,12 @@ class CFD_CORE_EXPORT ScriptBuilder {
   }
 
   /**
+   * @brief append string data.
+   * @param[in] message  string data.
+   * @return script builder object.
+   */
+  ScriptBuilder &AppendString(const std::string &message);
+  /**
    * @brief append script operator.
    * @param[in] type      ScriptType.
    * @return script builder object.

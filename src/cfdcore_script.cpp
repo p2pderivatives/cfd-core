@@ -368,7 +368,11 @@ ScriptElement::ScriptElement(const ByteData& binary_data)
       op_code_(kOpInvalidOpCode),
       binary_data_(binary_data),
       value_(0) {
-  // do nothing
+  // check number
+  uint32_t size = static_cast<uint32_t>(binary_data.GetDataSize());
+  if ((size > 0) && (size <= 5) && ConvertBinaryToNumber(&value_)) {
+    type_ = kElementNumber;
+  }
 }
 
 ScriptElement::ScriptElement(int64_t value)
@@ -401,6 +405,11 @@ ScriptElement::ScriptElement(int64_t value)
     if (op_code_.GetDataType() != kOpInvalidOpCode) {
       type_ = kElementOpCode;
     }
+  }
+
+  if (type_ == kElementNumber) {
+    // set binary data
+    binary_data_ = ByteData(SerializeScriptNum(value_));
   }
 }
 
@@ -470,8 +479,8 @@ std::string ScriptElement::ToString() const {
 bool ScriptElement::ConvertBinaryToNumber(int64_t* int64_value) const {
   bool is_success = false;
   std::vector<uint8_t> vch = binary_data_.GetBytes();
-  if ((type_ == kElementBinary) && (vch.size() <= 5) &&
-      ((vch.back() & 0x7f) != 0)) {
+  if (((type_ == kElementBinary) || (type_ == kElementNumber)) &&
+      (vch.size() <= 5) && ((vch.back() & 0x7f) != 0)) {
     int64_t val = 0;
     for (size_t i = 0; i != vch.size(); ++i) {
       val |= static_cast<int64_t>(vch[i]) << 8 * i;
@@ -918,6 +927,25 @@ bool Script::IsPegoutScript() const {
 // -----------------------------------------------------------------------------
 // ScriptBuilder
 // -----------------------------------------------------------------------------
+ScriptBuilder& ScriptBuilder::AppendString(const std::string& message) {
+  if (ScriptOperator::IsValid(message)) {
+    return AppendOperator(ScriptOperator::Get(message));
+  } else if ((message.length() > 2) && (message.substr(0, 2) == "0x")) {
+    // to hex
+    return AppendData(ByteData(message.substr(2)));
+  } else {
+    if (std::atoi(message.c_str()) != 0) {  // check number
+      int int_value = std::atoi(message.c_str());
+      std::string str = std::to_string(int_value);
+      if (str == message) {
+        return AppendData(static_cast<int64_t>(int_value));
+      }
+    }
+    // hex string check (force)
+    return AppendData(ByteData(message));
+  }
+}
+
 ScriptBuilder& ScriptBuilder::AppendOperator(ScriptType type) {
   script_byte_array_.push_back(type);
   return *this;
