@@ -1,7 +1,7 @@
 project(external_download NONE)
 
 # load file
-set(EXTERNAL_DEBUG_FILENAME  external_project_debug.config)
+set(EXTERNAL_DEBUG_FILENAME  local_resource/external_project_local_setting.config)
 set(DEBUG_VERSION_FILE  ${CMAKE_SOURCE_DIR}/${EXTERNAL_DEBUG_FILENAME})
 if(EXISTS ${DEBUG_VERSION_FILE})
 transform_makefile_srclist(${DEBUG_VERSION_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${EXTERNAL_DEBUG_FILENAME}.cmake")
