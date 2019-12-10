@@ -1,4 +1,4 @@
-name: develop pre-merge check
+name: master pre-merge check
 
 on: 
   push:
