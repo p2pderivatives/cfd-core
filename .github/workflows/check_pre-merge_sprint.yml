@@ -49,6 +49,8 @@ jobs:
       run: |
         cd build
         ctest -C Release
+    - name: lint_check
+      run: ./tools/lint_quiet.sh
 
   doxygen-ubuntu:
     name: doxygen-ubuntu
