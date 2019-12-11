@@ -2305,26 +2305,7 @@ Privkey ConfidentialTransaction::GetIssuanceBlindingKey(
 
 ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
-    Amount txin_value, bool is_witness) {
-  // Change Amount to ConfidentialValue
-  std::vector<uint8_t> value(WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
-  int ret = wally_tx_confidential_value_from_satoshi(
-      txin_value.GetSatoshiValue(), value.data(), value.size());
-  if (ret != WALLY_OK) {
-    warn(
-        CFD_LOG_SOURCE, "wally_tx_confidential_value_from_satoshi NG[{}] ",
-        ret);
-    throw CfdException(
-        kCfdIllegalArgumentError, "satoshi to confidential value error.");
-  }
-
-  return GetElementsSignatureHash(
-      txin_index, script_data, sighash_type, ByteData(value), is_witness);
-}
-
-ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
-    uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
-    const ByteData &value, bool is_witness) {
+    const ConfidentialValue &value, WitnessVersion version) const {
   if (script_data.Empty()) {
     warn(CFD_LOG_SOURCE, "empty script");
     throw CfdException(
@@ -2346,14 +2327,15 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
 
   // Calculate signature hash
   try {
+    const std::vector<uint8_t> &value_data = value.GetData().GetBytes();
     uint32_t tx_flag = 0;
-    if (is_witness) {
+    if (version != WitnessVersion::kVersionNone) {
       tx_flag = GetWallyFlag() & WALLY_TX_FLAG_USE_WITNESS;
     }
     ret = wally_tx_get_elements_signature_hash(
-        tx_pointer, txin_index, bytes.data(), bytes.size(),
-        value.GetBytes().data(), value.GetBytes().size(),
-        sighash_type.GetSigHashFlag(), tx_flag, buffer.data(), buffer.size());
+        tx_pointer, txin_index, bytes.data(), bytes.size(), value_data.data(),
+        value_data.size(), sighash_type.GetSigHashFlag(), tx_flag,
+        buffer.data(), buffer.size());
     wally_tx_free(tx_pointer);
   } catch (...) {
     wally_tx_free(tx_pointer);

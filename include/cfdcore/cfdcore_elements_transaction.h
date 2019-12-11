@@ -1222,29 +1222,20 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const std::vector<Privkey>& blinding_keys);
 
   /**
-   * @brief Elements用signatureハッシュを取得する.(Amount指定)
+   * @brief Elements用signatureハッシュを取得する.
    * @param[in] txin_index    TxInのindex値
    * @param[in] script_data   unlocking script もしくは witness_program.
    * @param[in] sighash_type  SigHashType(@see cfdcore_util.h)
-   * @param[in] txin_value    TxInのAmount値.
-   * @param[in] is_witness     witness有無.
+   * @param[in] value         TxInのAmount/amountcommitment値.
+   * @param[in] version       Witness version
    * @return signatureハッシュ
    */
   ByteData256 GetElementsSignatureHash(
       uint32_t txin_index, const ByteData& script_data,
-      SigHashType sighash_type, Amount txin_value, bool is_witness);
-  /**
-   * @brief Elements用signatureハッシュを取得する.(ConfidentialValue指定)
-   * @param[in] txin_index    TxInのindex値
-   * @param[in] script_data   unlocking script もしくは witness_program.
-   * @param[in] sighash_type  SigHashType(@see cfdcore_util.h)
-   * @param[in] value         Confidential value.
-   * @param[in] is_witness     witness有無.
-   * @return signatureハッシュ
-   */
-  ByteData256 GetElementsSignatureHash(
-      uint32_t txin_index, const ByteData& script_data,
-      SigHashType sighash_type, const ByteData& value, bool is_witness);
+      SigHashType sighash_type,
+      const ConfidentialValue& value = ConfidentialValue(),
+      WitnessVersion version = WitnessVersion::kVersionNone) const;
+
   /**
    * @brief TxOutの順序をランダムソートする.
    * @details ブラインド前のみ実施可能.

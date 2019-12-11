@@ -809,8 +809,7 @@ TEST(ConfidentialTransaction, SignatureHashTest) {
   ByteData script_byte = builder.Build().GetData();
 
   EXPECT_NO_THROW(
-      (byte_data = tx.GetElementsSignatureHash(0, script_byte, sig_hash_type,
-                                               amount, false)));
+      (byte_data = tx.GetElementsSignatureHash(0, script_byte, sig_hash_type)));
   EXPECT_STREQ(
       byte_data.GetHex().c_str(),
       "d0b8a3b596813756ca042fd510c4acac522378e8e3ac610fdc0301f6921aac34");
@@ -818,7 +817,7 @@ TEST(ConfidentialTransaction, SignatureHashTest) {
   Script empty_script;
   EXPECT_THROW(
       (byte_data = tx.GetElementsSignatureHash(
-          0, empty_script.GetData(), sig_hash_type, amount, false)), CfdException);
+          0, empty_script.GetData(), sig_hash_type)), CfdException);
 }
 
 TEST(ConfidentialTransaction, SetAssetIssuanceTest) {
