@@ -383,6 +383,16 @@ TEST(Transaction, GetSignatureHash) {
         sighash.GetHex().c_str(),
         "f66fdcfbe73820d26162111873d76062bb3e1b23bc9eaf6ab8a3b333f4bc5242");
   }
+
+  {
+    // error
+    Transaction tx(
+        "01000000019c53cb2a6118530aaa345b799aeb7e4e5055de41ac5b2dd2ce47419624c57b580000000000ffffffff0130ea052a010000001976a9143cadb10040e9e7002bbd9d0620f5f79c05603ffd88ac00000000");
+    ByteData empty_script;
+    SigHashType sighashtype(SigHashAlgorithm::kSigHashAll, false);
+    ByteData256 sighash;
+    EXPECT_THROW((sighash = tx.GetSignatureHash(0, empty_script, HashType::kP2pkh, sighashtype)), CfdException);
+  }
 }
 
 TEST(Transaction, CheckTxOutBuffer) {
