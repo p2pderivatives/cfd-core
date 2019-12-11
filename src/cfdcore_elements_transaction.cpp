@@ -2325,6 +2325,11 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
 ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
     const ByteData &value, bool is_witness) {
+  if (script_data.Empty()) {
+    warn(CFD_LOG_SOURCE, "empty script");
+    throw CfdException(
+        kCfdIllegalArgumentError, "Failed to GetSignatureHash. empty script.");
+  }
   std::vector<uint8_t> buffer(SHA256_LEN);
   const std::vector<uint8_t> &bytes = script_data.GetBytes();
   struct wally_tx *tx_pointer = NULL;

@@ -644,6 +644,11 @@ ByteData256 Transaction::GetSignatureHash(
 ByteData256 Transaction::GetSignatureHash(
     uint32_t txin_index, const ByteData &script_data, HashType hash_type,
     SigHashType sighash_type, Amount txin_value) {
+  if (script_data.Empty()) {
+    warn(CFD_LOG_SOURCE, "empty script");
+    throw CfdException(
+        kCfdIllegalArgumentError, "Failed to GetSignatureHash. empty script.");
+  }
   std::vector<uint8_t> buffer(SHA256_LEN);
   const std::vector<uint8_t> &bytes = script_data.GetBytes();
   struct wally_tx *tx_pointer = NULL;
