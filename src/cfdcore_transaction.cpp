@@ -634,16 +634,8 @@ void Transaction::RemoveTxOut(uint32_t index) {
 }
 
 ByteData256 Transaction::GetSignatureHash(
-    uint32_t txin_index, const ByteData &script_data, HashType hash_type,
-    SigHashType sighash_type) {
-  return GetSignatureHash(
-      txin_index, script_data, hash_type, sighash_type,
-      Amount::CreateBySatoshiAmount(0));
-}
-
-ByteData256 Transaction::GetSignatureHash(
-    uint32_t txin_index, const ByteData &script_data, HashType hash_type,
-    SigHashType sighash_type, Amount txin_value) {
+    uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
+    const Amount &value, WitnessVersion version) const {
   if (script_data.Empty()) {
     warn(CFD_LOG_SOURCE, "empty script");
     throw CfdException(
@@ -668,12 +660,12 @@ ByteData256 Transaction::GetSignatureHash(
   if (tx_pointer != NULL) {
     try {
       uint32_t tx_flag = 0;
-      if (hash_type == HashType::kP2wpkh || hash_type == HashType::kP2wsh) {
+      if (version != WitnessVersion::kVersionNone) {
         tx_flag = GetWallyFlag() & WALLY_TX_FLAG_USE_WITNESS;
       }
       ret = wally_tx_get_btc_signature_hash(
           tx_pointer, txin_index, bytes.data(), bytes.size(),
-          txin_value.GetSatoshiValue(), sighash_type.GetSigHashFlag(), tx_flag,
+          value.GetSatoshiValue(), sighash_type.GetSigHashFlag(), tx_flag,
           buffer.data(), buffer.size());
       wally_tx_free(tx_pointer);
     } catch (...) {
