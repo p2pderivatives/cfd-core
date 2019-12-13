@@ -356,25 +356,15 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @brief signatureハッシュを取得する.
    * @param[in] txin_index    TxInのindex値
    * @param[in] script_data   unlocking script もしくは witness_program.
-   * @param[in] hash_type     ハッシュ種別
    * @param[in] sighash_type  SigHashType(@see cfdcore_util.h)
+   * @param[in] value         TxInのAmount値.
+   * @param[in] version       Witness version
    * @return signatureハッシュ
    */
   ByteData256 GetSignatureHash(
-      uint32_t txin_index, const ByteData& script_data, HashType hash_type,
-      SigHashType sighash_type);
-  /**
-   * @brief signatureハッシュを取得する.
-   * @param[in] txin_index    TxInのindex値
-   * @param[in] script_data   unlocking script もしくは witness_program.
-   * @param[in] hash_type     ハッシュ種別
-   * @param[in] sighash_type  SigHashType(@see cfdcore_util.h)
-   * @param[in] txin_value    TxInのAmount値.
-   * @return signatureハッシュ
-   */
-  ByteData256 GetSignatureHash(
-      uint32_t txin_index, const ByteData& script_data, HashType hash_type,
-      SigHashType sighash_type, Amount txin_value);
+      uint32_t txin_index, const ByteData& script_data,
+      SigHashType sighash_type, const Amount& value = Amount(),
+      WitnessVersion version = WitnessVersion::kVersionNone) const;
   /**
    * @brief witness情報かどうかを取得する.
    * @retval true   witness
