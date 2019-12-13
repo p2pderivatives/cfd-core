@@ -662,8 +662,13 @@ ByteData256 CryptoUtil::MerkleHashSha256Midstate(
 /// RandomNumberUtil
 //////////////////////////////////
 std::vector<uint8_t> RandomNumberUtil::GetRandomBytes(int len) {
+#if defined(_WIN32) && defined(__GNUC__) && (__GNUC__ < 9)
+  // for mingw gcc lower 9
+  static std::mt19937 engine(static_cast<unsigned int>(time(nullptr)));
+#else
   static std::random_device rd;
   static std::mt19937 engine(rd());
+#endif
   std::vector<uint8_t> result(len);
 
   int index = 0;
@@ -683,8 +688,13 @@ std::vector<uint8_t> RandomNumberUtil::GetRandomBytes(int len) {
 }
 
 std::vector<uint32_t> RandomNumberUtil::GetRandomIndexes(uint32_t length) {
+#if defined(_WIN32) && defined(__GNUC__) && (__GNUC__ < 9)
+  // for mingw gcc lower 9
+  static std::mt19937 engine(static_cast<unsigned int>(time(nullptr)));
+#else
   static std::random_device rd;
   static std::mt19937 engine(rd());
+#endif
   std::uniform_int_distribution<> dist(0, length);
   std::vector<uint32_t> result(length);
   std::set<uint32_t> exist_value;
@@ -718,8 +728,13 @@ std::vector<uint32_t> RandomNumberUtil::GetRandomIndexes(uint32_t length) {
 }
 
 bool RandomNumberUtil::GetRandomBool(std::vector<bool> *random_cache) {
+#if defined(_WIN32) && defined(__GNUC__) && (__GNUC__ < 9)
+  // for mingw gcc lower 9
+  static std::mt19937 engine(static_cast<unsigned int>(time(nullptr)));
+#else
   static std::random_device rd;
   static std::mt19937 engine(rd());
+#endif
   if (random_cache == nullptr) {
     throw CfdException(kCfdIllegalArgumentError, "GetRandomBool error.");
   }

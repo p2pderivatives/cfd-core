@@ -59,7 +59,7 @@ TEST(ScriptElement, NumTypeConstructor) {
 
   EXPECT_EQ(ScriptElementType::kElementNumber, num_elem.GetType());
   EXPECT_EQ(ScriptOperator::OP_INVALIDOPCODE, num_elem.GetOpCode());
-  EXPECT_EQ(ByteData().GetBytes(), num_elem.GetBinaryData().GetBytes());
+  EXPECT_EQ(ByteData("9000").GetBytes(), num_elem.GetBinaryData().GetBytes());
   EXPECT_EQ(144, num_elem.GetNumber());
   EXPECT_EQ(ByteData("029000").GetBytes(), num_elem.GetData().GetBytes());
   EXPECT_STREQ("144", num_elem.ToString().c_str());
@@ -96,7 +96,7 @@ TEST(ScriptElement, CopyOperator) {
 
 TEST(ScriptElement, ConvertBinaryToNumber) {
   ScriptElement bi_num_elem = ScriptElement(ByteData("ff7f"));
-  int64_t converted;
+  int64_t converted = 0;
   EXPECT_TRUE(bi_num_elem.ConvertBinaryToNumber(&converted));
   EXPECT_EQ(32767, converted);
 
