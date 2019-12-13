@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include <vector>
 
+#include "cfdcore/cfdcore_address.h"
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_coin.h"
 #include "cfdcore/cfdcore_transaction.h"
@@ -8,19 +9,20 @@
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_bytedata.h"
 
+using cfd::core::Amount;
+using cfd::core::ByteData;
+using cfd::core::ByteData160;
+using cfd::core::ByteData256;
+using cfd::core::CfdException;
+using cfd::core::HashType;
+using cfd::core::Script;
+using cfd::core::SigHashAlgorithm;
+using cfd::core::SigHashType;
 using cfd::core::Transaction;
 using cfd::core::Txid;
 using cfd::core::TxInReference;
 using cfd::core::TxOutReference;
-using cfd::core::Script;
-using cfd::core::ByteData;
-using cfd::core::ByteData160;
-using cfd::core::ByteData256;
-using cfd::core::Amount;
-using cfd::core::SigHashType;
-using cfd::core::HashType;
-using cfd::core::SigHashAlgorithm;
-using cfd::core::CfdException;
+using cfd::core::WitnessVersion;
 
 static const int32_t exp_version = 2;
 static const uint32_t exp_locktime = 0;
@@ -364,8 +366,8 @@ TEST(Transaction, GetSignatureHash) {
     ByteData script("76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac");
     SigHashType sighashtype(SigHashAlgorithm::kSigHashAll, false);
     ByteData256 sighash;
-    sighash = tx.GetSignatureHash(1, script, HashType::kP2wpkh, sighashtype,
-                                  Amount::CreateByCoinAmount(6));
+    sighash = tx.GetSignatureHash(1, script, sighashtype,
+                                  Amount::CreateByCoinAmount(6), WitnessVersion::kVersion0);
     EXPECT_STREQ(
         sighash.GetHex().c_str(),
         "c37af31116d1b27caf68aae9e3ac82f1477929014d5b917657d0eb49478cb670");
@@ -378,10 +380,20 @@ TEST(Transaction, GetSignatureHash) {
     ByteData script("76a9141462eca4b9b8d8df63550abd24d0cb64e8f2d74688ac");
     SigHashType sighashtype(SigHashAlgorithm::kSigHashAll, false);
     ByteData256 sighash;
-    sighash = tx.GetSignatureHash(0, script, HashType::kP2pkh, sighashtype);
+    sighash = tx.GetSignatureHash(0, script, sighashtype);
     EXPECT_STREQ(
         sighash.GetHex().c_str(),
         "f66fdcfbe73820d26162111873d76062bb3e1b23bc9eaf6ab8a3b333f4bc5242");
+  }
+
+  {
+    // error
+    Transaction tx(
+        "01000000019c53cb2a6118530aaa345b799aeb7e4e5055de41ac5b2dd2ce47419624c57b580000000000ffffffff0130ea052a010000001976a9143cadb10040e9e7002bbd9d0620f5f79c05603ffd88ac00000000");
+    ByteData empty_script;
+    SigHashType sighashtype(SigHashAlgorithm::kSigHashAll, false);
+    ByteData256 sighash;
+    EXPECT_THROW((sighash = tx.GetSignatureHash(0, empty_script, sighashtype)), CfdException);
   }
 }
 

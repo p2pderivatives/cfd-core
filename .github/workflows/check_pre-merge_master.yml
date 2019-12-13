@@ -1,0 +1,82 @@
+name: master pre-merge check
+
+on: 
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  cmake-win-test:
+    name: cmake build-win
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        generator: [vs2019, mingw]
+        shared: [on, off]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: cmake_version
+      run: cmake --version
+    - name: cmake_generage-vs2019
+      if: matrix.generator == 'vs2019'
+      run: cmake -S . -B build -G "Visual Studio 16 2019"
+    - name: cmake_generage-mingw
+      if: matrix.generator == 'mingw'
+      run: cmake -S . -B build -G "MSYS Makefiles"
+    - name: cmake_configure-shared
+      if: matrix.shared == 'on'
+      run: cmake -DENABLE_SHARED=on --build build
+    - name: cmake_configure-static
+      if: matrix.shared == 'off'
+      run: cmake -DENABLE_SHARED=off --build build
+    - name: cmake_build
+      run: cmake --build build --config Release
+    - name: ctest
+      run: |
+        cd build
+        ctest -C Release
+
+  cmake-mac-test:
+    name: cmake build-mac
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        elements: [on, off]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: cmake_version
+      run: cmake --version
+    - name: cmake_generage-macos
+      run: cmake -S . -B build -G "Unix Makefiles"
+    - name: cmake_configure-enable-elements
+      if: matrix.elements == 'on'
+      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on --build build
+    - name: cmake_configure-disable-elements
+      if: matrix.elements == 'off'
+      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off --build build
+    - name: cmake_build
+      run: cmake --build build --config Release
+    - name: ctest
+      run: |
+        cd build
+        ctest -C Release
+    - name: lint_check
+      run: ./tools/lint_quiet.sh
+
+  doxygen-ubuntu:
+    name: doxygen-ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: install_doxygen
+      run: sudo apt install doxygen graphviz
+    - name: doxygen_check
+      run: |
+        cd doc
+        doxygen Doxyfile_quiet_all
