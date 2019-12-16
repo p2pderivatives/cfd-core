@@ -105,7 +105,7 @@ jobs:
         name: output-lcov-cfdcore
         path: ./build/lcov_cfdcore_output
     - name: ubuntu-after
-      run: rm -rf cache/cmake/cmake-3.15.5-Linux-x86_64
+      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   doxygen-ubuntu:
     name: doxygen-ubuntu
