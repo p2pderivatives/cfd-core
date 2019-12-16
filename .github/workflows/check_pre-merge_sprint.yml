@@ -89,6 +89,7 @@ jobs:
         cmake -S . -B build -G "Unix Makefiles"
         cmake -DENABLE_SHARED=on -DENABLE_COVERAGE=on -DTARGET_RPATH=./build/Debug --build build
         cmake --build build --config Debug
+        ls build
     - name: test
       run: |
         cd build
