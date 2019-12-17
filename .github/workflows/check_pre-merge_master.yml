@@ -8,6 +8,9 @@ on:
     branches:
     - master
 
+env:
+  CMAKE_VERSION: 3.15.5
+
 jobs:
   cmake-win-test:
     name: cmake build-win
@@ -96,31 +99,19 @@ jobs:
       if: matrix.elements == 'elements-on'
       run: |
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DENABLE_DEBUG=on -DENABLE_COVERAGE=on -DTARGET_RPATH=./build/Debug --build build
+        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DTARGET_RPATH=./build/Release --build build
     - name: cmake_configure-disable-elements
       if: matrix.elements == 'elements-off'
       run: |
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DTARGET_RPATH=./build/Debug --build build
+        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DTARGET_RPATH=./build/Release --build build
     - name: cmake-build
-      run: cmake --build build --config Debug
+      run: cmake --build build --config Release
     - name: test
       run: |
         cd build
-        ctest -C Debug
+        ctest -C Release
         cd ..
-    - name: collect coverage
-      if: matrix.elements == 'elements-on'
-      run: |
-        cd build
-        make lcov_cfdcore
-        cd ..
-    - name: upload coverage
-      if: matrix.elements == 'elements-on'
-      uses: actions/upload-artifact@v1
-      with:
-        name: output-lcov-cfdcore
-        path: ./build/lcov_cfdcore_output
     - name: ubuntu-after
       run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 

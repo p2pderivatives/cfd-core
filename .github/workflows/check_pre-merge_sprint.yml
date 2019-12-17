@@ -83,13 +83,14 @@ jobs:
         export CURRENT_DIR=$(pwd)
         echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
         cd ../..
+    - name: ubuntu-apt-install
+      run: sudo apt install lcov
     - name: cmake-build
       run: |
         cmake --version
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_DEBUG=on -DENABLE_COVERAGE=on -DTARGET_RPATH=./build/Debug --build build
+        cmake -DENABLE_SHARED=on -DENABLE_DEBUG=on -DENABLE_COVERAGE=on -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
         cmake --build build --config Debug
-        ls build
     - name: test
       run: |
         cd build
@@ -99,12 +100,13 @@ jobs:
       run: |
         cd build
         make lcov_cfdcore
+        zip -r lcov_cfdcore_output.zip lcov_cfdcore_output
         cd ..
     - name: upload coverage
       uses: actions/upload-artifact@v1
       with:
         name: output-lcov-cfdcore
-        path: ./build/lcov_cfdcore_output
+        path: ./build/lcov_cfdcore_output.zip
     - name: ubuntu-after
       run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
