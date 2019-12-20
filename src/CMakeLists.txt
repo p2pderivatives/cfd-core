@@ -7,6 +7,7 @@ cmake_policy(SET CMP0076 NEW)
 ####################
 # options
 ####################
+option(CFDCORE_SHARED "force shared build (ON or OFF. default:OFF)" OFF)
 if(CMAKE_JS_INC)
 option(ENABLE_SHARED "enable shared library (ON or OFF. default:ON)" ON)
 else()
@@ -38,6 +39,12 @@ else()
 set(ENABLE_DEBUG  FALSE)
 set(STACK_PROTECTOR_OPT  "")
 endif() # CMAKE_BUILD_TYPE
+
+if(CFDCORE_SHARED AND (WIN32 OR APPLE))
+set(USE_CFDCORE_SHARED  TRUE)
+else()
+set(USE_CFDCORE_SHARED  FALSE)
+endif()
 
 ####################
 # common setting
@@ -128,7 +135,7 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-if(ENABLE_SHARED)
+if(ENABLE_SHARED OR USE_CFDCORE_SHARED)
 add_library(${PROJECT_NAME} SHARED)
 else()
 add_library(${PROJECT_NAME} STATIC)

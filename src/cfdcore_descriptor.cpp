@@ -176,10 +176,12 @@ DescriptorScriptReference::DescriptorScriptReference(
 DescriptorScriptReference::DescriptorScriptReference(
     const Script& locking_script, DescriptorScriptType script_type,
     const std::vector<DescriptorKeyReference>& key_list,
-    const std::vector<AddressFormatData>& address_prefixes)
+    const std::vector<AddressFormatData>& address_prefixes,
+    const uint32_t req_sig_num)
     : script_type_(script_type),
       locking_script_(locking_script),
       is_script_(false),
+      req_num_(req_sig_num),
       keys_(key_list),
       addr_prefixes_(address_prefixes) {
   // do nothing
@@ -205,6 +207,7 @@ DescriptorScriptReference& DescriptorScriptReference::operator=(
   redeem_script_ = object.redeem_script_;
   child_script_ = object.child_script_;
   keys_ = object.keys_;
+  req_num_ = object.req_num_;
   addr_prefixes_ = object.addr_prefixes_;
   return *this;
 }
@@ -368,6 +371,20 @@ DescriptorScriptReference DescriptorScriptReference::GetChild() const {
     return *child_script_;
   }
   return DescriptorScriptReference();
+}
+
+bool DescriptorScriptReference::HasReqNum() const {
+  return (script_type_ == DescriptorScriptType::kDescriptorScriptMulti ||
+          script_type_ ==
+              DescriptorScriptType::kDescriptorScriptSortedMulti) &&
+         (req_num_ > 0);
+}
+
+uint32_t DescriptorScriptReference::GetReqNum() const {
+  if (HasReqNum()) {
+    return req_num_;
+  }
+  return 0;
 }
 
 bool DescriptorScriptReference::HasKey() const { return !keys_.empty(); }
@@ -964,7 +981,8 @@ std::vector<DescriptorScriptReference> DescriptorNode::GetReferences(
         std::sort(pubkeys.begin(), pubkeys.end(), Pubkey::IsLarge);
       }
       locking_script = ScriptUtil::CreateMultisigRedeemScript(reqnum, pubkeys);
-      result.emplace_back(locking_script, script_type_, keys, addr_prefixes_);
+      result.emplace_back(
+          locking_script, script_type_, keys, addr_prefixes_, reqnum);
     } else if (
         (script_type_ == DescriptorScriptType::kDescriptorScriptSh) ||
         (script_type_ == DescriptorScriptType::kDescriptorScriptWsh)) {
