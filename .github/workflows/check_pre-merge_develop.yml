@@ -32,10 +32,10 @@ jobs:
       run: cmake -S . -B build -G "MSYS Makefiles"
     - name: cmake_configure-shared
       if: matrix.shared == 'shared'
-      run: cmake -DENABLE_SHARED=on --build build
+      run: cmake -DENABLE_SHARED=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 --build build
     - name: cmake_configure-static
       if: matrix.shared != 'shared'
-      run: cmake -DENABLE_SHARED=off --build build
+      run: cmake -DENABLE_SHARED=off -DCMAKE_BUILD_PARALLEL_LEVEL=2 --build build
     - name: cmake_build
       run: cmake --build build --config Release
     - name: ctest
@@ -54,7 +54,7 @@ jobs:
     - name: cmake_generage-macos
       run: cmake -S . -B build -G "Unix Makefiles"
     - name: cmake_configure-enable
-      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on --build build
+      run: cmake -DENABLE_SHARED=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_ELEMENTS=on --build build
     - name: cmake_build
       run: cmake --build build --config Release
     - name: ctest
@@ -99,12 +99,12 @@ jobs:
       if: matrix.elements == 'elements-on'
       run: |
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DTARGET_RPATH=./build/Release --build build
+        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DTARGET_RPATH=./build/Release --build build
     - name: cmake_configure-disable-elements
       if: matrix.elements == 'elements-off'
       run: |
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DTARGET_RPATH=./build/Release --build build
+        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DTARGET_RPATH=./build/Release --build build
     - name: cmake-build
       run: cmake --build build --config Release
     - name: test
