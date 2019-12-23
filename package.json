@@ -85,7 +85,7 @@
     "cmake_ninja_configure:linux": "run-s cmake_configure",
     "cmake_ninja_configure:darwin": "run-s cmake_configure",
     "cmake_build_direct": "run-script-os",
-    "cmake_build_direct:win32": "cmake --build build",
+    "cmake_build_direct:win32": "cmake --build build --parallel 4",
     "cmake_build_direct:linux": "run-s cmake_build",
     "cmake_build_direct:darwin": "run-s cmake_build",
     "cmake_static": "run-s cmake_static_configure cmake_build",
