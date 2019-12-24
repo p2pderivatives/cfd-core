@@ -32,7 +32,7 @@ jobs:
     - name: cmake_configure
       run: cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DCMAKE_BUILD_PARALLEL_LEVEL=2 --build build
     - name: cmake_build
-      run: cmake --build build --config Release
+      run: cmake --build build --config Release --parallel 2
 
   cmake-mac:
     name: cmake build-mac
@@ -45,7 +45,7 @@ jobs:
     - name: cmake_generage-macos
       run: |
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 --build build
+        cmake -DENABLE_SHARED=on --build build
     - name: cmake_build
       run: cmake --build build --config Release
     - name: ctest
@@ -90,7 +90,7 @@ jobs:
         cmake --version
         cmake -S . -B build -G "Unix Makefiles"
         cmake -DENABLE_SHARED=on -DENABLE_DEBUG=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_COVERAGE=on -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
-        cmake --build build --config Debug
+        cmake --build build --config Debug --parallel 2
     - name: test
       run: |
         cd build
