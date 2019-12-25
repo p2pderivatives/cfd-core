@@ -30,7 +30,7 @@ jobs:
       if: matrix.generator == 'mingw'
       run: cmake -S . -B build -G "MSYS Makefiles"
     - name: cmake_configure
-      run: cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DCMAKE_BUILD_PARALLEL_LEVEL=2 --build build
+      run: cmake -DENABLE_SHARED=on -DENABLE_TESTS=off --build build
     - name: cmake_build
       run: cmake --build build --config Release --parallel 2
 
@@ -89,7 +89,7 @@ jobs:
       run: |
         cmake --version
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_DEBUG=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_COVERAGE=on -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
+        cmake -DENABLE_SHARED=on -DENABLE_DEBUG=on -DENABLE_COVERAGE=on -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
         cmake --build build --config Debug --parallel 2
     - name: test
       run: |
