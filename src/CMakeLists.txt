@@ -168,7 +168,8 @@ target_compile_definitions(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
-    ../include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<INSTALL_INTERFACE:include>
   PRIVATE
     .
     include
@@ -217,19 +218,31 @@ endif()
 # install & export
 ####################
 include(GNUInstallDirs)
+set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON) 
 
 install(TARGETS       ${PROJECT_NAME}
         EXPORT        ${PROJECT_NAME}-export
         ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        OBJECTS       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-# https://cmake.org/cmake/help/latest/command/install.html
 
-export(TARGETS ${PROJECT_NAME}
-       APPEND FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-export.cmake
-       EXPORT_LINK_INTERFACE_LIBRARIES)
+install(EXPORT ${PROJECT_NAME}-export
+        FILE ${PROJECT_NAME}-config.cmake
+        DESTINATION "cmake/"
+        EXPORT_LINK_INTERFACE_LIBRARIES)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../include/cfdcore"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         FILES_MATCHING PATTERN "*.h")
+
+if(MSVC)
+install(DIRECTORY "${CFD_OBJ_BINARY_DIR}/"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        FILES_MATCHING PATTERN "*.exp")
+endif()
+
+#export(TARGETS ${PROJECT_NAME}
+#       APPEND FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake)

@@ -37,7 +37,7 @@ jobs:
       if: matrix.shared != 'shared'
       run: cmake -DENABLE_SHARED=off --build build
     - name: cmake_build
-      run: cmake --build build --config Release
+      run: cmake --build build --config Release --parallel 2
     - name: ctest
       run: |
         cd build
@@ -106,7 +106,7 @@ jobs:
         cmake -S . -B build -G "Unix Makefiles"
         cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DTARGET_RPATH=./build/Release --build build
     - name: cmake-build
-      run: cmake --build build --config Release
+      run: cmake --build build --config Release --parallel 2
     - name: test
       run: |
         cd build
