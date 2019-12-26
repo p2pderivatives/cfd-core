@@ -53,23 +53,18 @@ if(result)
   message(FATAL_ERROR "Build step for ${TEMPLATE_PROJECT_NAME} failed: ${result}")
 endif()
 
-if((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 if(EXISTS ${PROJECT_EXTERNAL})
   message(STATUS "[check exist directory] exist ${PROJECT_EXTERNAL}")
   message(STATUS "[check exist directory] dirpath ${DIR_PATH}")
   add_subdirectory(${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/external
                    ${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/external)
 endif()
-
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}
                  ${DIR_PATH}/build)
-else()
-# use install library
-endif((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 
 set_property(GLOBAL PROPERTY ${TEMPLATE_PROJECT_NAME} 1)
 endif()
-endif(NOT EXCLUDE_GENERATE_WALLY)
+endif((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 
 
 # googletest
