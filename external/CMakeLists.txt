@@ -1,5 +1,7 @@
 project(external_download NONE)
 
+find_package(wally  QUIET CONFIG)
+
 # load file
 set(EXTERNAL_LOCAL_FILENAME  local_resource/external_project_local_setting.config)
 set(LOCAL_VERSION_FILE  ${CMAKE_SOURCE_DIR}/${EXTERNAL_LOCAL_FILENAME})
@@ -32,6 +34,7 @@ set(PROJECT_EXTERNAL  "${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/ext
 set(DIR_PATH "${CFD_ROOT_BINARY_DIR}/${TEMPLATE_PROJECT_NAME}")
 set(DL_PATH "${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/download")
 
+if((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 get_property(PROP_VALUE  GLOBAL  PROPERTY ${TEMPLATE_PROJECT_NAME})
 if(PROP_VALUE)
   message(STATUS "[exist directory] ${TEMPLATE_PROJECT_NAME} exist")
@@ -49,17 +52,19 @@ execute_process(COMMAND ${CMAKE_COMMAND} --build ${DL_PATH}
 if(result)
   message(FATAL_ERROR "Build step for ${TEMPLATE_PROJECT_NAME} failed: ${result}")
 endif()
+
 if(EXISTS ${PROJECT_EXTERNAL})
   message(STATUS "[check exist directory] exist ${PROJECT_EXTERNAL}")
   message(STATUS "[check exist directory] dirpath ${DIR_PATH}")
   add_subdirectory(${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/external
                    ${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/external)
 endif()
-
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}
                  ${DIR_PATH}/build)
+
 set_property(GLOBAL PROPERTY ${TEMPLATE_PROJECT_NAME} 1)
 endif()
+endif((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 
 
 # googletest
