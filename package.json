@@ -96,6 +96,7 @@
     "cmake_static_debug_configure:linux": "cmake-js configure -O build --CDENABLE_SHARED=off --CDCFDCORE_DEBUG=on --CDTARGET_RPATH=./build/Release -g -D",
     "cmake_static_debug_configure:darwin": "cmake-js configure -O build --CDENABLE_SHARED=off --CDCFDCORE_DEBUG=on --CDTARGET_RPATH=\"@executable_path;./build/Release\" -C -D",
     "cmake_build": "cmake-js build -O build",
+    "cmake_build_parallel": "cmake --build build --parallel --config Release",
     "cmake_debug_build": "cmake-js build -O build -D",
     "cmake_quiet_build": "cmake-js build -O build -i",
     "cmake_clean": "cmake-js clean -O build",
