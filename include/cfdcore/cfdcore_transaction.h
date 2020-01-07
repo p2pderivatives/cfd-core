@@ -24,6 +24,21 @@
 namespace cfd {
 namespace core {
 
+//! transaction callback type: add txin
+constexpr const uint32_t kStateChangeAddTxIn = 0x00000001;
+//! transaction callback type: update txin
+constexpr const uint32_t kStateChangeUpdateTxIn = 0x00000002;
+//! transaction callback type: remove txout
+constexpr const uint32_t kStateChangeRemoveTxIn = 0x00000004;
+//! transaction callback type: update sign txin
+constexpr const uint32_t kStateChangeUpdateSignTxIn = 0x00000008;
+//! transaction callback type: add txout
+constexpr const uint32_t kStateChangeAddTxOut = 0x00000100;
+//! transaction callback type: update txout
+constexpr const uint32_t kStateChangeUpdateTxOut = 0x00000200;
+//! transaction callback type: remove txout
+constexpr const uint32_t kStateChangeRemoveTxOut = 0x00000400;
+
 /**
  * @brief TxOut情報を保持するクラス
  */

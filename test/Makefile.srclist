@@ -30,6 +30,7 @@ TEST_CFDCORE_SOURCES= \
     test_extprivkey.cpp \
     test_descriptor.cpp \
     test_address.cpp \
+    test_outpoint.cpp \
     test_scriptbuilder.cpp \
     test_script.cpp \
     test_scriptoperator.cpp \

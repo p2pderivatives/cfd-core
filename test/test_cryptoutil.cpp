@@ -402,8 +402,41 @@ TEST(CryptoUtil, HmacSha512DataEmpty) {
 }
 
 // poc transaction test
+// NormalizeSignature----------------------------------------------------------
+TEST(CryptoUtil, NormalizeSignature) {
+  ByteData signature(
+      "773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca471907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b24226");
+  ByteData byte_data = CryptoUtil::NormalizeSignature(signature);
+  // equals data on generate by libwally
+  EXPECT_STREQ(
+      byte_data.GetHex().c_str(),
+      signature.GetHex().c_str());
+}
+
 // ConvertSignatureToDer-------------------------------------------------------
 TEST(CryptoUtil, ConvertSignatureToDer) {
+  ByteData bytedata(
+      "773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca471907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b24226");
+  SigHashType sig_type(SigHashAlgorithm::kSigHashAll);
+  ByteData byte_data = CryptoUtil::ConvertSignatureToDer(bytedata, sig_type);
+  EXPECT_STREQ(
+      byte_data.GetHex().c_str(),
+      "30440220773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca4702201907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b2422601");
+}
+
+TEST(CryptoUtil, ConvertSignatureToDerEmpty) {
+  try {
+    ByteData empty_data;
+    SigHashType sig_type(SigHashAlgorithm::kSigHashAll);
+    ByteData byte_data = CryptoUtil::ConvertSignatureToDer(empty_data, sig_type);
+  } catch (const cfd::core::CfdException &cfd_except) {
+    EXPECT_STREQ(cfd_except.what(), "der encode error.");
+    return;
+  }
+  ASSERT_TRUE(false);
+}
+
+TEST(CryptoUtil, ConvertSignatureToDerStr) {
   std::string hex_sig =
       "773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca471907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b24226";
   SigHashType sig_type(SigHashAlgorithm::kSigHashAll);

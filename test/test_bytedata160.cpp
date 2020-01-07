@@ -60,6 +60,20 @@ TEST(ByteData160, BytesConstructor) {
   EXPECT_TRUE(is_equals);
 }
 
+TEST(ByteData160, ByteDataConstructor) {
+  ByteData data("1234567890123456789012345678901234567890");
+  ByteData160 byte_data = ByteData160(data);
+
+  EXPECT_STREQ(byte_data.GetHex().c_str(), data.GetHex().c_str());
+  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_STREQ(
+    byte_data.Serialize().GetHex().c_str(),
+    "141234567890123456789012345678901234567890");
+  ByteData byte_class_data;
+  EXPECT_NO_THROW(byte_class_data = byte_data.GetData());
+  EXPECT_EQ(byte_data.GetBytes(), byte_class_data.GetBytes());
+}
+
 TEST(ByteData160, HexConstructorException) {
   try {
     ByteData160 byte_data = ByteData160(
