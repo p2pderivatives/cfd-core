@@ -185,8 +185,7 @@ Transaction::Transaction(const std::string &hex_string) : vin_(), vout_() {
   SetFromHex(hex_string);
 }
 
-Transaction::Transaction(const ByteData &byte_data)
-    : vin_(), vout_() {
+Transaction::Transaction(const ByteData &byte_data) : vin_(), vout_() {
   SetFromHex(byte_data.GetHex());
 }
 
