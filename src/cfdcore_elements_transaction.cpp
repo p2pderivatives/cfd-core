@@ -823,6 +823,9 @@ ConfidentialTransaction::ConfidentialTransaction(const std::string &hex_string)
   SetFromHex(hex_string);
 }
 
+ConfidentialTransaction::ConfidentialTransaction(const ByteData &byte_data)
+    : ConfidentialTransaction(byte_data.GetHex()) {}
+
 ConfidentialTransaction::ConfidentialTransaction(
     const ConfidentialTransaction &transaction)
     : ConfidentialTransaction(transaction.GetHex()) {

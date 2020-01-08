@@ -660,6 +660,39 @@ class CFD_CORE_EXPORT OutPoint {
   uint32_t vout_;  //!< vout
 };
 
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<=(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>=(const OutPoint& source, const OutPoint& dest);
+
 }  // namespace core
 }  // namespace cfd
 

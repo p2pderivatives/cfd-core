@@ -185,6 +185,9 @@ Transaction::Transaction(const std::string &hex_string) : vin_(), vout_() {
   SetFromHex(hex_string);
 }
 
+Transaction::Transaction(const ByteData &byte_data)
+    : Transaction(byte_data.GetHex()) {}
+
 Transaction::Transaction(const Transaction &transaction)
     : Transaction(transaction.GetHex()) {
   // copy constructor

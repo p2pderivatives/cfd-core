@@ -186,6 +186,11 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    */
   explicit Transaction(int32_t version, uint32_t lock_time);
   /**
+   * @brief constructor
+   * @param[in] byte_data   tx byte data
+   */
+  explicit Transaction(const ByteData& byte_data);
+  /**
    * @brief コンストラクタ
    * @param[in] hex_string    txバイトデータのHEX文字列
    */
