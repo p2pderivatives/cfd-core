@@ -414,9 +414,21 @@ ByteData CryptoUtil::HmacSha512(
   return ByteData(output);
 }
 
+ByteData CryptoUtil::NormalizeSignature(const ByteData &signature) {
+  std::vector<uint8_t> sig = signature.GetBytes();
+  std::vector<uint8_t> output(EC_SIGNATURE_LEN);
+  int ret = wally_ec_sig_normalize(
+      sig.data(), sig.size(), output.data(), output.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_ec_sig_normalize NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "ec normalize error.");
+  }
+  return ByteData(output);
+}
+
 ByteData CryptoUtil::ConvertSignatureToDer(
-    const std::string &hex_string, SigHashType sighash_type) {
-  std::vector<uint8_t> sig = StringUtil::StringToByte(hex_string);
+    const ByteData &signature, SigHashType sighash_type) {
+  std::vector<uint8_t> sig = signature.GetBytes();
   // SigHashType分を追加して領域確保
   std::vector<uint8_t> output(EC_SIGNATURE_DER_MAX_LEN + 1);
   size_t written = 0;
@@ -440,6 +452,11 @@ ByteData CryptoUtil::ConvertSignatureToDer(
   output.resize(written);
 
   return ByteData(output);
+}
+
+ByteData CryptoUtil::ConvertSignatureToDer(
+    const std::string &hex_string, SigHashType sighash_type) {
+  return ConvertSignatureToDer(ByteData(hex_string), sighash_type);
 }
 
 /**

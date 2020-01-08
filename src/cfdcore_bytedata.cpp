@@ -56,6 +56,20 @@ ByteData::ByteData(const std::vector<uint8_t>& vector) : data_(vector) {}
 ByteData::ByteData(const std::string& hex)
     : data_(StringUtil::StringToByte(hex)) {}
 
+ByteData::ByteData(const uint8_t* buffer, uint32_t size) : data_(0) {
+  if (buffer == nullptr) {
+    if (size == 0) {
+      // create empty buffer
+    } else {
+      warn(CFD_LOG_SOURCE, "buffer is null.");
+      throw CfdException(kCfdIllegalArgumentError, "buffer is null.");
+    }
+  } else if (size != 0) {
+    data_.resize(size);
+    memcpy(data_.data(), buffer, size);
+  }
+}
+
 std::string ByteData::GetHex() const {
   return StringUtil::ByteToString(data_);
 }
@@ -138,6 +152,9 @@ ByteData160::ByteData160(const std::string& hex)
   data_ = vector;
 }
 
+ByteData160::ByteData160(const ByteData& byte_data)
+    : ByteData160(byte_data.GetBytes()) {}
+
 std::string ByteData160::GetHex() const {
   return StringUtil::ByteToString(data_);
 }
@@ -186,6 +203,9 @@ ByteData256::ByteData256(const std::string& hex)
   }
   data_ = vector;
 }
+
+ByteData256::ByteData256(const ByteData& byte_data)
+    : ByteData256(byte_data.GetBytes()) {}
 
 std::string ByteData256::GetHex() const {
   return StringUtil::ByteToString(data_);

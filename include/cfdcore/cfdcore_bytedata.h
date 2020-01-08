@@ -41,6 +41,13 @@ class CFD_CORE_EXPORT ByteData {
   explicit ByteData(const std::string& hex);
 
   /**
+   * @brief constructor
+   * @param[in] buffer    Byte data buffer
+   * @param[in] size      Byte data size
+   */
+  explicit ByteData(const uint8_t* buffer, uint32_t size);
+
+  /**
    * @brief HEX文字列を取得する.
    * @return HEX文字列
    */
@@ -132,6 +139,12 @@ class CFD_CORE_EXPORT ByteData160 {
   explicit ByteData160(const std::string& hex);
 
   /**
+   * @brief constructor
+   * @param[in] byte_data   Byte data
+   */
+  explicit ByteData160(const ByteData& byte_data);
+
+  /**
    * @brief HEX文字列を取得する.
    * @return HEX文字列
    */
@@ -199,6 +212,12 @@ class CFD_CORE_EXPORT ByteData256 {
    * @param[in] hex  ByteデータHEX文字列
    */
   explicit ByteData256(const std::string& hex);
+
+  /**
+   * @brief constructor
+   * @param[in] byte_data   Byte data
+   */
+  explicit ByteData256(const ByteData& byte_data);
 
   /**
    * @brief HEX文字列を取得する.
