@@ -19,7 +19,7 @@ TEST(OutPoint, OutPointEmpty) {
   EXPECT_FALSE(outpoint.IsValid());
 }
 
-TEST(OutPoint, Constructory) {
+TEST(OutPoint, Constructor) {
   ByteData256 byte_data = ByteData256(
       "3412907856341290785634129078563412907856341290785634129078563412");
   Txid txid = Txid(byte_data);
