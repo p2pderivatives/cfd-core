@@ -386,6 +386,11 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
       SigHashType sighash_type, const Amount& value = Amount(),
       WitnessVersion version = WitnessVersion::kVersionNone) const;
   /**
+   * @brief Transactionのバイトデータを取得する.
+   * @return バイトデータ
+   */
+  virtual ByteData GetData() const;
+  /**
    * @brief witness情報かどうかを取得する.
    * @retval true   witness
    * @retval false  witnessではない

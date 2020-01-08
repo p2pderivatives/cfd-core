@@ -135,6 +135,11 @@ TEST(ConfidentialTransaction, ConstructorTest) {
   ConfidentialTransaction tx(exp_tx_hex);
   EXPECT_STREQ(tx.GetHex().c_str(), exp_tx_hex.c_str());
 
+  ByteData exp_data = ByteData(exp_tx_hex);
+  ConfidentialTransaction tx_b(exp_data);
+  ByteData data = tx_b.GetData();
+  EXPECT_STREQ(data.GetHex().c_str(), exp_tx_hex.c_str());
+
   EXPECT_NO_THROW((tx_null = tx));
   EXPECT_STREQ(
       tx_null.GetHex().c_str(),

@@ -186,7 +186,9 @@ Transaction::Transaction(const std::string &hex_string) : vin_(), vout_() {
 }
 
 Transaction::Transaction(const ByteData &byte_data)
-    : Transaction(byte_data.GetHex()) {}
+    : vin_(), vout_() {
+  SetFromHex(byte_data.GetHex());
+}
 
 Transaction::Transaction(const Transaction &transaction)
     : Transaction(transaction.GetHex()) {
@@ -713,6 +715,10 @@ ByteData256 Transaction::GetSignatureHash(
   }
 
   return ByteData256(buffer);
+}
+
+ByteData Transaction::GetData() const {
+  return AbstractTransaction::GetData();
 }
 
 bool Transaction::HasWitness() const {

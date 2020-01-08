@@ -2711,6 +2711,10 @@ void ConfidentialTransaction::SetElementsTxState() {
   }
 }
 
+ByteData ConfidentialTransaction::GetData() const {
+  return AbstractTransaction::GetData();
+}
+
 ByteData ConfidentialTransaction::GetData(bool has_witness) const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);

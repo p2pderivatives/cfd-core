@@ -404,7 +404,7 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @brief Transactionのバイトデータを取得する.
    * @return バイトデータ
    */
-  ByteData GetData() const;
+  virtual ByteData GetData() const;
   /**
    * @brief TransactionのバイトデータをHEX文字列変換して取得する.
    * @return HEX文字列
