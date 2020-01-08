@@ -203,11 +203,11 @@ class CFD_CORE_EXPORT Privkey {
   Pubkey GeneratePubkey(bool is_compressed = true) const;
 
   /**
-   * @brief PrivateKeyの設定状態が不正であるかを返却する.
-   * @retval true 状態が不正
-   * @retval false 状態は正常
+   * @brief PrivateKeyの設定状態が正常であるかを返却する.
+   * @retval true 状態が正常
+   * @retval false 状態が不正
    */
-  bool IsInvalid() const;
+  bool IsValid() const;
 
  private:
   /**

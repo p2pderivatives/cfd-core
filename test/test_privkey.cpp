@@ -173,21 +173,19 @@ TEST(Privkey, GeneratePubkey_uncompressed) {
       "041777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb78885d348051c6fbd31ac749eb5646481f6d8d9c36f8d157712ca054046a9b8b");
 }
 
-TEST(Privkey, IsInvalid_true) {
-  Privkey privkey;
-  bool isInvalid = privkey.IsInvalid();
-  EXPECT_TRUE(isInvalid);
-}
-
-TEST(Privkey, IsInvalid_false) {
+TEST(Privkey, IsValid_true) {
   Privkey privkey(
       "305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
-  bool isInvalid = privkey.IsInvalid();
-  EXPECT_FALSE(isInvalid);
+  EXPECT_TRUE(privkey.IsValid());
+}
+
+TEST(Privkey, IsValid_false) {
+  Privkey privkey;
+  EXPECT_FALSE(privkey.IsValid());
 }
 
 TEST(Privkey, GenerageRandomKeyTest) {
   Privkey privkey = Privkey::GenerageRandomKey();
-  bool isInvalid = privkey.IsInvalid();
-  EXPECT_FALSE(isInvalid);
+  bool isValid = privkey.IsValid();
+  EXPECT_TRUE(isValid);
 }

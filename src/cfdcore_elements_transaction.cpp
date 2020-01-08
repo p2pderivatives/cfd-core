@@ -1710,8 +1710,8 @@ void ConfidentialTransaction::BlindTransaction(
       bool token_blind = false;
       if ((!issuance_blinding_keys.empty()) &&
           (issuance_blinding_keys.size() > index)) {
-        asset_blind = !issuance_blinding_keys[index].asset_key.IsInvalid();
-        token_blind = !issuance_blinding_keys[index].token_key.IsInvalid();
+        asset_blind = issuance_blinding_keys[index].asset_key.IsValid();
+        token_blind = issuance_blinding_keys[index].token_key.IsValid();
       }
       IssuanceParameter issue = CalculateIssuanceValue(
           vin_[index].GetTxid(), vin_[index].GetVout(), token_blind,
@@ -1813,8 +1813,8 @@ void ConfidentialTransaction::BlindTransaction(
     bool token_blind = false;
     if ((!issuance_blinding_keys.empty()) &&
         (issuance_blinding_keys.size() > index)) {
-      asset_blind = !issuance_blinding_keys[index].asset_key.IsInvalid();
-      token_blind = !issuance_blinding_keys[index].token_key.IsInvalid();
+      asset_blind = issuance_blinding_keys[index].asset_key.IsValid();
+      token_blind = issuance_blinding_keys[index].token_key.IsValid();
     }
     IssuanceParameter issue = CalculateIssuanceValue(
         vin_[index].GetTxid(), vin_[index].GetVout(), token_blind,
@@ -2120,7 +2120,7 @@ std::vector<UnblindParameter> ConfidentialTransaction::UnblindTxIn(
   if (tx_in.GetInflationKeysRangeproof().GetDataSize() != 0) {
     if (tx_in.GetInflationKeys().HasBlinding()) {
       token_unblind = CalculateUnblindIssueData(
-          (token_blinding_key.IsInvalid()) ? blinding_key : token_blinding_key,
+          (token_blinding_key.IsValid()) ? token_blinding_key : blinding_key,
           token_rangeproof, tx_in.GetInflationKeys(), Script(), issue.token);
       token_rangeproof = ByteData();
     }
@@ -2188,7 +2188,7 @@ std::vector<UnblindParameter> ConfidentialTransaction::UnblindTxOut(
     // skip if vout is txout for fee
     if (vout_[index].GetLockingScript().IsEmpty()) {
       // fall-through
-    } else if (blinding_keys[index].IsInvalid()) {
+    } else if (!blinding_keys[index].IsValid()) {
       // fall-through
     } else {
       results.push_back(UnblindTxOut(index, blinding_keys[index]));
@@ -2402,7 +2402,7 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   if (bip32_counter > kPegoutBip32CountMaximum) {
     throw CfdException(kCfdIllegalArgumentError, "bip32_counter over error.");
   }
-  if ((!online_pubkey.IsValid()) || master_online_key.IsInvalid() ||
+  if ((!online_pubkey.IsValid()) || !master_online_key.IsValid() ||
       (!master_online_key.GeneratePubkey().Equals(online_pubkey))) {
     throw CfdException(kCfdIllegalArgumentError, "Illegal online key error.");
   }

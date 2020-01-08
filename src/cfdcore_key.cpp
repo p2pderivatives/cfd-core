@@ -217,8 +217,8 @@ Privkey Privkey::GenerageRandomKey() {
   return Privkey(ByteData(privkey));
 }
 
-bool Privkey::IsInvalid() const {
-  if (IsValid(data_.GetBytes())) {
+bool Privkey::IsValid() const {
+  if (!IsValid(data_.GetBytes())) {
     return false;
   }
   return true;

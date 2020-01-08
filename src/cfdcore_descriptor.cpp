@@ -752,7 +752,7 @@ void DescriptorNode::AnalyzeKey() {
           throw except;
         }
       }
-      if (privkey.IsInvalid()) {
+      if (!privkey.IsValid()) {
         try {
           privkey = Privkey::FromWif(key_info_, NetType::kTestnet);
         } catch (const CfdException& except) {
@@ -762,7 +762,7 @@ void DescriptorNode::AnalyzeKey() {
           }
         }
       }
-      if (privkey.IsInvalid()) {
+      if (!privkey.IsValid()) {
         warn(CFD_LOG_SOURCE, "Failed to privkey.");
         throw CfdException(
             CfdError::kCfdIllegalArgumentError, "privkey invalid.");
