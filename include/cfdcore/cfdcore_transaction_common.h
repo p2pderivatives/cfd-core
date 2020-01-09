@@ -404,7 +404,7 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @brief Transactionのバイトデータを取得する.
    * @return バイトデータ
    */
-  ByteData GetData() const;
+  virtual ByteData GetData() const;
   /**
    * @brief TransactionのバイトデータをHEX文字列変換して取得する.
    * @return HEX文字列
@@ -659,6 +659,39 @@ class CFD_CORE_EXPORT OutPoint {
   Txid txid_;      //!< txid
   uint32_t vout_;  //!< vout
 };
+
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<=(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>=(const OutPoint& source, const OutPoint& dest);
 
 }  // namespace core
 }  // namespace cfd

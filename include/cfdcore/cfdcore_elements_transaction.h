@@ -836,6 +836,11 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    */
   explicit ConfidentialTransaction(const std::string& hex_string);
   /**
+   * @brief constructor
+   * @param[in] byte_data   tx byte data
+   */
+  explicit ConfidentialTransaction(const ByteData& byte_data);
+  /**
    * @brief コンストラクタ
    * @param[in] transaction   トランザクション情報
    */
@@ -1247,6 +1252,12 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @return witness only hash
    */
   ByteData256 GetWitnessOnlyHash() const;
+
+  /**
+   * @brief Transactionのバイトデータを取得する.
+   * @return バイトデータ
+   */
+  virtual ByteData GetData() const;
 
   /**
    * @brief witness情報かどうかを取得する.

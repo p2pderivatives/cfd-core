@@ -259,6 +259,35 @@ bool OutPoint::operator!=(const OutPoint &object) const {
   return !(*this == object);
 }
 
+bool operator<(const OutPoint &source, const OutPoint &dest) {
+  if (source.GetVout() < dest.GetVout()) {
+    return true;
+  }
+  if (source.GetTxid().GetData().GetBytes() <
+      dest.GetTxid().GetData().GetBytes()) {
+    return true;
+  }
+  return false;
+}
+
+bool operator<=(const OutPoint &source, const OutPoint &dest) {
+  if (source == dest) {
+    return true;
+  }
+  return (source < dest);
+}
+
+bool operator>=(const OutPoint &source, const OutPoint &dest) {
+  return !(source < dest);
+}
+
+bool operator>(const OutPoint &source, const OutPoint &dest) {
+  if (source == dest) {
+    return false;
+  }
+  return !(source < dest);
+}
+
 // -----------------------------------------------------------------------------
 // AbstractTransaction
 // -----------------------------------------------------------------------------
