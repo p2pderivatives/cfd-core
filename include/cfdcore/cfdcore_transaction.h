@@ -403,10 +403,17 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    */
   virtual uint32_t GetWallyFlag() const;
 
- private:
+ protected:
   std::vector<TxIn> vin_;    ///< TxIn配列
   std::vector<TxOut> vout_;  ///< TxOut配列
 
+  /**
+   * @brief HEX文字列からTransaction情報を設定する.
+   * @param[in] hex_string    TransactionバイトデータのHEX文字列
+   */
+  void SetFromHex(const std::string& hex_string);
+
+ private:
   /**
    * @brief TxIn配列のIndex範囲をチェックする.
    * @param[in] index     TxIn配列のIndex値
@@ -448,11 +455,6 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @return バイトデータ
    */
   ByteData GetData(bool has_witness) const;
-  /**
-   * @brief HEX文字列からTransaction情報を設定する.
-   * @param[in] hex_string    TransactionバイトデータのHEX文字列
-   */
-  void SetFromHex(const std::string& hex_string);
   /**
    * @brief TxOut領域のByteDataの整合性チェックと、TxOutへの設定を行う.
    *
