@@ -1005,7 +1005,7 @@ uint32_t ConfidentialTransaction::AddTxIn(
   std::vector<uint8_t> empty_data;
   const std::vector<uint8_t> &script_data =
       (unlocking_script.Empty()) ? empty_data
-                                   : unlocking_script.GetData().GetBytes();
+                                 : unlocking_script.GetData().GetBytes();
   int ret = wally_tx_add_elements_raw_input(
       tx_pointer, txid_buf.data(), txid_buf.size(), index, sequence,
       script_data.data(), script_data.size(), NULL, NULL, 0, NULL, 0, NULL, 0,
