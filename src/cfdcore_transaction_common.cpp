@@ -283,7 +283,7 @@ bool operator>=(const OutPoint &source, const OutPoint &dest) {
 
 bool operator>(const OutPoint &source, const OutPoint &dest) {
   if (source == dest) {
-    return true;
+    return false;
   }
   return !(source < dest);
 }

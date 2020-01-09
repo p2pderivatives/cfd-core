@@ -63,3 +63,34 @@ TEST(OutPoint, NotEquals) {
   EXPECT_TRUE((outpoint1 != outpoint3));
   EXPECT_TRUE((outpoint1 != outpoint4));
 }
+
+TEST(OutPoint, Operators) {
+  ByteData256 byte_data = ByteData256(
+      "3412907856341290785634129078563412907856341290785634129078563412");
+  Txid txid = Txid(byte_data);
+  ByteData256 byte_data2 = ByteData256(
+      "9812907856341290785634129078563412907856341290785634129078563412");
+  Txid txid2 = Txid(byte_data2);
+  OutPoint outpoint1(txid, 1);
+  OutPoint outpoint2(txid, 1);
+  OutPoint outpoint3(txid, 2);
+  OutPoint outpoint4(txid2, 1);
+
+  EXPECT_TRUE((outpoint1 >= outpoint2));
+  EXPECT_FALSE((outpoint1 >= outpoint3));
+  EXPECT_FALSE((outpoint1 >= outpoint4));
+
+  EXPECT_FALSE((outpoint1 > outpoint2));
+  EXPECT_FALSE((outpoint1 > outpoint3));
+  EXPECT_FALSE((outpoint1 > outpoint4));
+
+  EXPECT_TRUE((outpoint1 <= outpoint2));
+  EXPECT_TRUE((outpoint1 <= outpoint3));
+  EXPECT_TRUE((outpoint1 <= outpoint4));
+
+  EXPECT_FALSE((outpoint1 < outpoint2));
+  EXPECT_TRUE((outpoint1 < outpoint3));
+  EXPECT_TRUE((outpoint1 < outpoint4));
+
+  EXPECT_TRUE((outpoint4 < outpoint3));
+}
