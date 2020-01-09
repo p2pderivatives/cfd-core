@@ -568,7 +568,7 @@ const ByteData ScriptHash::GetData() const { return script_hash_; }
 // -----------------------------------------------------------------------------
 // Script
 // -----------------------------------------------------------------------------
-const Script Script::Empty;  ///< empty script
+const Script Script::EmptyScript;  ///< empty script
 
 Script::Script() : script_data_(), script_stack_() {
   // do nothing
@@ -789,7 +789,7 @@ const ByteData Script::GetData() const { return script_data_; }
 
 const std::string Script::GetHex() const { return script_data_.GetHex(); }
 
-bool Script::IsEmpty() const { return script_data_.GetBytes().empty(); }
+bool Script::Empty() const { return script_data_.GetBytes().empty(); }
 
 std::vector<ScriptElement> Script::GetElementList() const {
   return script_stack_;

@@ -1204,7 +1204,7 @@ TEST(ConfidentialTransaction, UnblindTxOutTest) {
     std::vector<ConfidentialTxOutReference> actual_tx_outs = ctx.GetTxOutList();
     size_t unblindparam_index = 0;
     for (size_t i = 0; i < actual_tx_outs.size(); ++i) {
-      if (actual_tx_outs[i].GetLockingScript().IsEmpty()) {
+      if (actual_tx_outs[i].GetLockingScript().Empty()) {
         continue;
       }
       CheckTxOuts(actual_tx_outs[i],

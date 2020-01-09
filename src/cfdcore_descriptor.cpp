@@ -357,7 +357,7 @@ HashType DescriptorScriptReference::GetHashType() const {
 }
 
 bool DescriptorScriptReference::HasRedeemScript() const {
-  return !redeem_script_.IsEmpty();
+  return !redeem_script_.Empty();
 }
 
 Script DescriptorScriptReference::GetRedeemScript() const {

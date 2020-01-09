@@ -151,7 +151,7 @@ bool ConfidentialNonce::HasBlinding() const {
   return (version_ != 0) && (version_ != kConfidentialVersion_1);
 }
 
-bool ConfidentialNonce::IsEmpty() const { return (version_ == 0); }
+bool ConfidentialNonce::Empty() const { return (version_ == 0); }
 
 // -----------------------------------------------------------------------------
 // ConfidentialAssetId
@@ -261,7 +261,7 @@ ByteData ConfidentialAssetId::GetUnblindedData() const {
   return GetData();
 }
 
-bool ConfidentialAssetId::IsEmpty() const { return (version_ == 0); }
+bool ConfidentialAssetId::Empty() const { return (version_ == 0); }
 
 // -----------------------------------------------------------------------------
 // ConfidentialValue
@@ -358,7 +358,7 @@ bool ConfidentialValue::HasBlinding() const {
   return (version_ != 0) && (version_ != kConfidentialVersion_1);
 }
 
-bool ConfidentialValue::IsEmpty() const { return (version_ == 0); }
+bool ConfidentialValue::Empty() const { return (version_ == 0); }
 
 ByteData ConfidentialValue::ConvertToConfidentialValue(  // force LF
     const Amount &value) {
@@ -579,7 +579,7 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
 
     if (pegin_btc_tx_size != 0) {
       witness_size += pegin_btc_tx_size + kPeginWitnessSize;
-      if (!fedpeg_script.IsEmpty()) {
+      if (!fedpeg_script.Empty()) {
         witness_size +=
             static_cast<uint32_t>(fedpeg_script.GetData().GetSerializeSize());
       }
@@ -765,8 +765,8 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
   static constexpr const uint32_t kTxOutRangeproof = 2893 + 3;
   uint32_t result = 0;
   uint32_t witness_size = 0;
-  bool is_blind = is_blinded || (!nonce_.IsEmpty());
-  if (is_blind && (!locking_script_.IsEmpty()) &&
+  bool is_blind = is_blinded || (!nonce_.Empty());
+  if (is_blind && (!locking_script_.Empty()) &&
       (!locking_script_.IsPegoutScript())) {
     result += kConfidentialDataSize;  // asset
     result += kConfidentialDataSize;  // value
@@ -778,7 +778,7 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
   } else {
     result += kConfidentialDataSize;   // asset
     result += kConfidentialValueSize;  // value
-    if (locking_script_.IsEmpty()) {
+    if (locking_script_.Empty()) {
       result += 2;  // fee (nonce & lockingScript empty.)
     } else {
       result += 1;  // nonce
@@ -1004,7 +1004,7 @@ uint32_t ConfidentialTransaction::AddTxIn(
   const std::vector<uint8_t> &txid_buf = txid.GetData().GetBytes();
   std::vector<uint8_t> empty_data;
   const std::vector<uint8_t> &script_data =
-      (unlocking_script.IsEmpty()) ? empty_data
+      (unlocking_script.Empty()) ? empty_data
                                    : unlocking_script.GetData().GetBytes();
   int ret = wally_tx_add_elements_raw_input(
       tx_pointer, txid_buf.data(), txid_buf.size(), index, sequence,
@@ -1019,7 +1019,7 @@ uint32_t ConfidentialTransaction::AddTxIn(
   wally_tx_is_coinbase(tx_pointer, &is_coinbase);
   uint32_t set_index = (is_coinbase == 0) ? index & kTxInVoutMask : index;
   ConfidentialTxIn txin(txid, set_index, sequence);
-  if (!unlocking_script.IsEmpty()) {
+  if (!unlocking_script.Empty()) {
     txin = ConfidentialTxIn(txid, set_index, sequence, unlocking_script);
   }
   vin_.push_back(txin);
@@ -1698,8 +1698,8 @@ void ConfidentialTransaction::BlindTransaction(
       vbfs.insert(vbfs.end(), std::begin(vbf), std::end(vbf));
     }
 
-    if (((!vin_[index].GetIssuanceAmount().IsEmpty()) ||
-         (!vin_[index].GetInflationKeys().IsEmpty()))) {
+    if (((!vin_[index].GetIssuanceAmount().Empty()) ||
+         (!vin_[index].GetInflationKeys().Empty()))) {
       if (vin_[index].GetIssuanceAmount().HasBlinding() ||
           vin_[index].GetInflationKeys().HasBlinding()) {
         warn(CFD_LOG_SOURCE, "already txin blinded.");
@@ -1722,7 +1722,7 @@ void ConfidentialTransaction::BlindTransaction(
       bool is_reissue =
           !vin_[index].GetBlindingNonce().Equals(kEmptyByteData256);
 
-      if (!vin_[index].GetIssuanceAmount().IsEmpty()) {
+      if (!vin_[index].GetIssuanceAmount().Empty()) {
         const std::vector<uint8_t> &asset_bytes =
             issue.asset.GetUnblindedData().GetBytes();
         input_asset_ids.insert(
@@ -1751,7 +1751,7 @@ void ConfidentialTransaction::BlindTransaction(
             CFD_LOG_SOURCE, "generator_data asset=[{}]",
             generator_data.GetHex());
       }
-      if ((!is_reissue) && (!vin_[index].GetInflationKeys().IsEmpty())) {
+      if ((!is_reissue) && (!vin_[index].GetInflationKeys().Empty())) {
         const std::vector<uint8_t> &token_bytes =
             issue.token.GetUnblindedData().GetBytes();
         input_asset_ids.insert(
@@ -1883,7 +1883,7 @@ void ConfidentialTransaction::BlindTransaction(
 
   std::vector<Pubkey> input_confidential_keys(vout_.size());
   for (size_t index = 0; index < vout_.size(); ++index) {
-    if (vout_[index].GetLockingScript().IsEmpty()) {
+    if (vout_[index].GetLockingScript().Empty()) {
       // fee
     } else if (txout_confidential_keys[index].IsValid()) {
       const ConfidentialValue &value = vout_[index].GetConfidentialValue();
@@ -2186,7 +2186,7 @@ std::vector<UnblindParameter> ConfidentialTransaction::UnblindTxOut(
   std::vector<UnblindParameter> results;
   for (uint32_t index = 0; index < vout_.size(); index++) {
     // skip if vout is txout for fee
-    if (vout_[index].GetLockingScript().IsEmpty()) {
+    if (vout_[index].GetLockingScript().Empty()) {
       // fall-through
     } else if (!blinding_keys[index].IsValid()) {
       // fall-through
@@ -2247,7 +2247,7 @@ UnblindParameter ConfidentialTransaction::CalculateUnblindIssueData(
   const std::vector<uint8_t> commitment_bytes =
       value_commitment.GetData().GetBytes();
   std::vector<uint8_t> extra_bytes;
-  if (!extra.IsEmpty()) {
+  if (!extra.Empty()) {
     extra_bytes = extra.GetData().GetBytes();
   }
 
