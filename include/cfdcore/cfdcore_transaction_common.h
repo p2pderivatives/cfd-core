@@ -404,7 +404,7 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @brief Transactionのバイトデータを取得する.
    * @return バイトデータ
    */
-  ByteData GetData() const;
+  virtual ByteData GetData() const;
   /**
    * @brief TransactionのバイトデータをHEX文字列変換して取得する.
    * @return HEX文字列
@@ -442,6 +442,11 @@ class CFD_CORE_EXPORT AbstractTransaction {
  protected:
   void* wally_tx_pointer_;  ///< libwally tx構造体アドレス
 
+  /**
+   * @brief This function is called by the state change.
+   * @param[in] type    change type
+   */
+  virtual void CallbackStateChange(uint32_t type);
   /**
    * @brief TxInを追加する.
    * @param[in] txid                txid
@@ -600,6 +605,93 @@ class CFD_CORE_EXPORT SignatureUtil {
   SignatureUtil();
   // constructor抑止
 };
+
+/**
+ * @brief class for serialize txin data model.
+ */
+class CFD_CORE_EXPORT OutPoint {
+ public:
+  /**
+   * @brief constructor (for vector)
+   */
+  OutPoint();
+  /**
+   * @brief constructor.
+   * @param[in] txid            txid
+   * @param[in] vout            vout
+   */
+  explicit OutPoint(const Txid& txid, uint32_t vout);
+
+  /**
+   * @brief get txid.
+   * @return Txid
+   */
+  const Txid GetTxid() const;
+  /**
+   * @brief get vout.
+   * @return vout
+   */
+  uint32_t GetVout() const;
+
+  /**
+   * @brief check valid object.
+   * @retval true
+   * @retval false
+   */
+  bool IsValid() const;
+
+  /**
+   * @brief 等価比較オペレータ
+   * @param[in] object     比較対象
+   * @retval true 等価
+   * @retval false 不等価
+   */
+  bool operator==(const OutPoint& object) const;
+  /**
+   * @brief 不等価比較オペレータ
+   * @param[in] object     比較対象
+   * @retval true 不等価
+   * @retval false 等価
+   */
+  bool operator!=(const OutPoint& object) const;
+
+ private:
+  Txid txid_;      //!< txid
+  uint32_t vout_;  //!< vout
+};
+
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<=(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>=(const OutPoint& source, const OutPoint& dest);
 
 }  // namespace core
 }  // namespace cfd

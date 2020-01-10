@@ -65,6 +65,19 @@ class CFD_CORE_EXPORT Amount {
   static Amount CreateByCoinAmount(double coin_amount);
 
   /**
+   * @brief Create Amount instance by amount satoshi units
+   * @param[in] amount amount in satoshi units
+   * @exception CfdException if invalid value passed
+   */
+  explicit Amount(int64_t amount);
+  /**
+   * @brief Create Amount instance by amount bitcoin units
+   * @param[in] coin_amount amount in bitcoin units
+   * @exception CfdException if invalid value passed
+   */
+  explicit Amount(double coin_amount);
+
+  /**
    * @brief 自身のインスタンスからsatoshi単位のAmount額を取得する.
    * @return satoshi単位のAmountの数値
    */
@@ -176,20 +189,6 @@ class CFD_CORE_EXPORT Amount {
    * @exception CfdException 不正な値が渡された場合
    */
   static void CheckValidAmount(int64_t satoshi_amount);
-
-  /**
-   * @brief 引数で与えられたbitcoin単位のAmountが不正な値でないかを検証する.
-   * @param[in] coin_amount bitcoin単位のAmount
-   * @exception CfdException 不正な値が渡された場合
-   */
-  static void CheckValidAmount(double coin_amount);
-
-  /**
-   * @brief コンストラクタ
-   * @param[in] amount satoshi単位のAmount
-   * @exception CfdException 不正な値が渡された場合
-   */
-  explicit Amount(int64_t amount);
 };
 
 /**

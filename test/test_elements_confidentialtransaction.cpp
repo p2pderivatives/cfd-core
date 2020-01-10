@@ -135,6 +135,11 @@ TEST(ConfidentialTransaction, ConstructorTest) {
   ConfidentialTransaction tx(exp_tx_hex);
   EXPECT_STREQ(tx.GetHex().c_str(), exp_tx_hex.c_str());
 
+  ByteData exp_data = ByteData(exp_tx_hex);
+  ConfidentialTransaction tx_b(exp_data);
+  ByteData data = tx_b.GetData();
+  EXPECT_STREQ(data.GetHex().c_str(), exp_tx_hex.c_str());
+
   EXPECT_NO_THROW((tx_null = tx));
   EXPECT_STREQ(
       tx_null.GetHex().c_str(),
@@ -794,8 +799,8 @@ TEST(ConfidentialTransaction, BlindTransactionTest1) {
 TEST(ConfidentialTransaction, SignatureHashTest) {
   ConfidentialTransaction tx(
       "020000000001319bff5f4311e6255ecf4dd472650a6ef85fde7d11cd10d3e6ba5974174aeb560100000000ffffffff0201f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f0100000bd2cc1584c002deb65cc52301e1622f482a2f588b9800d2b8386ffabf74d6b2d73d17503a2f921976a9146a98a3f2935718df72518c00768ec67c589e0b2888ac01f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f0100000000004c4b40000000000000");
-  double inputamount = 130000.0;
-  Amount amount = Amount::CreateByCoinAmount(inputamount);
+  // double inputamount = 130000.0;
+  // Amount amount = Amount::CreateByCoinAmount(inputamount);
   ByteData256 byte_data;
   SigHashType sig_hash_type(SigHashAlgorithm::kSigHashAll);
   Pubkey utxo_pubkey(

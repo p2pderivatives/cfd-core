@@ -63,6 +63,28 @@ TEST(ByteData, BytesConstructor) {
     "140102030405060708090001020304050607080900");
 }
 
+TEST(ByteData, ByteDataConstructor) {
+  uint8_t target[20];
+  uint32_t size = 20;
+  uint8_t byte = 1;
+  for (uint32_t i = 0; i < size; i++) {
+    target[i] = byte;
+    byte++;
+    if (byte > 9) {
+      byte = 0;
+    }
+  }
+  ByteData byte_data = ByteData(target, size);
+
+  EXPECT_STREQ(byte_data.GetHex().c_str(),
+               "0102030405060708090001020304050607080900");
+  EXPECT_EQ(byte_data.GetDataSize(), size);
+  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_STREQ(
+    byte_data.Serialize().GetHex().c_str(),
+    "140102030405060708090001020304050607080900");
+}
+
 TEST(ByteData, Serialize) {
   auto blank_str = [](uint16_t len){
     std::string ret;

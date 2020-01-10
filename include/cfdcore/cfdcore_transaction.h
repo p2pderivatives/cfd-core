@@ -24,6 +24,21 @@
 namespace cfd {
 namespace core {
 
+//! transaction callback type: add txin
+constexpr const uint32_t kStateChangeAddTxIn = 0x00000001;
+//! transaction callback type: update txin
+constexpr const uint32_t kStateChangeUpdateTxIn = 0x00000002;
+//! transaction callback type: remove txout
+constexpr const uint32_t kStateChangeRemoveTxIn = 0x00000004;
+//! transaction callback type: update sign txin
+constexpr const uint32_t kStateChangeUpdateSignTxIn = 0x00000008;
+//! transaction callback type: add txout
+constexpr const uint32_t kStateChangeAddTxOut = 0x00000100;
+//! transaction callback type: update txout
+constexpr const uint32_t kStateChangeUpdateTxOut = 0x00000200;
+//! transaction callback type: remove txout
+constexpr const uint32_t kStateChangeRemoveTxOut = 0x00000400;
+
 /**
  * @brief TxOut情報を保持するクラス
  */
@@ -170,6 +185,11 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @param[in] lock_time     lock time
    */
   explicit Transaction(int32_t version, uint32_t lock_time);
+  /**
+   * @brief constructor
+   * @param[in] byte_data   tx byte data
+   */
+  explicit Transaction(const ByteData& byte_data);
   /**
    * @brief コンストラクタ
    * @param[in] hex_string    txバイトデータのHEX文字列
@@ -366,6 +386,11 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
       SigHashType sighash_type, const Amount& value = Amount(),
       WitnessVersion version = WitnessVersion::kVersionNone) const;
   /**
+   * @brief Transactionのバイトデータを取得する.
+   * @return バイトデータ
+   */
+  virtual ByteData GetData() const;
+  /**
    * @brief witness情報かどうかを取得する.
    * @retval true   witness
    * @retval false  witnessではない
@@ -378,10 +403,17 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    */
   virtual uint32_t GetWallyFlag() const;
 
- private:
+ protected:
   std::vector<TxIn> vin_;    ///< TxIn配列
   std::vector<TxOut> vout_;  ///< TxOut配列
 
+  /**
+   * @brief HEX文字列からTransaction情報を設定する.
+   * @param[in] hex_string    TransactionバイトデータのHEX文字列
+   */
+  void SetFromHex(const std::string& hex_string);
+
+ private:
   /**
    * @brief TxIn配列のIndex範囲をチェックする.
    * @param[in] index     TxIn配列のIndex値
@@ -423,11 +455,6 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @return バイトデータ
    */
   ByteData GetData(bool has_witness) const;
-  /**
-   * @brief HEX文字列からTransaction情報を設定する.
-   * @param[in] hex_string    TransactionバイトデータのHEX文字列
-   */
-  void SetFromHex(const std::string& hex_string);
   /**
    * @brief TxOut領域のByteDataの整合性チェックと、TxOutへの設定を行う.
    *

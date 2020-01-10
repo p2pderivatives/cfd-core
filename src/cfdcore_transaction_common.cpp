@@ -21,6 +21,7 @@
 namespace cfd {
 namespace core {
 
+using logger::trace;
 using logger::warn;
 
 // -----------------------------------------------------------------------------
@@ -230,6 +231,64 @@ bool SignatureUtil::VerifyEcSignature(
 }
 
 // -----------------------------------------------------------------------------
+// OutPoint
+// -----------------------------------------------------------------------------
+OutPoint::OutPoint() : txid_(), vout_(0) {
+  // do nothing
+}
+
+OutPoint::OutPoint(const Txid &txid, uint32_t vout)
+    : txid_(txid), vout_(vout) {
+  // do nothing
+}
+
+const Txid OutPoint::GetTxid() const { return txid_; }
+
+uint32_t OutPoint::GetVout() const { return vout_; }
+
+bool OutPoint::IsValid() const { return txid_.IsValid(); }
+
+bool OutPoint::operator==(const OutPoint &object) const {
+  if ((vout_ == object.vout_) && (txid_.Equals(object.txid_))) {
+    return true;
+  }
+  return false;
+}
+
+bool OutPoint::operator!=(const OutPoint &object) const {
+  return !(*this == object);
+}
+
+bool operator<(const OutPoint &source, const OutPoint &dest) {
+  if (source.GetVout() < dest.GetVout()) {
+    return true;
+  }
+  if (source.GetTxid().GetData().GetBytes() <
+      dest.GetTxid().GetData().GetBytes()) {
+    return true;
+  }
+  return false;
+}
+
+bool operator<=(const OutPoint &source, const OutPoint &dest) {
+  if (source == dest) {
+    return true;
+  }
+  return (source < dest);
+}
+
+bool operator>=(const OutPoint &source, const OutPoint &dest) {
+  return !(source < dest);
+}
+
+bool operator>(const OutPoint &source, const OutPoint &dest) {
+  if (source == dest) {
+    return false;
+  }
+  return !(source < dest);
+}
+
+// -----------------------------------------------------------------------------
 // AbstractTransaction
 // -----------------------------------------------------------------------------
 AbstractTransaction::AbstractTransaction() : wally_tx_pointer_(NULL) {
@@ -258,6 +317,11 @@ uint32_t AbstractTransaction::GetLockTime() const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   return tx_pointer->locktime;
+}
+
+void AbstractTransaction::CallbackStateChange(uint32_t type) {
+  // please override this function
+  trace(CFD_LOG_SOURCE, "type[%#x]", type);
 }
 
 void AbstractTransaction::AddTxIn(

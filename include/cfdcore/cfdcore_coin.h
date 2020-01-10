@@ -57,6 +57,12 @@ class CFD_CORE_EXPORT Txid {
    * @return true:一致/false:不一致
    */
   bool Equals(const Txid& txid) const;
+  /**
+   * @brief check valid data.
+   * @retval true   valid.
+   * @retval false  invalid.
+   */
+  bool IsValid() const;
 
  private:
   ByteData data_;  ///< byte data
@@ -99,6 +105,12 @@ class CFD_CORE_EXPORT BlockHash {
    * @return ByteDataオブジェクト
    */
   const ByteData GetData() const;
+  /**
+   * @brief check valid data.
+   * @retval true   valid.
+   * @retval false  invalid.
+   */
+  bool IsValid() const;
 
  private:
   ByteData data_;  ///< byte data

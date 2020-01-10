@@ -55,6 +55,10 @@ bool Txid::Equals(const Txid& txid) const {
   return false;
 }
 
+bool Txid::IsValid() const {
+  return (data_.GetDataSize() == kByteData256Length);
+}
+
 // -----------------------------------------------------------------------------
 // BlockHash
 // -----------------------------------------------------------------------------
@@ -83,6 +87,10 @@ const std::string BlockHash::GetHex() const {
 }
 
 const ByteData BlockHash::GetData() const { return data_; }
+
+bool BlockHash::IsValid() const {
+  return (data_.GetDataSize() == kByteData256Length);
+}
 
 }  // namespace core
 }  // namespace cfd
