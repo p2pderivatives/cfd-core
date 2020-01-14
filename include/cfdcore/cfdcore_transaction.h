@@ -386,11 +386,6 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
       SigHashType sighash_type, const Amount& value = Amount(),
       WitnessVersion version = WitnessVersion::kVersionNone) const;
   /**
-   * @brief Transactionのバイトデータを取得する.
-   * @return バイトデータ
-   */
-  virtual ByteData GetData() const;
-  /**
    * @brief witness情報かどうかを取得する.
    * @retval true   witness
    * @retval false  witnessではない
@@ -454,7 +449,7 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @param[in] has_witness   witnessを含めるかのフラグ
    * @return バイトデータ
    */
-  ByteData GetData(bool has_witness) const;
+  ByteData GetByteData(bool has_witness) const;
   /**
    * @brief TxOut領域のByteDataの整合性チェックと、TxOutへの設定を行う.
    *

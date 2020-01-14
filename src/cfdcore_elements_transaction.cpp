@@ -2320,7 +2320,8 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
   int ret = WALLY_OK;
 
   // Change AbstractTransaction to wally_tx
-  const std::vector<uint8_t> &tx_bytedata = GetData(HasWitness()).GetBytes();
+  const std::vector<uint8_t> &tx_bytedata =
+      GetByteData(HasWitness()).GetBytes();
   ret = wally_tx_from_bytes(
       tx_bytedata.data(), tx_bytedata.size(), GetWallyFlag(), &tx_pointer);
   if (ret != WALLY_OK || tx_pointer == NULL) {
@@ -2711,11 +2712,7 @@ void ConfidentialTransaction::SetElementsTxState() {
   }
 }
 
-ByteData ConfidentialTransaction::GetData() const {
-  return AbstractTransaction::GetData();
-}
-
-ByteData ConfidentialTransaction::GetData(bool has_witness) const {
+ByteData ConfidentialTransaction::GetByteData(bool has_witness) const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   size_t size = 0;
