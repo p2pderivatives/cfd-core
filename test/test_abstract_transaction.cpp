@@ -75,7 +75,7 @@ class TestTransaction : public AbstractTransaction {
                                const char* ) const {
     // do nothing
   }
-  virtual ByteData GetData(bool ) const {
+  virtual ByteData GetByteData(bool ) const {
     return ByteData();
   }
 };
