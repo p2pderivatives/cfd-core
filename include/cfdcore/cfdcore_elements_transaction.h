@@ -1254,12 +1254,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   ByteData256 GetWitnessOnlyHash() const;
 
   /**
-   * @brief Transactionのバイトデータを取得する.
-   * @return バイトデータ
-   */
-  virtual ByteData GetData() const;
-
-  /**
    * @brief witness情報かどうかを取得する.
    * @retval true   witness
    * @retval false  witnessではない
@@ -1408,7 +1402,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] has_witness   witnessを含めるかのフラグ
    * @return バイトデータ
    */
-  ByteData GetData(bool has_witness) const;
+  ByteData GetByteData(bool has_witness) const;
   /**
    * @brief HEX文字列からTransaction情報を設定する.
    * @param[in] hex_string    TransactionバイトデータのHEX文字列

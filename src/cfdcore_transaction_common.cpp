@@ -588,12 +588,14 @@ ByteData256 AbstractTransaction::GetWitnessHash() const {
 }
 
 ByteData256 AbstractTransaction::GetHash(bool has_witness) const {
-  ByteData buffer = GetData(has_witness);
+  ByteData buffer = GetByteData(has_witness);
   // sha256d hash
   return HashUtil::Sha256D(buffer.GetBytes());
 }
 
-ByteData AbstractTransaction::GetData() const { return GetData(HasWitness()); }
+ByteData AbstractTransaction::GetData() const {
+  return GetByteData(HasWitness());
+}
 
 std::string AbstractTransaction::GetHex() const { return GetData().GetHex(); }
 

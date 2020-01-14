@@ -538,7 +538,7 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @param[in] has_witness   witnessを含めるかのフラグ
    * @return バイトデータ
    */
-  virtual ByteData GetData(bool has_witness) const = 0;
+  virtual ByteData GetByteData(bool has_witness) const = 0;
   /**
    * @brief VariableIntデータを取得する.
    * @param[in] p_byte_data Byte配列アドレス

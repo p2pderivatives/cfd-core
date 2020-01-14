@@ -679,7 +679,8 @@ ByteData256 Transaction::GetSignatureHash(
 
   // It is assumed that tx information has been created.
   // (If it is not created, it will cause inconsistency)
-  const std::vector<uint8_t> &tx_bytedata = GetData(HasWitness()).GetBytes();
+  const std::vector<uint8_t> &tx_bytedata =
+      GetByteData(HasWitness()).GetBytes();
   ret = wally_tx_from_bytes(
       tx_bytedata.data(), tx_bytedata.size(), 0, &tx_pointer);
   if (ret != WALLY_OK) {
@@ -716,10 +717,6 @@ ByteData256 Transaction::GetSignatureHash(
   return ByteData256(buffer);
 }
 
-ByteData Transaction::GetData() const {
-  return AbstractTransaction::GetData();
-}
-
 bool Transaction::HasWitness() const {
   for (const TxIn &txin : vin_) {
     if (!txin.GetScriptWitness().GetWitness().empty()) {
@@ -729,7 +726,7 @@ bool Transaction::HasWitness() const {
   return false;
 }
 
-ByteData Transaction::GetData(bool has_witness) const {
+ByteData Transaction::GetByteData(bool has_witness) const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   size_t size = 0;
