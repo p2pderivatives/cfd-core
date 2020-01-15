@@ -331,7 +331,7 @@ void AbstractTransaction::AddTxIn(
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   const std::vector<uint8_t> &txid_buf = txid.GetData().GetBytes();
   int ret;
-  if (unlocking_script.IsEmpty()) {
+  if (unlocking_script.Empty()) {
     ret = wally_tx_add_raw_input(
         tx_pointer, txid_buf.data(), txid_buf.size(), index, sequence, NULL, 0,
         NULL, 0);

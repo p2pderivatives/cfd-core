@@ -21,14 +21,14 @@ TEST(TxOut, Constractor) {
     int64_t satoshi = 0;
     TxOut txout;
     EXPECT_EQ(txout.GetValue().GetSatoshiValue(), satoshi);
-    EXPECT_EQ(txout.GetLockingScript().IsEmpty(), true);
+    EXPECT_EQ(txout.GetLockingScript().Empty(), true);
   }
 
   {
     int64_t satoshi = 1000000;
     TxOut txout(Amount::CreateBySatoshiAmount(satoshi), exp_script);
     EXPECT_EQ(txout.GetValue().GetSatoshiValue(), satoshi);
-    EXPECT_EQ(txout.GetLockingScript().IsEmpty(), false);
+    EXPECT_EQ(txout.GetLockingScript().Empty(), false);
     EXPECT_STREQ(txout.GetLockingScript().GetHex().c_str(),
                  exp_script.GetHex().c_str());
   }
@@ -39,7 +39,7 @@ TEST(TxOut, Constractor) {
     TxOut txout;
     EXPECT_NO_THROW((txout = TxOut(Amount::CreateBySatoshiAmount(satoshi), address)));
     EXPECT_EQ(txout.GetValue().GetSatoshiValue(), satoshi);
-    EXPECT_EQ(txout.GetLockingScript().IsEmpty(), false);
+    EXPECT_EQ(txout.GetLockingScript().Empty(), false);
     EXPECT_STREQ(txout.GetLockingScript().GetHex().c_str(), address.GetLockingScript().GetHex().c_str());
   }
 }
@@ -51,7 +51,7 @@ TEST(TxOutReference, Constractor) {
     TxOutReference txout_ref(txout);
 
     EXPECT_EQ(txout_ref.GetValue().GetSatoshiValue(), satoshi);
-    EXPECT_EQ(txout_ref.GetLockingScript().IsEmpty(), false);
+    EXPECT_EQ(txout_ref.GetLockingScript().Empty(), false);
     EXPECT_STREQ(txout_ref.GetLockingScript().GetHex().c_str(),
                  exp_script.GetHex().c_str());
   }

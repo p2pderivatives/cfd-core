@@ -100,7 +100,7 @@ uint32_t TxIn::EstimateTxInSize(
       is_pubkey = true;
       break;
     default:
-      if (redeem_script.IsEmpty()) {
+      if (redeem_script.Empty()) {
         warn(CFD_LOG_SOURCE, "unknown address type, and empty redeem script.");
         throw CfdException(
             kCfdIllegalArgumentError,
@@ -114,7 +114,7 @@ uint32_t TxIn::EstimateTxInSize(
     script_size = Pubkey::kCompressedPubkeySize + EC_SIGNATURE_DER_MAX_LEN + 3;
   } else {
     script_size = EC_SIGNATURE_DER_MAX_LEN + 2;  // allNum + sig(serialize)
-    if (!redeem_script.IsEmpty()) {
+    if (!redeem_script.Empty()) {
       script_size +=
           static_cast<uint32_t>(redeem_script.GetData().GetSerializeSize());
       try {
@@ -504,7 +504,7 @@ uint32_t Transaction::AddTxIn(
 
   AbstractTransaction::AddTxIn(txid, index, sequence, unlocking_script);
   TxIn txin(txid, index, sequence);
-  if (!unlocking_script.IsEmpty()) {
+  if (!unlocking_script.Empty()) {
     txin = TxIn(txid, index, sequence, unlocking_script);
   }
 

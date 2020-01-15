@@ -257,12 +257,13 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @param[in] txid                txid
    * @param[in] index               vout
    * @param[in] sequence            sequence
-   * @param[in] unlocking_script    unlocking script (未指定時はEmptyを設定する. default Script::Empty)
+   * @param[in] unlocking_script    unlocking script 
+   *     (未指定時はEmptyScriptを設定する. default Script::EmptyScript)
    * @return 追加したTxInのindex位置
    */
   uint32_t AddTxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
-      const Script& unlocking_script = Script::Empty);
+      const Script& unlocking_script = Script::EmptyScript);
   /**
    * @brief TxIn情報を削除する.
    * @param[in] index     削除するindex位置
