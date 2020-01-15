@@ -163,3 +163,10 @@ TEST(Pubkey, CombinePubkeysTest) {
                  combined.GetHex().c_str());
   }
 }
+
+TEST(Pubkey, NegateTest) {
+  Pubkey pubkey = Pubkey("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9");
+  Pubkey negate = pubkey.CreateNegate();
+  EXPECT_FALSE(pubkey.Equals(negate));
+  EXPECT_TRUE(pubkey.Equals(negate.CreateNegate()));
+}

@@ -42,21 +42,78 @@ class Secp256k1 {
   ByteData CombinePubkeySecp256k1Ec(const std::vector<ByteData>& pubkey_list);
 
   /**
+   * \~english 
+   * @brief Tweak a private key by adding tweak.
+   * @param[in] privkey     private key.(must 32-byte)
+   * @param[in] tweak       tweak value to be added.(32-byte)
+   * @return ByteData instance shows private key
+   * \~japanese
+   * @brief 加算によって、PrivateKeyを調整する。
+   * @param[in] privkey     秘密鍵.(32-byte固定)
+   * @param[in] tweak       調整値.(32-byte)
+   * @return private key が格納された ByteDataインスタンス.
+   */
+  ByteData AddTweakPrivkeySecp256k1Ec(
+      const ByteData& privkey, const ByteData& tweak);
+
+  /**
+   * \~english 
+   * @brief Tweak a private key by multiplying it by a tweak.
+   * @param[in] privkey     private key.(must 32-byte)
+   * @param[in] tweak       tweak value to be multiplied.(32-byte)
+   * @return ByteData instance shows private key
+   * \~japanese
+   * @brief 乗算によって、PrivateKeyを調整する。
+   * @param[in] tweak       秘密鍵.(32-byte固定)
+   * @param[in] tweak       調整値.(32-byte)
+   * @return private key が格納された ByteDataインスタンス.
+   */
+  ByteData MulTweakPrivkeySecp256k1Ec(
+      const ByteData& privkey, const ByteData& tweak);
+
+  /**
    * \~english
    * @brief function for adjusting Pubkey
    * @param[in] pubkey            Pubkey
-   * @param[in] tweak             調整値
+   * @param[in] tweak             tweak value to be added.(32-byte)
    * @param[in] is_tweak_check    boolean check for pubkey adjustment
    * @return  data of adjusted Pubkey data
    * \~japanese
-   * @brief Pubkey調整処理
+   * @brief 加算によって、PubKeyを調整する。
    * @param[in] pubkey            Pubkey
-   * @param[in] tweak             調整値
+   * @param[in] tweak             調整値.(32-byte)
    * @param[in] is_tweak_check    pubkey調整チェック実施有無
    * @return 調整後のPubkeyデータ
    */
   ByteData AddTweakPubkeySecp256k1Ec(
       const ByteData& pubkey, const ByteData& tweak, bool is_tweak_check);
+
+  /**
+   * \~english
+   * @brief Tweak a public key by multiplying it by a tweak value.
+   * @param[in] pubkey            Pubkey
+   * @param[in] tweak             tweak value to be multiplied.(32-byte)
+   * @return  data of adjusted Pubkey data
+   * \~japanese
+   * @brief 乗算によって、 PublicKey を調整する。
+   * @param[in] pubkey            Pubkey
+   * @param[in] tweak             調整値.(32-byte)
+   * @return 調整後のPubkeyデータ
+   */
+  ByteData MulTweakPubkeySecp256k1Ec(
+      const ByteData& pubkey, const ByteData& tweak);
+
+  /**
+   * \~english
+   * @brief function for negate Privkey
+   * @param[in] privkey         Privkey
+   * @return data of negated Privkey
+   * \~japanese
+   * @brief Privkey negate処理
+   * @param[in] privkey         Privkey
+   * @return 加工後のPrivkeyデータ
+   */
+  ByteData NegatePrivkeySecp256k1Ec(const ByteData& privkey);
 
   /**
    * \~english

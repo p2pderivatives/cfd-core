@@ -102,6 +102,32 @@ class CFD_CORE_EXPORT Pubkey {
   static Pubkey CombinePubkey(Pubkey pubkey, Pubkey message_key);
 
   /**
+   * @brief Create new public key with tweak added.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @param[in] tweak     tweak to be added
+   * @return new instance of pubkey key with tweak added.
+   */
+  Pubkey CreateTweakAdded(const ByteData256& tweak) const;
+
+  /**
+   * @brief Create new negated public key with tweak multiplied.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @param[in] tweak     tweak to be added
+   * @return new instance of pubkey key with tweak added.
+   */
+  Pubkey CreateTweakMuled(const ByteData256& tweak) const;
+
+  /**
+   * @brief Create new negated public key.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @return new instance of pubkey key with tweak added.
+   */
+  Pubkey CreateNegate() const;
+
+  /**
    * @brief 公開鍵として正しい形式であるかを検証する.
    * @param[in] byte_data 公開鍵のByteData
    * @retval true   正常フォーマット
@@ -178,6 +204,54 @@ class CFD_CORE_EXPORT Privkey {
   std::string ConvertWif(NetType net_type, bool is_compressed = true);
 
   /**
+   * @brief Private keyからPubkeyインスタンスを生成する.
+   * @param[in] is_compressed privatekeyから導出するpubkeyのcompress有無
+   * @return Pubkeyインスタンス
+   */
+  Pubkey GeneratePubkey(bool is_compressed = true) const;
+
+  /**
+   * @brief Create new private key with tweak added.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @param[in] tweak     tweak to be added
+   * @return new instance of private key with tweak added.
+   */
+  Privkey CreateTweakAdded(const ByteData256& tweak) const;
+
+  /**
+   * @brief Create new private key with tweak multiplied.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @param[in] tweak     tweak to be added
+   * @return new instance of private key with tweak added.
+   */
+  Privkey CreateTweakMuled(const ByteData256& tweak) const;
+
+  /**
+   * @brief Create new negated private key.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @return new instance of private key with tweak added.
+   */
+  Privkey CreateNegate() const;
+
+  /**
+   * @brief PrivateKeyの設定状態が正常であるかを返却する.
+   * @retval true 状態が正常
+   * @retval false 状態が不正
+   */
+  bool IsValid() const;
+
+  /**
+   * @brief Check this privkey and argument key byte is match or not.
+   * @param[in] privkey   private key to be compared
+   * @retval true   match
+   * @retval false  not match
+   */
+  bool Equals(const Privkey& privkey) const;
+
+  /**
    * @brief WIFからPrivKeyインスタンスを生成する.
    * @param[in] wif WIF文字列
    * @param[in] net_type Mainnet or Testnet
@@ -194,20 +268,6 @@ class CFD_CORE_EXPORT Privkey {
    * @return Privkeyインスタンス
    */
   static Privkey GenerageRandomKey();
-
-  /**
-   * @brief Private keyからPubkeyインスタンスを生成する.
-   * @param[in] is_compressed privatekeyから導出するpubkeyのcompress有無
-   * @return Pubkeyインスタンス
-   */
-  Pubkey GeneratePubkey(bool is_compressed = true) const;
-
-  /**
-   * @brief PrivateKeyの設定状態が正常であるかを返却する.
-   * @retval true 状態が正常
-   * @retval false 状態が不正
-   */
-  bool IsValid() const;
 
  private:
   /**

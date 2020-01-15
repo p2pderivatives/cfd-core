@@ -3,6 +3,7 @@
 
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_key.h"
+#include "cfdcore/cfdcore_util.h"
 #include "cfdcore/cfdcore_exception.h"
 
 // https://qiita.com/yohm/items/477bac065f4b772127c7
@@ -13,6 +14,7 @@
 
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
+using cfd::core::RandomNumberUtil;
 using cfd::core::Privkey;
 using cfd::core::Pubkey;
 using cfd::core::NetType;
@@ -126,6 +128,9 @@ TEST(Privkey, FromWif_mainnet_compressed) {
   EXPECT_STREQ(
       privkey.GetHex().c_str(),
       "305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+
+  Privkey from_hex("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+  EXPECT_TRUE(privkey.Equals(from_hex));
 }
 
 TEST(Privkey, FromWif_testnet_compressed) {
@@ -134,6 +139,9 @@ TEST(Privkey, FromWif_testnet_compressed) {
   EXPECT_STREQ(
       privkey.GetHex().c_str(),
       "305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+
+  Privkey from_hex("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+  EXPECT_TRUE(privkey.Equals(from_hex));
 }
 
 TEST(Privkey, FromWif_mainnet_uncompressed) {
@@ -142,6 +150,9 @@ TEST(Privkey, FromWif_mainnet_uncompressed) {
   EXPECT_STREQ(
       privkey.GetHex().c_str(),
       "305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+
+  Privkey from_hex("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+  EXPECT_TRUE(privkey.Equals(from_hex));
 }
 
 TEST(Privkey, FromWif_wif_error) {
@@ -188,4 +199,37 @@ TEST(Privkey, GenerageRandomKeyTest) {
   Privkey privkey = Privkey::GenerageRandomKey();
   bool isValid = privkey.IsValid();
   EXPECT_TRUE(isValid);
+}
+
+TEST(Privkey, TweakConversionTest) {
+  Privkey privkey("036b13c5a0dd9935fe175b2b9ff86585c231e734b2148149d788a941f1f4f566");
+  ByteData256 tweak("98430d10471cf697e2661e31ceb8720750b59a85374290e175799ba5dd06508e");
+
+  // test for adding tweak
+  {
+    Privkey priv_tweak_added;
+    EXPECT_NO_THROW(priv_tweak_added = privkey.CreateTweakAdded(tweak));
+    EXPECT_STREQ(priv_tweak_added.GetHex().c_str(), "9bae20d5e7fa8fcde07d795d6eb0d78d12e781b9e957122b4d0244e7cefb45f4");
+
+    Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakAdded(tweak);
+    EXPECT_TRUE(expect_pubkey.Equals(priv_tweak_added.GeneratePubkey()));
+  }
+
+  // test for multiplying tweak
+  {
+    Privkey priv_tweak_mul;
+    EXPECT_NO_THROW(priv_tweak_mul = privkey.CreateTweakMuled(tweak));
+    EXPECT_STREQ(priv_tweak_mul.GetHex().c_str(), "aa71b12accba23b49761a7521e661f07a7e5742ac48cf708b8f9497b3a72a957");
+
+    // FIXME: これについて成り立つか確認する
+    // Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakMuled(tweak);
+    // EXPECT_TRUE(expect_pubkey.Equals(priv_tweak_mul.GeneratePubkey()));
+  }
+}
+
+TEST(Privkey, NegateTest) {
+  Privkey privkey = Privkey("6a3f76d20a24aba37d97ad07bcb090499a64a76bb9d30e156d7e97285926cb89");
+  Privkey negate = privkey.CreateNegate();
+  EXPECT_FALSE(privkey.Equals(negate));
+  EXPECT_TRUE(privkey.Equals(negate.CreateNegate()));
 }

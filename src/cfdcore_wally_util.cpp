@@ -88,12 +88,36 @@ ByteData WallyUtil::CombinePubkeySecp256k1Ec(
   return secp256k1.CombinePubkeySecp256k1Ec(pubkey_list);
 }
 
+ByteData WallyUtil::AddTweakPrivkey(
+    const ByteData& privkey, const ByteData256& tweak) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return secp256k1.AddTweakPrivkeySecp256k1Ec(
+      privkey, ByteData(tweak.GetBytes()));
+}
+
+ByteData WallyUtil::MulTweakPrivkey(
+    const ByteData& privkey, const ByteData256& tweak) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return secp256k1.MulTweakPrivkeySecp256k1Ec(
+      privkey, ByteData(tweak.GetBytes()));
+}
+
 ByteData WallyUtil::AddTweakPubkey(
     const ByteData& pubkey, const ByteData256& tweak, bool is_tweak_check) {
   struct secp256k1_context_struct* context = wally_get_secp_context();
   Secp256k1 secp256k1(context);
   return secp256k1.AddTweakPubkeySecp256k1Ec(
       pubkey, ByteData(tweak.GetBytes()), is_tweak_check);
+}
+
+ByteData WallyUtil::MulTweakPubkey(
+    const ByteData& pubkey, const ByteData256& tweak) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return secp256k1.MulTweakPubkeySecp256k1Ec(
+      pubkey, ByteData(tweak.GetBytes()));
 }
 
 std::vector<uint8_t> WallyUtil::CreateScriptDataFromBytes(
@@ -120,6 +144,12 @@ std::vector<uint8_t> WallyUtil::CreateScriptDataFromBytes(
   }
   ret_bytes.resize(written);
   return ret_bytes;
+}
+
+ByteData WallyUtil::NegatePrivkey(const ByteData& privkey) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return secp256k1.NegatePrivkeySecp256k1Ec(privkey);
 }
 
 ByteData WallyUtil::NegatePubkey(const ByteData& pubkey) {
