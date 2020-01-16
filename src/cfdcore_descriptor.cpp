@@ -357,7 +357,7 @@ HashType DescriptorScriptReference::GetHashType() const {
 }
 
 bool DescriptorScriptReference::HasRedeemScript() const {
-  return !redeem_script_.Empty();
+  return !redeem_script_.IsEmpty();
 }
 
 Script DescriptorScriptReference::GetRedeemScript() const {
@@ -752,7 +752,7 @@ void DescriptorNode::AnalyzeKey() {
           throw except;
         }
       }
-      if (!privkey.IsValid()) {
+      if (privkey.IsInvalid()) {
         try {
           privkey = Privkey::FromWif(key_info_, NetType::kTestnet);
         } catch (const CfdException& except) {
@@ -762,7 +762,7 @@ void DescriptorNode::AnalyzeKey() {
           }
         }
       }
-      if (!privkey.IsValid()) {
+      if (privkey.IsInvalid()) {
         warn(CFD_LOG_SOURCE, "Failed to privkey.");
         throw CfdException(
             CfdError::kCfdIllegalArgumentError, "privkey invalid.");

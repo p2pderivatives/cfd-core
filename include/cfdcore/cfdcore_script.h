@@ -644,7 +644,7 @@ class CFD_CORE_EXPORT ScriptHash {
 class CFD_CORE_EXPORT Script {
  public:
   //! empty script
-  static const Script EmptyScript;
+  static const Script Empty;
   //! maximum size of script
   static constexpr uint32_t kMaxScriptSize = 10000;
   //! maximum size of RedeemScript
@@ -700,7 +700,7 @@ class CFD_CORE_EXPORT Script {
    * @retval true   empty.
    * @retval false  data exist.
    */
-  bool Empty() const;
+  bool IsEmpty() const;
   /**
    * @brief get element list.
    * @return element list

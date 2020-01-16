@@ -74,7 +74,7 @@ class CFD_CORE_EXPORT ConfidentialNonce {
    * @retval true  empty
    * @retval false exist value
    */
-  bool Empty() const;
+  bool IsEmpty() const;
 
  private:
   ByteData data_;    //!< byte data
@@ -135,7 +135,7 @@ class CFD_CORE_EXPORT ConfidentialAssetId {
    * @retval true  empty
    * @retval false exist value
    */
-  bool Empty() const;
+  bool IsEmpty() const;
 
  private:
   ByteData data_;    //!< byte data
@@ -203,7 +203,7 @@ class CFD_CORE_EXPORT ConfidentialValue {
    * @retval true  empty
    * @retval false exist value
    */
-  bool Empty() const;
+  bool IsEmpty() const;
 
   /**
    * @brief satoshiをConfidentialValueへと変換する.
@@ -886,13 +886,12 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] txid                txid
    * @param[in] index               vout
    * @param[in] sequence            sequence
-   * @param[in] unlocking_script    unlocking script
-   *     (未指定時はEmptyScriptを設定する. default Script::EmptyScript)
+   * @param[in] unlocking_script    unlocking script (未指定時はEmptyを設定する. default Script::Empty)
    * @return 追加したTxInのindex位置
    */
   uint32_t AddTxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
-      const Script& unlocking_script = Script::EmptyScript);
+      const Script& unlocking_script = Script::Empty);
   /**
    * @brief TxIn情報を削除する.
    * @param[in] index     削除するindex位置

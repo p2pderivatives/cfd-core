@@ -237,11 +237,11 @@ class CFD_CORE_EXPORT Privkey {
   Privkey CreateNegate() const;
 
   /**
-   * @brief PrivateKeyの設定状態が正常であるかを返却する.
-   * @retval true 状態が正常
-   * @retval false 状態が不正
+   * @brief PrivateKeyの設定状態が不正であるかを返却する.
+   * @retval true 状態が不正
+   * @retval false 状態は正常
    */
-  bool IsValid() const;
+  bool IsInvalid() const;
 
   /**
    * @brief Check this privkey and argument key byte is match or not.

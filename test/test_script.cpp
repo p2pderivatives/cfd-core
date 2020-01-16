@@ -25,7 +25,7 @@ TEST(Script, Script) {
   size_t size = 0;
   Script script;
   EXPECT_STREQ(script.GetHex().c_str(), "");
-  EXPECT_EQ(script.Empty(), true);
+  EXPECT_EQ(script.IsEmpty(), true);
   EXPECT_EQ(script.GetData().GetDataSize(), size);
   EXPECT_EQ(script.GetElementList().size(), size);
 }
@@ -36,7 +36,7 @@ TEST(Script, Script_hex) {
   Script script(hex);
   EXPECT_STREQ(script.GetHex().c_str(),
                "76a91498e977b2259a85278aa51188bd863a3df0ad31ba88ac");
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
 }
 
@@ -57,7 +57,7 @@ TEST(Script, Script_bytedata) {
   Script script(bytedata);
   EXPECT_STREQ(script.GetHex().c_str(),
                "76a91498e977b2259a85278aa51188bd863a3df0ad31ba88ac");
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
 }
 
@@ -71,7 +71,7 @@ TEST(Script, SetStackData_OP0) {
 
   // OP_0 <hash160(pubkey)>
   size_t size = 2;
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
   EXPECT_STREQ(
       script.GetHex().c_str(),
@@ -99,7 +99,7 @@ TEST(Script, SetStackData_kUseScriptNum1) {
 
   // OP_IF pubkeyA OP_ELSE delay OP_CHECKSEQUENCEVERIFY OP_DROP pubkeyB OP_ENDIF OP_CHECKSIG
   size_t size = 9;
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
   EXPECT_STREQ(
       script.ToString().c_str(),
@@ -118,7 +118,7 @@ TEST(Script, SetStackData_kUseScriptNum2) {
 
   // OP_5 OP_2 OP_ADD OP_7 OP_EQUALVERIFY
   size_t size = 5;
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
   EXPECT_STREQ(script.GetHex().c_str(), "5552935788");
   EXPECT_STREQ(script.ToString().c_str(), "5 2 OP_ADD 7 OP_EQUALVERIFY");
@@ -137,7 +137,7 @@ TEST(Script, SetStackData_kUseScriptNum3) {
 
   // OP_SIZE OP_TUCK 20 23 OP_WITHIN OP_VERIFY
   size_t size = 6;
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
   EXPECT_STREQ(script.GetHex().c_str(), "827d01200123a569");
   EXPECT_STREQ(script.ToString().c_str(),
@@ -152,7 +152,7 @@ TEST(Script, SetStackData_kOpPushData1) {
   Script script = builder.Build();
 
   size_t size = 1;
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
   EXPECT_EQ(script.GetData().GetBytes()[0], 0x4c);
 }
@@ -165,7 +165,7 @@ TEST(Script, SetStackData_kOpPushData2) {
   Script script = builder.Build();
 
   size_t size = 1;
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
   EXPECT_EQ(script.GetData().GetBytes()[0], 0x4d);
 }
@@ -182,7 +182,7 @@ TEST(Script, SetStackData_kOpPushData4) {
   Script script(bytes);
 
   size_t size = 1;
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
   EXPECT_EQ(script.GetData().GetBytes()[0], 0x4e);
 }
@@ -283,13 +283,13 @@ TEST(Script, GetHex) {
 
 TEST(Script, IsEmpty_true) {
   Script script;
-  EXPECT_EQ(script.Empty(), true);
+  EXPECT_EQ(script.IsEmpty(), true);
 }
 
 TEST(Script, IsEmpty_false) {
   Script script(
       "002096376230fbeec4d1e703c3a2d1efe975ccf650a40f6ca2ec2d6cce44fc6bb2b3");
-  EXPECT_EQ(script.Empty(), false);
+  EXPECT_EQ(script.IsEmpty(), false);
 }
 
 TEST(Script, GetElementList) {

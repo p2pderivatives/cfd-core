@@ -247,8 +247,8 @@ Privkey Privkey::CreateNegate() const {
   return Privkey(negated);
 }
 
-bool Privkey::IsValid() const {
-  if (!IsValid(data_.GetBytes())) {
+bool Privkey::IsInvalid() const {
+  if (IsValid(data_.GetBytes())) {
     return false;
   }
   return true;

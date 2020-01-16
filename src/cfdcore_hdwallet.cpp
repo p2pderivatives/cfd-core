@@ -524,7 +524,7 @@ ExtPubkey ExtPrivkey::DerivePubkey(const std::string& string_path) const {
   return privkey.GetExtPubkey();
 }
 
-bool ExtPrivkey::IsValid() const { return privkey_.IsValid(); }
+bool ExtPrivkey::IsValid() const { return !privkey_.IsInvalid(); }
 
 ByteData256 ExtPrivkey::GetChainCode() const { return chaincode_; }
 
