@@ -223,9 +223,8 @@ TEST(Privkey, TweakConversionTest) {
     EXPECT_NO_THROW(priv_tweak_mul = privkey.CreateTweakMuled(tweak));
     EXPECT_STREQ(priv_tweak_mul.GetHex().c_str(), "aa71b12accba23b49761a7521e661f07a7e5742ac48cf708b8f9497b3a72a957");
 
-    // FIXME: これについて成り立つか確認する
-    // Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakMuled(tweak);
-    // EXPECT_TRUE(expect_pubkey.Equals(priv_tweak_mul.GeneratePubkey()));
+    Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakMuled(tweak);
+    EXPECT_TRUE(expect_pubkey.Equals(priv_tweak_mul.GeneratePubkey()));
   }
 }
 

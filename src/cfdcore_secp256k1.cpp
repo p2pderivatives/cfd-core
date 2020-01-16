@@ -307,7 +307,7 @@ ByteData Secp256k1::MulTweakPubkeySecp256k1Ec(
   }
   memcpy(&watchman, &tweaked, sizeof(watchman));
 
-  ret = secp256k1_ec_pubkey_tweak_add(context, &tweaked, tweak_data.data());
+  ret = secp256k1_ec_pubkey_tweak_mul(context, &tweaked, tweak_data.data());
   if (ret != 1) {
     warn(CFD_LOG_SOURCE, "secp256k1_ec_pubkey_tweak_add Error.({})", ret);
     throw CfdException(
