@@ -353,17 +353,14 @@ ByteData Secp256k1::NegatePrivkeySecp256k1Ec(const ByteData& privkey) {
   }
 
   int ret;
-  std::vector<uint8_t> privkey_byte(kPrivkeyByteSize);
-  unsigned char* privkey_ptr =
-      static_cast<unsigned char*>(privkey.GetBytes().data());
-  ret = secp256k1_ec_privkey_negate(context, privkey_ptr);
+  std::vector<uint8_t> privkey_work = privkey.GetBytes();
+  ret = secp256k1_ec_privkey_negate(context, privkey_work.data());
   if (ret != 1) {
     warn(CFD_LOG_SOURCE, "secp256k1_ec_pubkey_negate Error.({})", ret);
     throw CfdException(
         CfdError::kCfdIllegalArgumentError, "Secp256k1 pubkey negate Error.");
   }
-  memcpy(privkey_byte.data(), privkey_ptr, privkey_byte.size());
-  return ByteData(privkey_byte);
+  return ByteData(privkey_work);
 }
 
 ByteData Secp256k1::NegatePubkeySecp256k1Ec(const ByteData& pubkey) {
