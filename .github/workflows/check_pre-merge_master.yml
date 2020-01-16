@@ -41,7 +41,7 @@ jobs:
     - name: ctest
       run: |
         cd build
-        ctest -C Release
+        ctest -C Release --output-on-failure
 
   cmake-mac-test:
     name: cmake build-mac
@@ -60,7 +60,7 @@ jobs:
     - name: ctest
       run: |
         cd build
-        ctest -C Release
+        ctest -C Release --output-on-failure
     - name: lint_check
       run: ./tools/lint_quiet.sh
 
@@ -110,7 +110,7 @@ jobs:
     - name: test
       run: |
         cd build
-        ctest -C Release
+        ctest -C Release --output-on-failure
         cd ..
     - name: ubuntu-after
       run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64

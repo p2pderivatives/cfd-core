@@ -83,6 +83,21 @@ Pubkey Pubkey::CombinePubkey(Pubkey pubkey, Pubkey message_key) {
   return Pubkey(WallyUtil::CombinePubkeySecp256k1Ec(data_list));
 }
 
+Pubkey Pubkey::CreateTweakAdded(const ByteData256& tweak) const {
+  ByteData tweak_added = WallyUtil::AddTweakPubkey(data_, tweak);
+  return Pubkey(tweak_added);
+}
+
+Pubkey Pubkey::CreateTweakMuled(const ByteData256& tweak) const {
+  ByteData tweak_muled = WallyUtil::MulTweakPubkey(data_, tweak);
+  return Pubkey(tweak_muled);
+}
+
+Pubkey Pubkey::CreateNegate() const {
+  ByteData negated = WallyUtil::NegatePubkey(data_);
+  return Pubkey(negated);
+}
+
 bool Pubkey::IsLarge(const Pubkey& source, const Pubkey& destination) {
   return ByteData::IsLarge(source.data_, destination.data_);
 }
@@ -217,11 +232,30 @@ Privkey Privkey::GenerageRandomKey() {
   return Privkey(ByteData(privkey));
 }
 
+Privkey Privkey::CreateTweakAdded(const ByteData256& tweak) const {
+  ByteData tweak_added = WallyUtil::AddTweakPrivkey(data_, tweak);
+  return Privkey(tweak_added);
+}
+
+Privkey Privkey::CreateTweakMuled(const ByteData256& tweak) const {
+  ByteData tweak_muled = WallyUtil::MulTweakPrivkey(data_, tweak);
+  return Privkey(tweak_muled);
+}
+
+Privkey Privkey::CreateNegate() const {
+  ByteData negated = WallyUtil::NegatePrivkey(data_);
+  return Privkey(negated);
+}
+
 bool Privkey::IsInvalid() const {
   if (IsValid(data_.GetBytes())) {
     return false;
   }
   return true;
+}
+
+bool Privkey::Equals(const Privkey& privkey) const {
+  return data_.Equals(privkey.data_);
 }
 
 bool Privkey::IsValid(const std::vector<uint8_t>& buffer) {

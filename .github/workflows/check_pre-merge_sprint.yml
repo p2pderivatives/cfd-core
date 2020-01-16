@@ -51,7 +51,7 @@ jobs:
     - name: ctest
       run: |
         cd build
-        ctest -C Release
+        ctest -C Release --output-on-failure
     - name: lint_check
       run: ./tools/lint_quiet.sh
 

@@ -54,7 +54,25 @@ class WallyUtil {
       const std::vector<ByteData>& pubkey_list);
 
   /**
-   * @brief Pubkey調整処理
+   * @brief 加算によるPrivkey調整処理
+   * @param[in] privkey           Privkey
+   * @param[in] tweak             調整値
+   * @return 調整後のPrivkey ByteData
+   */
+  static ByteData AddTweakPrivkey(
+      const ByteData& privkey, const ByteData256& tweak);
+
+  /**
+   * @brief 乗算によるPrivkey調整処理
+   * @param[in] privkey           Privkey
+   * @param[in] tweak             調整値
+   * @return 調整後のPrivkey ByteData
+   */
+  static ByteData MulTweakPrivkey(
+      const ByteData& privkey, const ByteData256& tweak);
+
+  /**
+   * @brief 加算によるPubkey調整処理
    * @param[in] pubkey            Pubkey
    * @param[in] tweak             調整値
    * @param[in] is_tweak_check    pubkey調整チェック実施有無
@@ -63,6 +81,15 @@ class WallyUtil {
   static ByteData AddTweakPubkey(
       const ByteData& pubkey, const ByteData256& tweak,
       bool is_tweak_check = false);
+
+  /**
+   * @brief 乗算によるPubkey調整処理
+   * @param[in] pubkey            Pubkey
+   * @param[in] tweak             調整値
+   * @return 調整後のPubkeyデータ
+   */
+  static ByteData MulTweakPubkey(
+      const ByteData& pubkey, const ByteData256& tweak);
 
   /**
    * @brief Scriptにpushするデータを生成する
@@ -74,9 +101,16 @@ class WallyUtil {
       const std::vector<uint8_t>& bytes, int32_t flags = 0);
 
   /**
+   * @brief Privkey negate処理
+   * @param[in] privkey           Privkey
+   * @return Negate 後の Privkey ByteData
+   */
+  static ByteData NegatePrivkey(const ByteData& privkey);
+
+  /**
    * @brief Pubkey negate処理
    * @param[in] pubkey            Pubkey
-   * @return 加工後のPubkeyデータ
+   * @return Negate 後の Pubkey ByteData
    */
   static ByteData NegatePubkey(const ByteData& pubkey);
 
