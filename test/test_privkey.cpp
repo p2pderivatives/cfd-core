@@ -210,20 +210,20 @@ TEST(Privkey, TweakConversionTest) {
   // test for adding tweak
   {
     Privkey priv_tweak_added;
-    EXPECT_NO_THROW(priv_tweak_added = privkey.CreateTweakAdded(tweak));
+    EXPECT_NO_THROW(priv_tweak_added = privkey.CreateTweakAdd(tweak));
     EXPECT_STREQ(priv_tweak_added.GetHex().c_str(), "9bae20d5e7fa8fcde07d795d6eb0d78d12e781b9e957122b4d0244e7cefb45f4");
 
-    Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakAdded(tweak);
+    Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakAdd(tweak);
     EXPECT_TRUE(expect_pubkey.Equals(priv_tweak_added.GeneratePubkey()));
   }
 
   // test for multiplying tweak
   {
     Privkey priv_tweak_mul;
-    EXPECT_NO_THROW(priv_tweak_mul = privkey.CreateTweakMuled(tweak));
+    EXPECT_NO_THROW(priv_tweak_mul = privkey.CreateTweakMul(tweak));
     EXPECT_STREQ(priv_tweak_mul.GetHex().c_str(), "aa71b12accba23b49761a7521e661f07a7e5742ac48cf708b8f9497b3a72a957");
 
-    Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakMuled(tweak);
+    Pubkey expect_pubkey = privkey.GeneratePubkey().CreateTweakMul(tweak);
     EXPECT_TRUE(expect_pubkey.Equals(priv_tweak_mul.GeneratePubkey()));
   }
 }

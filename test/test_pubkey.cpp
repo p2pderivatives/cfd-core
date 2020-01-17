@@ -161,6 +161,13 @@ TEST(Pubkey, CombinePubkeysTest) {
     Pubkey combined = Pubkey::CombinePubkey(pubkey1, pubkey2);
     EXPECT_STREQ(test_vector.combined_pubkey.c_str(),
                  combined.GetHex().c_str());
+
+    std::vector<Pubkey> pubkeys;
+    pubkeys.push_back(pubkey1);
+    pubkeys.push_back(pubkey2);
+    combined = Pubkey::CombinePubkey(pubkeys);
+    EXPECT_STREQ(test_vector.combined_pubkey.c_str(),
+                 combined.GetHex().c_str());
   }
 }
 
