@@ -95,11 +95,18 @@ class CFD_CORE_EXPORT Pubkey {
 
   /**
    * @brief 合成Pubkeyを生成する.
+   * @param[in] pubkeys 合成元Pubkey list
+   * @return 合成したPubkeyインスタンス
+   */
+  static Pubkey CombinePubkey(const std::vector<Pubkey>& pubkeys);
+
+  /**
+   * @brief 合成Pubkeyを生成する.
    * @param[in] pubkey 合成元Pubkey
    * @param[in] message_key 合成するmessage Pubkey
    * @return 合成したPubkeyインスタンス
    */
-  static Pubkey CombinePubkey(Pubkey pubkey, Pubkey message_key);
+  static Pubkey CombinePubkey(const Pubkey& pubkey, const Pubkey& message_key);
 
   /**
    * @brief Create new public key with tweak added.
@@ -108,7 +115,7 @@ class CFD_CORE_EXPORT Pubkey {
    * @param[in] tweak     tweak to be added
    * @return new instance of pubkey key with tweak added.
    */
-  Pubkey CreateTweakAdded(const ByteData256& tweak) const;
+  Pubkey CreateTweakAdd(const ByteData256& tweak) const;
 
   /**
    * @brief Create new negated public key with tweak multiplied.
@@ -117,7 +124,7 @@ class CFD_CORE_EXPORT Pubkey {
    * @param[in] tweak     tweak to be added
    * @return new instance of pubkey key with tweak added.
    */
-  Pubkey CreateTweakMuled(const ByteData256& tweak) const;
+  Pubkey CreateTweakMul(const ByteData256& tweak) const;
 
   /**
    * @brief Create new negated public key.
@@ -217,7 +224,7 @@ class CFD_CORE_EXPORT Privkey {
    * @param[in] tweak     tweak to be added
    * @return new instance of private key with tweak added.
    */
-  Privkey CreateTweakAdded(const ByteData256& tweak) const;
+  Privkey CreateTweakAdd(const ByteData256& tweak) const;
 
   /**
    * @brief Create new private key with tweak multiplied.
@@ -226,7 +233,7 @@ class CFD_CORE_EXPORT Privkey {
    * @param[in] tweak     tweak to be added
    * @return new instance of private key with tweak added.
    */
-  Privkey CreateTweakMuled(const ByteData256& tweak) const;
+  Privkey CreateTweakMul(const ByteData256& tweak) const;
 
   /**
    * @brief Create new negated private key.

@@ -75,20 +75,28 @@ bool Pubkey::Equals(const Pubkey& pubkey) const {
   return data_.Equals(pubkey.data_);
 }
 
-Pubkey Pubkey::CombinePubkey(Pubkey pubkey, Pubkey message_key) {
+Pubkey Pubkey::CombinePubkey(const std::vector<Pubkey>& pubkeys) {
   std::vector<ByteData> data_list;
-  data_list.push_back(ByteData(pubkey.GetData()));
-  data_list.push_back(ByteData(message_key.GetData()));
+  for (const auto& pubkey : pubkeys) {
+    data_list.push_back(pubkey.GetData());
+  }
+  return Pubkey(WallyUtil::CombinePubkeySecp256k1Ec(data_list));
+}
+
+Pubkey Pubkey::CombinePubkey(const Pubkey& pubkey, const Pubkey& message_key) {
+  std::vector<ByteData> data_list;
+  data_list.push_back(pubkey.GetData());
+  data_list.push_back(message_key.GetData());
 
   return Pubkey(WallyUtil::CombinePubkeySecp256k1Ec(data_list));
 }
 
-Pubkey Pubkey::CreateTweakAdded(const ByteData256& tweak) const {
+Pubkey Pubkey::CreateTweakAdd(const ByteData256& tweak) const {
   ByteData tweak_added = WallyUtil::AddTweakPubkey(data_, tweak);
   return Pubkey(tweak_added);
 }
 
-Pubkey Pubkey::CreateTweakMuled(const ByteData256& tweak) const {
+Pubkey Pubkey::CreateTweakMul(const ByteData256& tweak) const {
   ByteData tweak_muled = WallyUtil::MulTweakPubkey(data_, tweak);
   return Pubkey(tweak_muled);
 }
@@ -232,12 +240,12 @@ Privkey Privkey::GenerageRandomKey() {
   return Privkey(ByteData(privkey));
 }
 
-Privkey Privkey::CreateTweakAdded(const ByteData256& tweak) const {
+Privkey Privkey::CreateTweakAdd(const ByteData256& tweak) const {
   ByteData tweak_added = WallyUtil::AddTweakPrivkey(data_, tweak);
   return Privkey(tweak_added);
 }
 
-Privkey Privkey::CreateTweakMuled(const ByteData256& tweak) const {
+Privkey Privkey::CreateTweakMul(const ByteData256& tweak) const {
   ByteData tweak_muled = WallyUtil::MulTweakPrivkey(data_, tweak);
   return Privkey(tweak_muled);
 }
