@@ -75,7 +75,7 @@ bool Pubkey::Equals(const Pubkey& pubkey) const {
   return data_.Equals(pubkey.data_);
 }
 
-Pubkey Pubkey::CombinePubkey(const std::vector<Pubkey> pubkeys) {
+Pubkey Pubkey::CombinePubkey(const std::vector<Pubkey>& pubkeys) {
   std::vector<ByteData> data_list;
   for (const auto& pubkey : pubkeys) {
     data_list.push_back(pubkey.GetData());
@@ -83,7 +83,7 @@ Pubkey Pubkey::CombinePubkey(const std::vector<Pubkey> pubkeys) {
   return Pubkey(WallyUtil::CombinePubkeySecp256k1Ec(data_list));
 }
 
-Pubkey Pubkey::CombinePubkey(Pubkey pubkey, Pubkey message_key) {
+Pubkey Pubkey::CombinePubkey(const Pubkey& pubkey, const Pubkey& message_key) {
   std::vector<ByteData> data_list;
   data_list.push_back(pubkey.GetData());
   data_list.push_back(message_key.GetData());

@@ -98,7 +98,7 @@ class CFD_CORE_EXPORT Pubkey {
    * @param[in] pubkeys 合成元Pubkey list
    * @return 合成したPubkeyインスタンス
    */
-  static Pubkey CombinePubkey(const std::vector<Pubkey> pubkeys);
+  static Pubkey CombinePubkey(const std::vector<Pubkey>& pubkeys);
 
   /**
    * @brief 合成Pubkeyを生成する.
@@ -106,7 +106,7 @@ class CFD_CORE_EXPORT Pubkey {
    * @param[in] message_key 合成するmessage Pubkey
    * @return 合成したPubkeyインスタンス
    */
-  static Pubkey CombinePubkey(Pubkey pubkey, Pubkey message_key);
+  static Pubkey CombinePubkey(const Pubkey& pubkey, const Pubkey& message_key);
 
   /**
    * @brief Create new public key with tweak added.
