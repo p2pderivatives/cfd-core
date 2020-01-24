@@ -21,6 +21,19 @@ namespace core {
 
 using logger::warn;
 
+//////////////////////////////////
+/// inner definitions
+//////////////////////////////////
+static constexpr uint8_t kTweakByteSize = 32;    //!< ByteSize of tweak data
+static constexpr uint8_t kPrivkeyByteSize = 32;  //!< ByteSize of privkey
+static constexpr uint8_t kCompressedPubkeyByteSize =
+    33;  //!< ByteSize of compressed pubkey
+static constexpr uint8_t kFullPubkeyByteSize =
+    65;  //!< ByteSize of full pubkey
+
+//////////////////////////////////
+/// Secp256k1
+//////////////////////////////////
 Secp256k1::Secp256k1(void* context) : secp256k1_context_(context) {
   // do nothing
 }
@@ -88,6 +101,76 @@ ByteData Secp256k1::CombinePubkeySecp256k1Ec(
   return ByteData(byte_data);
 }
 
+ByteData Secp256k1::AddTweakPrivkeySecp256k1Ec(
+    const ByteData& privkey, const ByteData& tweak) {
+  if (secp256k1_context_ == NULL) {
+    warn(CFD_LOG_SOURCE, "Secp256k1 context is NULL.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 context is NULL.");
+  }
+  if (privkey.GetDataSize() != kPrivkeyByteSize) {
+    warn(CFD_LOG_SOURCE, "Invalid Argument privkey size.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid privkey size.");
+  }
+  if (tweak.GetDataSize() != kTweakByteSize) {
+    warn(CFD_LOG_SOURCE, "Invalid Argument tweak size.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid tweak size.");
+  }
+
+  secp256k1_context* context =
+      static_cast<secp256k1_context*>(secp256k1_context_);
+
+  std::vector<uint8_t> privkey_work = privkey.GetBytes();
+  std::vector<uint8_t> tweak_byte = tweak.GetBytes();
+  int ret = secp256k1_ec_privkey_tweak_add(
+      context, privkey_work.data(), tweak_byte.data());
+  if (ret != 1) {
+    warn(CFD_LOG_SOURCE, "secp256k1_ec_privkey_tweak_add Error.({})", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Secp256k1 privkey tweak add Error.");
+  }
+
+  return ByteData(privkey_work);
+}
+
+ByteData Secp256k1::MulTweakPrivkeySecp256k1Ec(
+    const ByteData& privkey, const ByteData& tweak) {
+  if (secp256k1_context_ == NULL) {
+    warn(CFD_LOG_SOURCE, "Secp256k1 context is NULL.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 context is NULL.");
+  }
+  if (privkey.GetDataSize() != kPrivkeyByteSize) {
+    warn(CFD_LOG_SOURCE, "Invalid Argument privkey size.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid privkey size.");
+  }
+  if (tweak.GetDataSize() != kTweakByteSize) {
+    warn(CFD_LOG_SOURCE, "Invalid Argument tweak size.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid tweak size.");
+  }
+
+  secp256k1_context* context =
+      static_cast<secp256k1_context*>(secp256k1_context_);
+
+  std::vector<uint8_t> privkey_work = privkey.GetBytes();
+  const std::vector<uint8_t>& tweak_byte = tweak.GetBytes();
+  int ret = secp256k1_ec_privkey_tweak_mul(
+      context, privkey_work.data(), tweak_byte.data());
+  if (ret != 1) {
+    warn(CFD_LOG_SOURCE, "secp256k1_ec_privkey_tweak_mul Error.({})", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Secp256k1 privkey tweak mul Error.");
+  }
+
+  return ByteData(privkey_work);
+}
+
 ByteData Secp256k1::AddTweakPubkeySecp256k1Ec(
     const ByteData& pubkey, const ByteData& tweak, bool is_tweak_check) {
   secp256k1_context* context =
@@ -98,12 +181,12 @@ ByteData Secp256k1::AddTweakPubkeySecp256k1Ec(
     throw CfdException(
         CfdError::kCfdIllegalArgumentError, "Secp256k1 context is NULL.");
   }
-  if (pubkey.GetDataSize() != 33) {
+  if (pubkey.GetDataSize() != kCompressedPubkeyByteSize) {
     warn(CFD_LOG_SOURCE, "Invalid Argument pubkey size.");
     throw CfdException(
         CfdError::kCfdIllegalArgumentError, "Invalid Pubkey size.");
   }
-  if (tweak.GetDataSize() != 32) {
+  if (tweak.GetDataSize() != kTweakByteSize) {
     warn(CFD_LOG_SOURCE, "Invalid Argument tweak size.");
     throw CfdException(
         CfdError::kCfdIllegalArgumentError, "Invalid tweak size.");
@@ -130,7 +213,7 @@ ByteData Secp256k1::AddTweakPubkeySecp256k1Ec(
         CfdError::kCfdIllegalArgumentError, "Secp256k1 pubkey tweak Error.");
   }
 
-  std::vector<uint8_t> byte_data(65);
+  std::vector<uint8_t> byte_data(kFullPubkeyByteSize);
   size_t byte_size = byte_data.size();
   ret = secp256k1_ec_pubkey_serialize(
       context, byte_data.data(), &byte_size, &tweaked,
@@ -142,7 +225,7 @@ ByteData Secp256k1::AddTweakPubkeySecp256k1Ec(
         "Secp256k1 pubkey serialize Error.");
   }
 
-  if (byte_size != 33) {
+  if (byte_size != kCompressedPubkeyByteSize) {
     warn(
         CFD_LOG_SOURCE,
         "secp256k1_ec_pubkey_serialize pubkey length Error.({})", byte_size);
@@ -187,6 +270,97 @@ ByteData Secp256k1::AddTweakPubkeySecp256k1Ec(
     }
   }
   return ByteData(byte_data);
+}
+
+ByteData Secp256k1::MulTweakPubkeySecp256k1Ec(
+    const ByteData& pubkey, const ByteData& tweak) {
+  secp256k1_context* context =
+      static_cast<secp256k1_context*>(secp256k1_context_);
+
+  if (secp256k1_context_ == NULL) {
+    warn(CFD_LOG_SOURCE, "Secp256k1 context is NULL.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 context is NULL.");
+  }
+  if (pubkey.GetDataSize() != kCompressedPubkeyByteSize) {
+    warn(CFD_LOG_SOURCE, "Invalid Argument pubkey size.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid Pubkey size.");
+  }
+  if (tweak.GetDataSize() != kTweakByteSize) {
+    warn(CFD_LOG_SOURCE, "Invalid Argument tweak size.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid tweak size.");
+  }
+
+  int ret;
+  std::vector<uint8_t> pubkey_data = pubkey.GetBytes();
+  std::vector<uint8_t> tweak_data = tweak.GetBytes();
+  secp256k1_pubkey tweaked;
+  secp256k1_pubkey watchman;
+  ret = secp256k1_ec_pubkey_parse(
+      context, &tweaked, pubkey_data.data(), pubkey_data.size());
+  if (ret != 1) {
+    warn(CFD_LOG_SOURCE, "secp256k1_ec_pubkey_parse Error.({})", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 pubkey parse Error.");
+  }
+  memcpy(&watchman, &tweaked, sizeof(watchman));
+
+  ret = secp256k1_ec_pubkey_tweak_mul(context, &tweaked, tweak_data.data());
+  if (ret != 1) {
+    warn(CFD_LOG_SOURCE, "secp256k1_ec_pubkey_tweak_add Error.({})", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 pubkey tweak Error.");
+  }
+
+  std::vector<uint8_t> byte_data(kFullPubkeyByteSize);
+  size_t byte_size = byte_data.size();
+  ret = secp256k1_ec_pubkey_serialize(
+      context, byte_data.data(), &byte_size, &tweaked,
+      SECP256K1_EC_COMPRESSED);
+  if (ret != 1) {
+    warn(CFD_LOG_SOURCE, "secp256k1_ec_pubkey_serialize Error.({})", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Secp256k1 pubkey serialize Error.");
+  }
+
+  if (byte_size != kCompressedPubkeyByteSize) {
+    warn(
+        CFD_LOG_SOURCE,
+        "secp256k1_ec_pubkey_serialize pubkey length Error.({})", byte_size);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 pubkey length Error.");
+  }
+  byte_data.resize(byte_size);
+  return ByteData(byte_data);
+}
+
+ByteData Secp256k1::NegatePrivkeySecp256k1Ec(const ByteData& privkey) {
+  secp256k1_context* context =
+      static_cast<secp256k1_context*>(secp256k1_context_);
+
+  if (secp256k1_context_ == NULL) {
+    warn(CFD_LOG_SOURCE, "Secp256k1 context is NULL.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 context is NULL.");
+  }
+  if (privkey.GetDataSize() != 32) {
+    warn(CFD_LOG_SOURCE, "Invalid Argument privkey size.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid privkey size.");
+  }
+
+  int ret;
+  std::vector<uint8_t> privkey_work = privkey.GetBytes();
+  ret = secp256k1_ec_privkey_negate(context, privkey_work.data());
+  if (ret != 1) {
+    warn(CFD_LOG_SOURCE, "secp256k1_ec_pubkey_negate Error.({})", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Secp256k1 pubkey negate Error.");
+  }
+  return ByteData(privkey_work);
 }
 
 ByteData Secp256k1::NegatePubkeySecp256k1Ec(const ByteData& pubkey) {

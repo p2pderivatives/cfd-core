@@ -144,6 +144,8 @@ TEST(Descriptor, Parse_sh_wsh) {
     EXPECT_TRUE(script_list[0].GetChild().HasRedeemScript());
     EXPECT_STREQ(script_list[0].GetChild().GetRedeemScript().ToString().c_str(),
       "OP_DUP OP_HASH160 c42e7ef92fdb603af844d064faad95db9bcdfd3d OP_EQUALVERIFY OP_CHECKSIG");
+    EXPECT_FALSE(script_list[0].HasReqNum());
+    EXPECT_EQ(script_list[0].GetReqNum(), 0);
   }
 }
 
@@ -166,6 +168,8 @@ TEST(Descriptor, Parse_multi) {
     EXPECT_FALSE(script_list[0].HasRedeemScript());
     EXPECT_STREQ(script_list[0].GetLockingScript().ToString().c_str(),
         "1 022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4 025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc 2 OP_CHECKMULTISIG");
+    EXPECT_TRUE(script_list[0].HasReqNum());
+    EXPECT_EQ(script_list[0].GetReqNum(), 1);
   }
 }
 
@@ -187,6 +191,8 @@ TEST(Descriptor, Parse_sh_multi) {
   if (script_list.size() == 1) {
     EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
         "2 022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01 03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe 2 OP_CHECKMULTISIG");
+    EXPECT_TRUE(script_list[0].GetChild().HasReqNum());
+    EXPECT_EQ(script_list[0].GetChild().GetReqNum(), 2);
   }
 }
 
@@ -208,6 +214,8 @@ TEST(Descriptor, Parse_sortedmulti) {
   if (script_list.size() == 1) {
     EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
       "2 022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01 03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe 2 OP_CHECKMULTISIG");
+    EXPECT_TRUE(script_list[0].GetChild().HasReqNum());
+    EXPECT_EQ(script_list[0].GetChild().GetReqNum(), 2);
   }
 }
 
@@ -229,6 +237,8 @@ TEST(Descriptor, Parse_wsh_multi) {
   if (script_list.size() == 1) {
     EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
       "2 03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7 03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb 03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a 3 OP_CHECKMULTISIG");
+    EXPECT_TRUE(script_list[0].GetChild().HasReqNum());
+    EXPECT_EQ(script_list[0].GetChild().GetReqNum(), 2);
   }
 }
 
@@ -253,6 +263,8 @@ TEST(Descriptor, Parse_sh_wsh_multi) {
     EXPECT_TRUE(script_list[0].GetChild().HasRedeemScript());
     EXPECT_STREQ(script_list[0].GetChild().GetRedeemScript().ToString().c_str(),
       "1 03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8 03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4 02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e 3 OP_CHECKMULTISIG");
+    EXPECT_TRUE(script_list[0].GetChild().GetChild().HasReqNum());
+    EXPECT_EQ(script_list[0].GetChild().GetChild().GetReqNum(), 1);
   }
 }
 

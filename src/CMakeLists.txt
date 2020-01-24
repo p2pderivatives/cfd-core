@@ -7,6 +7,7 @@ cmake_policy(SET CMP0076 NEW)
 ####################
 # options
 ####################
+option(CFDCORE_SHARED "force shared build (ON or OFF. default:OFF)" OFF)
 if(CMAKE_JS_INC)
 option(ENABLE_SHARED "enable shared library (ON or OFF. default:ON)" ON)
 else()
@@ -38,6 +39,12 @@ else()
 set(ENABLE_DEBUG  FALSE)
 set(STACK_PROTECTOR_OPT  "")
 endif() # CMAKE_BUILD_TYPE
+
+if(CFDCORE_SHARED AND (WIN32 OR APPLE))
+set(USE_CFDCORE_SHARED  TRUE)
+else()
+set(USE_CFDCORE_SHARED  FALSE)
+endif()
 
 ####################
 # common setting
@@ -128,7 +135,7 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-if(ENABLE_SHARED)
+if(ENABLE_SHARED OR USE_CFDCORE_SHARED)
 add_library(${PROJECT_NAME} SHARED)
 else()
 add_library(${PROJECT_NAME} STATIC)
@@ -161,7 +168,8 @@ target_compile_definitions(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
-    ../include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<INSTALL_INTERFACE:include>
   PRIVATE
     .
     include
@@ -210,19 +218,31 @@ endif()
 # install & export
 ####################
 include(GNUInstallDirs)
+set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON) 
 
 install(TARGETS       ${PROJECT_NAME}
         EXPORT        ${PROJECT_NAME}-export
         ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        OBJECTS       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-# https://cmake.org/cmake/help/latest/command/install.html
 
-export(TARGETS ${PROJECT_NAME}
-       APPEND FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-export.cmake
-       EXPORT_LINK_INTERFACE_LIBRARIES)
+install(EXPORT ${PROJECT_NAME}-export
+        FILE ${PROJECT_NAME}-config.cmake
+        DESTINATION "cmake/"
+        EXPORT_LINK_INTERFACE_LIBRARIES)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../include/cfdcore"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         FILES_MATCHING PATTERN "*.h")
+
+if(MSVC)
+install(DIRECTORY "${CFD_OBJ_BINARY_DIR}/"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        FILES_MATCHING PATTERN "*.exp")
+endif()
+
+#export(TARGETS ${PROJECT_NAME}
+#       APPEND FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake)

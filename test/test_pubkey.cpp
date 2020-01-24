@@ -161,5 +161,19 @@ TEST(Pubkey, CombinePubkeysTest) {
     Pubkey combined = Pubkey::CombinePubkey(pubkey1, pubkey2);
     EXPECT_STREQ(test_vector.combined_pubkey.c_str(),
                  combined.GetHex().c_str());
+
+    std::vector<Pubkey> pubkeys;
+    pubkeys.push_back(pubkey1);
+    pubkeys.push_back(pubkey2);
+    combined = Pubkey::CombinePubkey(pubkeys);
+    EXPECT_STREQ(test_vector.combined_pubkey.c_str(),
+                 combined.GetHex().c_str());
   }
+}
+
+TEST(Pubkey, NegateTest) {
+  Pubkey pubkey = Pubkey("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9");
+  Pubkey negate = pubkey.CreateNegate();
+  EXPECT_FALSE(pubkey.Equals(negate));
+  EXPECT_TRUE(pubkey.Equals(negate.CreateNegate()));
 }

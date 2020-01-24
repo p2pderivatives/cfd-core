@@ -161,32 +161,51 @@ typedef struct {
   ByteData pubkey;
   ByteData tweak;
   bool is_check;
-  std::string expect;
-} AddTweakPubkeyTestVector;
+  std::string expect_add;
+  std::string expect_mul;
+} TweakPubkeyTestVector;
 
 // @formatter:off
-const std::vector<AddTweakPubkeyTestVector> tweak_test_vectors = {
+const std::vector<TweakPubkeyTestVector> tweak_pubkey_test_vectors = {
     // pass less than two pubkeys
+    {
+        ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"),
+        ByteData("0000000000000000000000000000000000000000000000000000000000000001"),
+        true,
+        "02ca4ac065c33e2ec9777c711c8962f750a0d16ad648ff7714d18265f6cf5e5e4a",
+        "03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"
+    },
     {
         ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"),
         ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5"),
         true,
-        "02f7eb7db42b05503b0ab66523044044b0a1a96b73d41016da956b3483a1bbdd2f"
+        "02f7eb7db42b05503b0ab66523044044b0a1a96b73d41016da956b3483a1bbdd2f",
+        "03f057567dfc74686aaa30750d2c13d2e25f5938735a3bfd29af56be565742efc9"
     },
     {
         ByteData("0261e37f277f02a977b4f11eb5055abab4990bbf8dee701119d88df382fcc1fafe"),
         ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5"),
         false,
-        "03b34e7d886ba9cccbe1f7ee2b021e99cd5a3c858c8f7af485409f3d6b839ce372"
+        "03b34e7d886ba9cccbe1f7ee2b021e99cd5a3c858c8f7af485409f3d6b839ce372",
+        "026649c5a3374afc7e4c43f8856702fc8ec8f47c49fdd5908682524419586fcb59"
     },
 };
 
-const std::vector<AddTweakPubkeyTestVector> tweak_error_vectors = {
+const std::vector<TweakPubkeyTestVector> tweak_pubkey_error_vectors = {
+  // tweak must non-zero bytes
+  {
+    ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"),
+    ByteData("0000000000000000000000000000000000000000000000000000000000000000"),
+    false,
+    "03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9",
+    ""
+  },
   // invalid pubkey size(len isn't 33)
   {
     ByteData(""),
     ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5"),
     true,
+    "",
     ""
   },
   // empty pubkey
@@ -194,6 +213,7 @@ const std::vector<AddTweakPubkeyTestVector> tweak_error_vectors = {
     ByteData(""),
     ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"),
     true,
+    "",
     ""
   },
   // invalid tweak size(len isn't 32)
@@ -201,6 +221,7 @@ const std::vector<AddTweakPubkeyTestVector> tweak_error_vectors = {
     ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"),
     ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"),
     true,
+    "",
     ""
   },
   // empty tweak
@@ -208,6 +229,7 @@ const std::vector<AddTweakPubkeyTestVector> tweak_error_vectors = {
     ByteData("03662a01c232918c9deb3b330272483c3e4ec0c6b5da86df59252835afeb4ab5f9"),
     ByteData(""),
     true,
+    "",
     ""
   },
 };
@@ -216,23 +238,142 @@ const std::vector<AddTweakPubkeyTestVector> tweak_error_vectors = {
 TEST(Secp256k1, AddTweakPubkeySecp256k1EcTest) {
   struct secp256k1_context_struct *cxt = wally_get_secp_context();
   Secp256k1 secp = Secp256k1(cxt);
-  for (AddTweakPubkeyTestVector test_vector : tweak_test_vectors) {
-    ByteData actual;
+  for (TweakPubkeyTestVector test_vector : tweak_pubkey_test_vectors) {
+    ByteData actual_add;
     EXPECT_NO_THROW(
-        actual = secp.AddTweakPubkeySecp256k1Ec(test_vector.pubkey,
+        actual_add = secp.AddTweakPubkeySecp256k1Ec(test_vector.pubkey,
             test_vector.tweak, test_vector.is_check));
-    EXPECT_EQ(test_vector.expect, actual.GetHex());
+    EXPECT_EQ(test_vector.expect_add, actual_add.GetHex());
+
+    ByteData actual_mul;
+    EXPECT_NO_THROW(
+        actual_mul = secp.MulTweakPubkeySecp256k1Ec(test_vector.pubkey,
+            test_vector.tweak));
+    EXPECT_EQ(test_vector.expect_mul, actual_mul.GetHex());
   }
 }
 
 TEST(Secp256k1, AddTweakPubkeySecp256k1EcErrorTest) {
   struct secp256k1_context_struct *cxt = wally_get_secp_context();
   Secp256k1 secp = Secp256k1(cxt);
-  for (AddTweakPubkeyTestVector test_vector : tweak_error_vectors) {
-    EXPECT_THROW(
+  for (TweakPubkeyTestVector test_vector : tweak_pubkey_error_vectors) {
+    if (test_vector.expect_add.empty()) {
+      EXPECT_THROW(
         ByteData actual = secp.AddTweakPubkeySecp256k1Ec(test_vector.pubkey,
-            test_vector.tweak, test_vector.is_check),
+          test_vector.tweak, test_vector.is_check),
         CfdException);
+    }
+    if (test_vector.expect_mul.empty()) {
+      EXPECT_THROW(
+        ByteData actual = secp.MulTweakPubkeySecp256k1Ec(test_vector.pubkey,
+          test_vector.tweak),
+        CfdException);
+    }
+  }
+}
+
+typedef struct {
+  ByteData privkey;
+  ByteData tweak;
+  std::string expect_add;
+  std::string expect_mul;
+} TweakPrivkeyTestVector;
+
+// @formatter:off
+const std::vector<TweakPrivkeyTestVector> tweak_privkey_test_vectors = {
+    {
+        ByteData("0000000000000000000000000000000000000000000000000000000000000001"),
+        ByteData("0000000000000000000000000000000000000000000000000000000000000001"),
+        "0000000000000000000000000000000000000000000000000000000000000002",
+        "0000000000000000000000000000000000000000000000000000000000000001"
+    },
+    {
+        ByteData("0000000000000000000000000000000000000000000000000000000000000001"),
+        ByteData("0000000000000000000000000000000000000000000000000000000000000002"),
+        "0000000000000000000000000000000000000000000000000000000000000003",
+        "0000000000000000000000000000000000000000000000000000000000000002"
+    },
+    {
+        ByteData("036b13c5a0dd9935fe175b2b9ff86585c231e734b2148149d788a941f1f4f566"),
+        ByteData("98430d10471cf697e2661e31ceb8720750b59a85374290e175799ba5dd06508e"),
+        "9bae20d5e7fa8fcde07d795d6eb0d78d12e781b9e957122b4d0244e7cefb45f4",
+        "aa71b12accba23b49761a7521e661f07a7e5742ac48cf708b8f9497b3a72a957"
+    },
+};
+
+const std::vector<TweakPrivkeyTestVector> tweak_privkey_error_vectors = {
+    // tweak must non-zero bytes
+    {
+        ByteData("0000000000000000000000000000000000000000000000000000000000000001"),
+        ByteData("0000000000000000000000000000000000000000000000000000000000000000"),
+        "0000000000000000000000000000000000000000000000000000000000000001",
+        ""
+    },
+    // empty privkey
+    {
+        ByteData(""),
+        ByteData("0000000000000000000000000000000000000000000000000000000000000000"),
+        "",
+        ""
+    },
+    // empty tweak
+    {
+        ByteData("0000000000000000000000000000000000000000000000000000000000000000"),
+        ByteData(""),
+        "",
+        ""
+    },
+    // invalid privkey length
+    {
+        ByteData("00000000000000000000000000000000000000000000000000000000000000"),
+        ByteData("0000000000000000000000000000000000000000000000000000000000000001"),
+        "",
+        ""
+    },
+    // invalid tweak length
+    {
+        ByteData("0000000000000000000000000000000000000000000000000000000000000001"),
+        ByteData("00000000000000000000000000000000000000000000000000000000000000"),
+        "",
+        ""
+    },
+};
+// @formatter:on
+
+TEST(Secp256k1, TweakPrivkeySecp256k1EcTest) {
+  struct secp256k1_context_struct *cxt = wally_get_secp_context();
+  Secp256k1 secp = Secp256k1(cxt);
+  for (TweakPrivkeyTestVector test_vector : tweak_privkey_test_vectors) {
+    ByteData actual_add;
+    EXPECT_NO_THROW(
+        actual_add = secp.AddTweakPrivkeySecp256k1Ec(test_vector.privkey,
+            test_vector.tweak));
+    EXPECT_EQ(test_vector.expect_add, actual_add.GetHex());
+
+    ByteData actual_mul;
+    EXPECT_NO_THROW(
+        actual_mul = secp.MulTweakPrivkeySecp256k1Ec(test_vector.privkey,
+            test_vector.tweak));
+    EXPECT_EQ(test_vector.expect_mul, actual_mul.GetHex());
+  }
+}
+
+TEST(Secp256k1, TweakPrivkeySecp256k1EcErrorTest) {
+  struct secp256k1_context_struct *cxt = wally_get_secp_context();
+  Secp256k1 secp = Secp256k1(cxt);
+  for (TweakPrivkeyTestVector test_vector : tweak_privkey_error_vectors) {
+    if (test_vector.expect_add.empty()) {
+      EXPECT_THROW(
+        ByteData actual = secp.AddTweakPrivkeySecp256k1Ec(test_vector.privkey,
+          test_vector.tweak),
+        CfdException);
+    }
+    if (test_vector.expect_add.empty()) {
+      EXPECT_THROW(
+        ByteData actual = secp.MulTweakPrivkeySecp256k1Ec(test_vector.privkey,
+          test_vector.tweak),
+        CfdException);
+    }
   }
 }
 

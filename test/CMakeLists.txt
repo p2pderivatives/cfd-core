@@ -7,6 +7,7 @@ cmake_policy(SET CMP0076 NEW)
 ####################
 # options
 ####################
+option(CFDCORE_SHARED "force shared build (ON or OFF. default:OFF)" OFF)
 if(CMAKE_JS_INC)
 option(ENABLE_SHARED "enable shared library (ON or OFF. default:ON)" ON)
 else()
@@ -25,6 +26,12 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:DEB
 set(STACK_PROTECTOR_OPT  $<IF:$<CXX_COMPILER_ID:MSVC>,/GS,-fstack-check -fstack-protector>)
 else()
 set(STACK_PROTECTOR_OPT  "")
+endif()
+
+if(CFDCORE_SHARED AND (WIN32 OR APPLE))
+set(USE_CFDCORE_SHARED  TRUE)
+else()
+set(USE_CFDCORE_SHARED  FALSE)
 endif()
 
 ####################
@@ -117,9 +124,6 @@ else()
 add_executable(${PROJECT_NAME} ${TEST_CFDCORE_SOURCES} ${TEST_CFDCORE_STATIC_SOURCES})
 endif()
 
-# using shared library : -DGTEST_LINKED_AS_SHARED_LIBRARY=1
-
-if(ENABLE_SHARED)
 target_compile_options(${PROJECT_NAME}
   PRIVATE
     $<IF:$<CXX_COMPILER_ID:MSVC>,
@@ -130,6 +134,8 @@ target_compile_options(${PROJECT_NAME}
     >
     $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:${STACK_PROTECTOR_OPT}>
 )
+
+if(ENABLE_SHARED OR USE_CFDCORE_SHARED)
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE
     CFD_CORE_SHARED=1
@@ -138,16 +144,6 @@ target_compile_definitions(${PROJECT_NAME}
     ${CFD_ELEMENTS_USE}
 )
 else()
-target_compile_options(${PROJECT_NAME}
-  PRIVATE
-    $<IF:$<CXX_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /Wall 
-      /wd4061 /wd4244 /wd4251 /wd4365 /wd4464 /wd4514 /wd4571 /wd4574 /wd4623 /wd4625 /wd4626 /wd4668 /wd4710 /wd4711 /wd4774 /wd4820 /wd4946 /wd5026 /wd5027 /wd5039 /wd5045 /wd5052
-      ${STACK_PROTECTOR_OPT},
-      -Wall -Wextra
-    >
-    $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:${STACK_PROTECTOR_OPT}>
-)
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}

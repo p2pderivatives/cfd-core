@@ -40,4 +40,14 @@ TEST(BlockHash, Constractor_bytedata) {
       "186c7f955149a5274b39e24b6a50d1d6479f552f6522d91f3a97d771f1c18179");
 }
 
+TEST(BlockHash, IsValid) {
+  ByteData256 bytes(
+      "186c7f955149a5274b39e24b6a50d1d6479f552f6522d91f3a97d771f1c18179");
+  BlockHash blockhash(bytes);
+  EXPECT_TRUE(blockhash.IsValid());
+
+  BlockHash empty_blockhash;
+  EXPECT_FALSE(empty_blockhash.IsValid());
+}
+
 #endif  // CFD_DISABLE_ELEMENTS

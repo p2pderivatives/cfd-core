@@ -5,10 +5,12 @@
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_coin.h"
 #include "cfdcore/cfdcore_transaction.h"
+#include "cfdcore/cfdcore_transaction_common.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_bytedata.h"
 
+using cfd::core::AbstractTransaction;
 using cfd::core::Amount;
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
@@ -118,6 +120,13 @@ TEST(Transaction, ConstructorGetter) {
     EXPECT_THROW(tx.GetTxOut(2), CfdException);
     EXPECT_EQ(tx.GetWallyFlag(), 1);
     EXPECT_EQ(tx.HasWitness(), true);
+  }
+
+  {
+    ByteData exp_data = ByteData(exp_tx_witness);
+    Transaction tx_b(exp_data);
+    ByteData data = tx_b.GetData();
+    EXPECT_STREQ(data.GetHex().c_str(), exp_tx_witness.c_str());
   }
 
   {

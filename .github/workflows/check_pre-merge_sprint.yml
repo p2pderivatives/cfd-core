@@ -8,6 +8,9 @@ on:
     branches:
     - features/sprint*
 
+env:
+  CMAKE_VERSION: 3.15.5
+
 jobs:
   cmake-win:
     name: cmake build-win
@@ -29,7 +32,7 @@ jobs:
     - name: cmake_configure
       run: cmake -DENABLE_SHARED=on -DENABLE_TESTS=off --build build
     - name: cmake_build
-      run: cmake --build build --config Release
+      run: cmake --build build --config Release --parallel 2
 
   cmake-mac:
     name: cmake build-mac
@@ -48,9 +51,64 @@ jobs:
     - name: ctest
       run: |
         cd build
-        ctest -C Release
+        ctest -C Release --output-on-failure
     - name: lint_check
       run: ./tools/lint_quiet.sh
+
+  cmake-ubuntu-coverage:
+    name: cmake build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: cmake-useCache-ubuntu
+      uses: actions/cache@v1
+      id: cache
+      with:
+        path: cache/cmake
+        key: ${{ runner.os }}-cmake-3.15.5-x64
+    - name: cmake-download-ubuntu
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p cache/cmake
+        cd cache/cmake
+        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
+        cd ../..
+    - name: cmake-setting-ubuntu
+      run: |
+        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
+        cd cache/cmake
+        tar zxvf $cmake_file_name.tar.gz
+        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
+        export CURRENT_DIR=$(pwd)
+        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
+        cd ../..
+    - name: ubuntu-apt-install
+      run: sudo apt install lcov
+    - name: cmake-build
+      run: |
+        cmake --version
+        cmake -S . -B build -G "Unix Makefiles"
+        cmake -DENABLE_SHARED=on -DENABLE_DEBUG=on -DENABLE_COVERAGE=on -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
+        cmake --build build --config Debug --parallel 2
+    - name: test
+      run: |
+        cd build
+        ctest -C Debug
+        cd ..
+    - name: collect coverage
+      run: |
+        cd build
+        make lcov_cfdcore
+        zip -r lcov_cfdcore_output.zip lcov_cfdcore_output
+        cd ..
+    - name: upload coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: output-lcov-cfdcore
+        path: ./build/lcov_cfdcore_output.zip
+    - name: ubuntu-after
+      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   doxygen-ubuntu:
     name: doxygen-ubuntu

@@ -75,3 +75,13 @@ TEST(Txid, TxidEqualsGetByte) {
   bool is_equals = (txid.GetData().GetBytes() == list1);
   EXPECT_TRUE(is_equals);
 }
+
+TEST(Txid, IsValid) {
+  ByteData256 bytes(
+      "186c7f955149a5274b39e24b6a50d1d6479f552f6522d91f3a97d771f1c18179");
+  Txid txid(bytes);
+  EXPECT_TRUE(txid.IsValid());
+
+  Txid empty_txid;
+  EXPECT_FALSE(empty_txid.IsValid());
+}

@@ -185,6 +185,10 @@ Transaction::Transaction(const std::string &hex_string) : vin_(), vout_() {
   SetFromHex(hex_string);
 }
 
+Transaction::Transaction(const ByteData &byte_data) : vin_(), vout_() {
+  SetFromHex(byte_data.GetHex());
+}
+
 Transaction::Transaction(const Transaction &transaction)
     : Transaction(transaction.GetHex()) {
   // copy constructor
@@ -506,6 +510,7 @@ uint32_t Transaction::AddTxIn(
 
   vin_.push_back(txin);
 
+  CallbackStateChange(kStateChangeAddTxIn);
   return static_cast<uint32_t>(vin_.size() - 1);
 }
 
@@ -517,12 +522,14 @@ void Transaction::RemoveTxIn(uint32_t index) {
     ite += index;
   }
   vin_.erase(ite);
+  CallbackStateChange(kStateChangeRemoveTxIn);
 }
 
 void Transaction::SetUnlockingScript(
     uint32_t tx_in_index, const Script &unlocking_script) {
   AbstractTransaction::SetUnlockingScript(tx_in_index, unlocking_script);
   vin_[tx_in_index].SetUnlockingScript(unlocking_script);
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
 }
 
 void Transaction::SetUnlockingScript(
@@ -530,6 +537,7 @@ void Transaction::SetUnlockingScript(
   Script generate_unlocking_script =
       AbstractTransaction::SetUnlockingScript(tx_in_index, unlocking_script);
   vin_[tx_in_index].SetUnlockingScript(generate_unlocking_script);
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
 }
 
 uint32_t Transaction::GetScriptWitnessStackNum(uint32_t tx_in_index) const {
@@ -539,17 +547,26 @@ uint32_t Transaction::GetScriptWitnessStackNum(uint32_t tx_in_index) const {
 
 const ScriptWitness Transaction::AddScriptWitnessStack(
     uint32_t tx_in_index, const ByteData &data) {
-  return AddScriptWitnessStack(tx_in_index, data.GetBytes());
+  const ScriptWitness &witness =
+      AddScriptWitnessStack(tx_in_index, data.GetBytes());
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
+  return witness;
 }
 
 const ScriptWitness Transaction::AddScriptWitnessStack(
     uint32_t tx_in_index, const ByteData160 &data) {
-  return AddScriptWitnessStack(tx_in_index, data.GetBytes());
+  const ScriptWitness &witness =
+      AddScriptWitnessStack(tx_in_index, data.GetBytes());
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
+  return witness;
 }
 
 const ScriptWitness Transaction::AddScriptWitnessStack(
     uint32_t tx_in_index, const ByteData256 &data) {
-  return AddScriptWitnessStack(tx_in_index, data.GetBytes());
+  const ScriptWitness &witness =
+      AddScriptWitnessStack(tx_in_index, data.GetBytes());
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
+  return witness;
 }
 
 const ScriptWitness Transaction::AddScriptWitnessStack(
@@ -558,22 +575,32 @@ const ScriptWitness Transaction::AddScriptWitnessStack(
 
   const ScriptWitness &witness =
       vin_[tx_in_index].AddScriptWitnessStack(ByteData(data));
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
   return witness;
 }
 
 const ScriptWitness Transaction::SetScriptWitnessStack(
     uint32_t tx_in_index, uint32_t witness_index, const ByteData &data) {
-  return SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+  const ScriptWitness &witness =
+      SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
+  return witness;
 }
 
 const ScriptWitness Transaction::SetScriptWitnessStack(
     uint32_t tx_in_index, uint32_t witness_index, const ByteData160 &data) {
-  return SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+  const ScriptWitness &witness =
+      SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
+  return witness;
 }
 
 const ScriptWitness Transaction::SetScriptWitnessStack(
     uint32_t tx_in_index, uint32_t witness_index, const ByteData256 &data) {
-  return SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+  const ScriptWitness &witness =
+      SetScriptWitnessStack(tx_in_index, witness_index, data.GetBytes());
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
+  return witness;
 }
 
 const ScriptWitness Transaction::SetScriptWitnessStack(
@@ -583,6 +610,7 @@ const ScriptWitness Transaction::SetScriptWitnessStack(
 
   const ScriptWitness &witness =
       vin_[tx_in_index].SetScriptWitnessStack(witness_index, ByteData(data));
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
   return witness;
 }
 
@@ -590,6 +618,7 @@ void Transaction::RemoveScriptWitnessStackAll(uint32_t tx_in_index) {
   AbstractTransaction::RemoveScriptWitnessStackAll(tx_in_index);
 
   vin_[tx_in_index].RemoveScriptWitnessStackAll();
+  CallbackStateChange(kStateChangeUpdateSignTxIn);
 }
 
 const TxOutReference Transaction::GetTxOut(uint32_t index) const {
@@ -620,6 +649,7 @@ uint32_t Transaction::AddTxOut(
 
   TxOut out(value, locking_script);
   vout_.push_back(out);
+  CallbackStateChange(kStateChangeAddTxOut);
   return static_cast<uint32_t>(vout_.size() - 1);
 }
 
@@ -631,6 +661,7 @@ void Transaction::RemoveTxOut(uint32_t index) {
     ite += index;
   }
   vout_.erase(ite);
+  CallbackStateChange(kStateChangeRemoveTxOut);
 }
 
 ByteData256 Transaction::GetSignatureHash(
@@ -648,7 +679,8 @@ ByteData256 Transaction::GetSignatureHash(
 
   // It is assumed that tx information has been created.
   // (If it is not created, it will cause inconsistency)
-  const std::vector<uint8_t> &tx_bytedata = GetData(HasWitness()).GetBytes();
+  const std::vector<uint8_t> &tx_bytedata =
+      GetByteData(HasWitness()).GetBytes();
   ret = wally_tx_from_bytes(
       tx_bytedata.data(), tx_bytedata.size(), 0, &tx_pointer);
   if (ret != WALLY_OK) {
@@ -694,7 +726,7 @@ bool Transaction::HasWitness() const {
   return false;
 }
 
-ByteData Transaction::GetData(bool has_witness) const {
+ByteData Transaction::GetByteData(bool has_witness) const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   size_t size = 0;
