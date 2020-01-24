@@ -1,5 +1,22 @@
 project(external_download NONE)
 
+find_package(wally  QUIET CONFIG)
+
+# env check
+if($ENV{CFD_CMAKE_GIT_SSH})
+if($ENV{CFD_CMAKE_GIT_SSH} STREQUAL "1")
+set(USE_GIT_SSH   ON)
+message(STATUS "[USE_GIT_SSH] set ${USE_GIT_SSH}")
+else()
+set(USE_GIT_SSH   OFF)
+message(STATUS "[USE_GIT_SSH] unmatch")
+endif()
+else()
+set(USE_GIT_SSH   OFF)
+message(STATUS "[USE_GIT_SSH] not set")
+endif()
+message(STATUS "[USE_GIT_SSH] $ENV{CFD_CMAKE_GIT_SSH}")
+
 # load file
 set(EXTERNAL_LOCAL_FILENAME  local_resource/external_project_local_setting.config)
 set(LOCAL_VERSION_FILE  ${CMAKE_SOURCE_DIR}/${EXTERNAL_LOCAL_FILENAME})
@@ -25,13 +42,20 @@ else()
 set(LIBWALLY_TARGET_TAG  cmake_build)
 endif()
 
+if(${USE_GIT_SSH})
+set(LIBWALLY_URL  git@github.com:cryptogarageinc/libwally-core.git)
+else()
+set(LIBWALLY_URL  https://github.com/cryptogarageinc/libwally-core.git)
+endif()
+
 set(TEMPLATE_PROJECT_NAME           libwally-core)
-set(TEMPLATE_PROJECT_GIT_REPOSITORY https://github.com/cryptogarageinc/libwally-core.git)
+set(TEMPLATE_PROJECT_GIT_REPOSITORY ${LIBWALLY_URL})
 set(TEMPLATE_PROJECT_GIT_TAG        ${LIBWALLY_TARGET_TAG})
 set(PROJECT_EXTERNAL  "${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/external")
 set(DIR_PATH "${CFD_ROOT_BINARY_DIR}/${TEMPLATE_PROJECT_NAME}")
 set(DL_PATH "${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/download")
 
+if((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 get_property(PROP_VALUE  GLOBAL  PROPERTY ${TEMPLATE_PROJECT_NAME})
 if(PROP_VALUE)
   message(STATUS "[exist directory] ${TEMPLATE_PROJECT_NAME} exist")
@@ -49,17 +73,19 @@ execute_process(COMMAND ${CMAKE_COMMAND} --build ${DL_PATH}
 if(result)
   message(FATAL_ERROR "Build step for ${TEMPLATE_PROJECT_NAME} failed: ${result}")
 endif()
+
 if(EXISTS ${PROJECT_EXTERNAL})
   message(STATUS "[check exist directory] exist ${PROJECT_EXTERNAL}")
   message(STATUS "[check exist directory] dirpath ${DIR_PATH}")
   add_subdirectory(${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/external
                    ${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/external)
 endif()
-
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}
                  ${DIR_PATH}/build)
+
 set_property(GLOBAL PROPERTY ${TEMPLATE_PROJECT_NAME} 1)
 endif()
+endif((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 
 
 # googletest
@@ -71,8 +97,14 @@ else()
 set(GTEST_TARGET_TAG  release-1.8.1)
 endif()
 
+if(${USE_GIT_SSH})
+set(GTEST_URL  git@github.com:google/googletest.git)
+else()
+set(GTEST_URL  https://github.com/google/googletest.git)
+endif()
+
 set(TEMPLATE_PROJECT_NAME           googletest)
-set(TEMPLATE_PROJECT_GIT_REPOSITORY https://github.com/google/googletest.git)
+set(TEMPLATE_PROJECT_GIT_REPOSITORY ${GTEST_URL})
 set(TEMPLATE_PROJECT_GIT_TAG        ${GTEST_TARGET_TAG})
 set(PROJECT_EXTERNAL  "${CMAKE_SOURCE_DIR}/external/${TEMPLATE_PROJECT_NAME}/external")
 set(DL_PATH "${CFD_ROOT_BINARY_DIR}/external/${TEMPLATE_PROJECT_NAME}/download")

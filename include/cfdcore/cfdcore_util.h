@@ -349,6 +349,20 @@ class CFD_CORE_EXPORT CryptoUtil {
   static ByteData HmacSha512(
       const std::vector<uint8_t> &key, const ByteData &data);
   /**
+   * @brief Normalize signature.
+   * @param[in] signature  signature
+   * @return Normalized signature
+   */
+  static ByteData NormalizeSignature(const ByteData &signature);
+  /**
+   * @brief Convert signature to DER format
+   * @param[in] signature  signature
+   * @param[in] sighash_type signature hash type(SIGHASH_TYPE)
+   * @return DER format signature
+   */
+  static ByteData ConvertSignatureToDer(
+      const ByteData &signature, SigHashType sighash_type);
+  /**
    * @brief Convert signature to DER format
    * @param[in] hex_string hex string of signature
    * @param[in] sighash_type signature hash type(SIGHASH_TYPE)

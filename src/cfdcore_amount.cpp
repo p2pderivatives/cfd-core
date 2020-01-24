@@ -24,25 +24,15 @@ Amount::Amount() : amount_(0) {
   // do nothing
 }
 
-Amount::Amount(int64_t amount) : amount_(amount) {
-  // do nothing
-  // Amount validation is done by CreateBySatoshiAmount
-}
+Amount::Amount(int64_t amount) : amount_(amount) { CheckValidAmount(amount_); }
+
+Amount::Amount(double amount)
+    : Amount(static_cast<int64_t>(amount * kCoinBase)) {}
 
 void Amount::CheckValidAmount(int64_t satoshi_amount) {
   if (!IsValidAmount(satoshi_amount)) {
     warn(CFD_LOG_SOURCE, "Amount out of range. amount={}.", satoshi_amount);
     throw CfdException(kCfdOutOfRangeError, "Amount out of range.");
-  }
-}
-
-void Amount::CheckValidAmount(double coin_amount) {
-  int64_t satoshi_amount = static_cast<int64_t>(coin_amount * kCoinBase);
-  if (!IsValidAmount(satoshi_amount)) {
-    warn(
-        CFD_LOG_SOURCE, "Coin amount out of range. amount={}.",
-        satoshi_amount);
-    throw CfdException(kCfdOutOfRangeError, "Coin amount out of range.");
   }
 }
 
@@ -53,9 +43,7 @@ Amount Amount::CreateBySatoshiAmount(int64_t satoshi_amount) {
 
 Amount Amount::CreateByCoinAmount(double coin_amount) {
   CheckValidAmount(coin_amount);
-
-  int64_t satoshi_amount = static_cast<int64_t>(coin_amount * kCoinBase);
-  return Amount(satoshi_amount);
+  return Amount(coin_amount);
 }
 
 int64_t Amount::GetSatoshiValue() const { return amount_; }
