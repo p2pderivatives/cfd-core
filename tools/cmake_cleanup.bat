@@ -9,3 +9,5 @@ rmdir /S /Q build
 
 rmdir /S /Q external\libwally-core
 
+rmdir /S /Q external\googletest
+
