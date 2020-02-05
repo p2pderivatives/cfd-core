@@ -1,5 +1,7 @@
 project(external_download NONE)
 
+include(../cmake/ConvertSrclistFunction.cmake)
+
 find_package(wally  QUIET CONFIG)
 
 # env check
