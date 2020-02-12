@@ -106,15 +106,26 @@ class CFD_CORE_EXPORT TxIn : public AbstractTxIn {
   static constexpr const size_t kMinimumTxInSize = 41;
 
   /**
-   * @brief TxInのサイズを見積もる。
-   * @param[in] addr_type       address type
-   * @param[in] redeem_script   redeem script
-   * @param[out] witness_stack_size   witness stack size
-   * @return TxInのサイズ
+   * @brief estimate txin's size, and witness size.
+   * @param[in] addr_type         address type
+   * @param[in] redeem_script     redeem script
+   * @param[out] witness_area_size     witness area size
+   * @param[out] no_witness_area_size  no witness area size
+   * @return TxIn size.
    */
   static uint32_t EstimateTxInSize(
       AddressType addr_type, Script redeem_script = Script(),
-      uint32_t* witness_stack_size = nullptr);
+      uint32_t* witness_area_size = nullptr,
+      uint32_t* no_witness_area_size = nullptr);
+
+  /**
+   * @brief estimate txin's virtual size direct.
+   * @param[in] addr_type       address type
+   * @param[in] redeem_script   redeem script
+   * @return TxIn virtual size.
+   */
+  static uint32_t EstimateTxInVsize(
+      AddressType addr_type, Script redeem_script = Script());
 
   /**
    * @brief コンストラクタ.

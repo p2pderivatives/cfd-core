@@ -272,21 +272,38 @@ class CFD_CORE_EXPORT BlindFactor {
 class CFD_CORE_EXPORT ConfidentialTxIn : public AbstractTxIn {
  public:
   /**
-   * @brief TxInのサイズを見積もる。
+   * @brief estimate txin's size, and witness size.
    * @param[in] addr_type           address type
    * @param[in] redeem_script       redeem script
    * @param[in] pegin_btc_tx_size   pegin bitcoin transaction size
    * @param[in] fedpeg_script       fedpeg script
    * @param[in] is_issuance         issuance/reissuance transaction
    * @param[in] is_blind            blind transaction (for issuance/reissuance)
-   * @param[out] witness_stack_size   witness stack size
-   * @return TxInのサイズ
+   * @param[out] witness_area_size     witness area size
+   * @param[out] no_witness_area_size  no witness area size
+   * @return TxIn size.
    */
   static uint32_t EstimateTxInSize(
       AddressType addr_type, Script redeem_script = Script(),
       uint32_t pegin_btc_tx_size = 0, Script fedpeg_script = Script(),
       bool is_issuance = false, bool is_blind = false,
-      uint32_t* witness_stack_size = nullptr);
+      uint32_t* witness_area_size = nullptr,
+      uint32_t* no_witness_area_size = nullptr);
+
+  /**
+   * @brief estimate txin's virtual size direct.
+   * @param[in] addr_type           address type
+   * @param[in] redeem_script       redeem script
+   * @param[in] pegin_btc_tx_size   pegin bitcoin transaction size
+   * @param[in] fedpeg_script       fedpeg script
+   * @param[in] is_issuance         issuance/reissuance transaction
+   * @param[in] is_blind            blind transaction (for issuance/reissuance)
+   * @return TxIn virtual size.
+   */
+  static uint32_t EstimateTxInVsize(
+      AddressType addr_type, Script redeem_script = Script(),
+      uint32_t pegin_btc_tx_size = 0, Script fedpeg_script = Script(),
+      bool is_issuance = false, bool is_blind = false);
 
   /**
    * @brief コンストラクタ.
@@ -754,13 +771,22 @@ class CFD_CORE_EXPORT ConfidentialTxOutReference
    */
   ByteData GetRangeProof() const { return range_proof_; }
   /**
-   * @brief シリアライズ済みのサイズを取得する.
-   * @param[in] is_blinded    blind済みかどうか
-   * @param[out] witness_stack_size   witness stack size
+   * @brief Get a serialized size.
+   * @param[in] is_blinded             blinding or not.
+   * @param[out] witness_area_size     witness area size.
+   * @param[out] no_witness_area_size  no witness area size.
    * @return serialized size
    */
   uint32_t GetSerializeSize(
-      bool is_blinded = true, uint32_t* witness_stack_size = nullptr) const;
+      bool is_blinded = true, uint32_t* witness_area_size = nullptr,
+      uint32_t* no_witness_area_size = nullptr) const;
+
+  /**
+   * @brief Get a serialized virtual size.
+   * @param[in] is_blinded             blinding or not.
+   * @return serialized virtual size.
+   */
+  uint32_t GetSerializeVsize(bool is_blinded = true) const;
 
  private:
   ConfidentialAssetId asset_;             //!< confidential asset
