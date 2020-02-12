@@ -192,6 +192,10 @@ uint32_t AbstractTxOutReference::GetSerializeSize() const {
   return static_cast<uint32_t>(result);
 }
 
+uint32_t AbstractTxOutReference::GetSerializeVsize() const {
+  return AbstractTransaction::GetVsizeFromSize(GetSerializeSize(), 0);
+}
+
 // -----------------------------------------------------------------------------
 // SignatureUtil
 // -----------------------------------------------------------------------------

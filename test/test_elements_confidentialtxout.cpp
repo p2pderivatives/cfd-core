@@ -304,13 +304,29 @@ TEST(ConfidentialTxOutReference, GetSerializeSize) {
     ConfidentialTxOutReference txout_ref(txout);
 
     uint32_t wit_size = 0;
-    EXPECT_EQ(txout_ref.GetSerializeSize(false, &wit_size), 68);
+    uint32_t no_wit_size = 0;
+    EXPECT_EQ(txout_ref.GetSerializeSize(false, &wit_size, &no_wit_size), 68);
     EXPECT_EQ(wit_size, 2);
+    EXPECT_EQ(no_wit_size, 66);
 
     wit_size = 0;
-    EXPECT_EQ(txout_ref.GetSerializeSize(true, &wit_size), 3150);
+    no_wit_size = 0;
+    EXPECT_EQ(txout_ref.GetSerializeSize(true, &wit_size, &no_wit_size), 3150);
     EXPECT_EQ(wit_size, 3028);
+    EXPECT_EQ(no_wit_size, 122);
   }
+}
+
+TEST(ConfidentialTxOutReference, GetSerializeVsize) {
+  int64_t satoshi = 1000000;
+  ConfidentialAssetId asset("1234567890123456789012345678901234567890123456789012345678901234");
+  ConfidentialTxOut txout(exp_script, asset,
+      ConfidentialValue(Amount::CreateBySatoshiAmount(satoshi)));
+  ConfidentialTxOutReference txout_ref(txout);
+
+  EXPECT_EQ(txout_ref.GetSerializeVsize(false), 67);
+
+  EXPECT_EQ(txout_ref.GetSerializeVsize(true), 879);
 }
 
 #endif  // CFD_DISABLE_ELEMENTS

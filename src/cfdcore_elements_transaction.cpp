@@ -549,7 +549,7 @@ ByteData256 ConfidentialTxIn::GetWitnessHash() const {
 uint32_t ConfidentialTxIn::EstimateTxInSize(
     AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
     Script fedpeg_script, bool is_issuance, bool is_blind,
-    uint32_t *witness_stack_size) {
+    uint32_t *witness_area_size, uint32_t *no_witness_area_size) {
   // issuance時の追加サイズ: entity(32),hash(32),amount(8+1),key(8+1)
   static constexpr const uint32_t kIssuanceAppendSize = 82;
   // blind issuance時の追加サイズ: entity,hash,amount(33),key(33)
@@ -560,9 +560,8 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
   // btc(9),asset(33),block(33),fedpegSize(-),txSize(3),txoutproof(152)
   static constexpr const uint32_t kPeginWitnessSize = 230;
   uint32_t witness_size = 0;
-  uint32_t size =
-      TxIn::EstimateTxInSize(addr_type, redeem_script, &witness_size);
-  size -= witness_size;  // non segwit size
+  uint32_t size = 0;
+  TxIn::EstimateTxInSize(addr_type, redeem_script, &witness_size, &size);
 
   if (is_issuance) {
     if (is_blind) {
@@ -593,10 +592,24 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
     }
   }
 
-  if (witness_stack_size) {
-    *witness_stack_size = witness_size;
+  if (witness_area_size != nullptr) {
+    *witness_area_size = witness_size;
+  }
+  if (no_witness_area_size != nullptr) {
+    *no_witness_area_size = size;
   }
   return size + witness_size;
+}
+
+uint32_t ConfidentialTxIn::EstimateTxInVsize(
+    AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
+    Script fedpeg_script, bool is_issuance, bool is_blind) {
+  uint32_t witness_size = 0;
+  uint32_t no_witness_size = 0;
+  ConfidentialTxIn::EstimateTxInSize(
+      addr_type, redeem_script, pegin_btc_tx_size, fedpeg_script, is_issuance,
+      is_blind, &witness_size, &no_witness_size);
+  return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
 // -----------------------------------------------------------------------------
@@ -760,7 +773,8 @@ ConfidentialTxOutReference::ConfidentialTxOutReference(
 }
 
 uint32_t ConfidentialTxOutReference::GetSerializeSize(
-    bool is_blinded, uint32_t *witness_stack_size) const {
+    bool is_blinded, uint32_t *witness_area_size,
+    uint32_t *no_witness_area_size) const {
   static constexpr const uint32_t kTxOutSurjection = 131 + 1;
   static constexpr const uint32_t kTxOutRangeproof = 2893 + 3;
   uint32_t result = 0;
@@ -789,11 +803,21 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
     witness_size += 1;  // range proof
   }
 
-  if (witness_stack_size) {
-    *witness_stack_size = witness_size;
+  if (witness_area_size != nullptr) {
+    *witness_area_size = witness_size;
+  }
+  if (no_witness_area_size != nullptr) {
+    *no_witness_area_size = result;
   }
   result += witness_size;
   return result;
+}
+
+uint32_t ConfidentialTxOutReference::GetSerializeVsize(bool is_blinded) const {
+  uint32_t witness_size = 0;
+  uint32_t no_witness_size = 0;
+  GetSerializeSize(is_blinded, &witness_size, &no_witness_size);
+  return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
 // -----------------------------------------------------------------------------
