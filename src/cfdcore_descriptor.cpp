@@ -19,6 +19,7 @@
 #include "cfdcore/cfdcore_elements_address.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_hdwallet.h"
+#include "cfdcore/cfdcore_key.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_util.h"
@@ -56,6 +57,214 @@ static const DescriptorNodeScriptData kDescriptorNodeScriptTable[] = {
     {"addr", DescriptorScriptType::kDescriptorScriptAddr, true, false, false},
     {"raw", DescriptorScriptType::kDescriptorScriptRaw, true, false, false},
 };
+
+// -----------------------------------------------------------------------------
+// DescriptorKeyInfo
+// -----------------------------------------------------------------------------
+std::string DescriptorKeyInfo::GetExtPrivkeyInformation(
+    const ExtPrivkey& ext_privkey, const std::string& child_path) {
+  std::string result;
+  if (ext_privkey.IsValid()) {
+    result = "[" + ext_privkey.GetFingerprintData().GetHex();
+    if (!child_path.empty()) {
+      if (child_path[0] != '/') {
+        result += "/";
+      }
+      result += child_path;
+    }
+    result += "]";
+  }
+  return result;
+}
+
+std::string DescriptorKeyInfo::GetExtPubkeyInformation(
+    const ExtPubkey& ext_pubkey, const std::string& child_path) {
+  std::string result;
+  if (ext_pubkey.IsValid()) {
+    result = "[" + ext_pubkey.GetFingerprintData().GetHex();
+    if (!child_path.empty()) {
+      if (child_path[0] != '/') {
+        result += "/";
+      }
+      result += child_path;
+    }
+    result += "]";
+  }
+  return result;
+}
+
+DescriptorKeyInfo::DescriptorKeyInfo() {
+  // do nothing
+}
+
+DescriptorKeyInfo::DescriptorKeyInfo(
+    const std::string& key, const std::string parent_key_information) {
+  if (key.size() < 4) {
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "DescriptorKeyInfo illegal key.");
+  }
+  // analyze format
+  std::string hdkey_top = key.substr(1, 3);
+  if ((hdkey_top == "pub") || (hdkey_top == "prv")) {
+    std::vector<std::string> list = StringUtil::Split(key, "/");
+    for (size_t index = 1; index < list.size(); ++index) {
+      path_ += "/" + list[index];
+    }
+    if (hdkey_top == "prv") {
+      key_type_ = DescriptorKeyType::kDescriptorKeyBip32Priv;
+      extprivkey_ = ExtPrivkey(list[0]);
+    } else {
+      key_type_ = DescriptorKeyType::kDescriptorKeyBip32;
+      extpubkey_ = ExtPubkey(list[0]);
+    }
+  } else {
+    key_type_ = DescriptorKeyType::kDescriptorKeyPublic;
+    bool is_wif = false;
+    try {
+      // pubkey format check
+      ByteData bytes(key);
+      if (Pubkey::IsValid(bytes)) {
+        // pubkey
+        pubkey_ = Pubkey(bytes);
+      } else {
+        // privkey
+        Privkey privkey(bytes);
+        privkey_ = privkey;
+        key_string_ = privkey_.GetHex();
+      }
+    } catch (const CfdException& except) {
+      std::string errmsg(except.what());
+      if (errmsg.find("hex to byte convert error.") != std::string::npos) {
+        is_wif = true;
+      } else {
+        throw except;
+      }
+    }
+    if (is_wif) {
+      Privkey privkey;
+      // privkey WIF check
+      try {
+        privkey_ = Privkey::FromWif(key, NetType::kMainnet);
+      } catch (const CfdException& except) {
+        std::string errmsg(except.what());
+        if (errmsg.find("Error WIF to Private key.") == std::string::npos) {
+          throw except;
+        }
+      }
+      if (!privkey_.IsValid()) {
+        privkey_ = Privkey::FromWif(key, NetType::kTestnet);
+      }
+      key_string_ = privkey_.GetHex();
+    }
+  }
+
+  if (!parent_key_information.empty()) {
+    parent_info_ = parent_key_information;
+  }
+}
+
+DescriptorKeyInfo::DescriptorKeyInfo(
+    const Pubkey& pubkey, const std::string parent_key_information)
+    : key_type_(DescriptorKeyType::kDescriptorKeyPublic), pubkey_(pubkey) {
+  if (!parent_key_information.empty()) {
+    parent_info_ = parent_key_information;
+  }
+}
+
+DescriptorKeyInfo::DescriptorKeyInfo(
+    const Privkey& privkey, bool wif, NetType net_type, bool is_compressed,
+    const std::string parent_key_information)
+    : key_type_(DescriptorKeyType::kDescriptorKeyPublic), privkey_(privkey) {
+  if (wif) {
+    key_string_ = privkey.ConvertWif(net_type, is_compressed);
+  } else {
+    key_string_ = privkey.GetHex();
+  }
+  if (!parent_key_information.empty()) {
+    parent_info_ = parent_key_information;
+  }
+}
+
+DescriptorKeyInfo::DescriptorKeyInfo(
+    const ExtPrivkey& ext_privkey, const std::string parent_key_information,
+    const std::string path)
+    : key_type_(DescriptorKeyType::kDescriptorKeyBip32Priv),
+      extprivkey_(ext_privkey) {
+  if (!parent_key_information.empty()) {
+    parent_info_ = parent_key_information;
+  }
+  if (!path.empty()) {
+    if (path[0] != '/') {
+      path_ = "/" + path;
+    } else {
+      path_ = path;
+    }
+  }
+}
+
+DescriptorKeyInfo::DescriptorKeyInfo(
+    const ExtPubkey& ext_pubkey, const std::string parent_key_information,
+    const std::string path)
+    : key_type_(DescriptorKeyType::kDescriptorKeyBip32),
+      extpubkey_(ext_pubkey) {
+  if (!parent_key_information.empty()) {
+    parent_info_ = parent_key_information;
+  }
+  if (!path.empty()) {
+    if (path[0] != '/') {
+      path_ = "/" + path;
+    } else {
+      path_ = path;
+    }
+  }
+}
+
+DescriptorKeyInfo& DescriptorKeyInfo::operator=(
+    const DescriptorKeyInfo& object) {
+  key_type_ = object.key_type_;
+  pubkey_ = object.pubkey_;
+  privkey_ = object.privkey_;
+  extprivkey_ = object.extprivkey_;
+  extpubkey_ = object.extpubkey_;
+  parent_info_ = object.parent_info_;
+  path_ = object.path_;
+  key_string_ = object.key_string_;
+  return *this;
+}
+
+Pubkey DescriptorKeyInfo::GetPubkey() const { return pubkey_; }
+
+Privkey DescriptorKeyInfo::GetPrivkey() const { return privkey_; }
+
+std::string DescriptorKeyInfo::GetBip32Path() const { return path_; }
+
+ExtPrivkey DescriptorKeyInfo::GetExtPrivkey() const { return extprivkey_; }
+
+ExtPubkey DescriptorKeyInfo::GetExtPubkey() const { return extpubkey_; }
+
+DescriptorKeyType DescriptorKeyInfo::GetKeyType() const { return key_type_; }
+
+bool DescriptorKeyInfo::HasExtPrivkey() const { return extprivkey_.IsValid(); }
+
+bool DescriptorKeyInfo::HasExtPubkey() const { return extpubkey_.IsValid(); }
+
+bool DescriptorKeyInfo::HasPrivkey() const { return privkey_.IsValid(); }
+
+std::string DescriptorKeyInfo::ToString() const {
+  if (key_type_ == DescriptorKeyType::kDescriptorKeyPublic) {
+    if (privkey_.IsValid()) {
+      return parent_info_ + key_string_;
+    } else {
+      return parent_info_ + pubkey_.GetHex();
+    }
+  } else if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32) {
+    return parent_info_ + extpubkey_.ToString() + path_;
+  } else if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv) {
+    return parent_info_ + extprivkey_.ToString() + path_;
+  } else {
+    return "";
+  }
+}
 
 // -----------------------------------------------------------------------------
 // DescriptorKeyReference
@@ -658,7 +867,10 @@ void DescriptorNode::AnalyzeKey() {
   }
   // derive key check (xpub,etc)
   info(CFD_LOG_SOURCE, "key_info_ = {}", key_info_);
-  std::string hdkey_top = key_info_.substr(1, 3);
+  std::string hdkey_top;
+  if (key_info_.size() > 4) {
+    hdkey_top = key_info_.substr(1, 3);
+  }
   if ((hdkey_top == "pub") || (hdkey_top == "prv")) {
     key_type_ = DescriptorKeyType::kDescriptorKeyBip32;
     if (hdkey_top == "prv") {
@@ -792,6 +1004,7 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
   for (const auto& node_data : kDescriptorNodeScriptTable) {
     if (name_ == node_data.name) {
       p_data = &node_data;
+      break;
     }
   }
   if (p_data == nullptr) {
@@ -1195,6 +1408,109 @@ Descriptor Descriptor::ParseElements(const std::string& output_descriptor) {
   return Parse(output_descriptor, &network_pefixes);
 }
 #endif  // CFD_DISABLE_ELEMENTS
+
+Descriptor Descriptor::CreateDescriptor(
+    DescriptorScriptType type, const DescriptorKeyInfo& key_info,
+    const std::vector<AddressFormatData>* network_parameters) {
+  std::vector<DescriptorScriptType> types;
+  std::vector<DescriptorKeyInfo> keys;
+  types.push_back(type);
+  keys.push_back(key_info);
+  return CreateDescriptor(types, keys, 1, network_parameters);
+}
+
+Descriptor Descriptor::CreateDescriptor(
+    const std::vector<DescriptorScriptType>& type_list,
+    const std::vector<DescriptorKeyInfo>& key_info_list, uint32_t require_num,
+    const std::vector<AddressFormatData>* network_parameters) {
+  if (type_list.empty()) {
+    warn(CFD_LOG_SOURCE, "Failed to type list.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to type list. list is empty.");
+  }
+  std::string output_descriptor;
+  std::vector<DescriptorScriptType> types(type_list);
+  for (auto ite = types.rbegin(); ite != types.rend(); ++ite) {
+    DescriptorScriptType type = *ite;
+
+    std::string key_text;
+    if (output_descriptor.empty() && (!key_info_list.empty())) {
+      for (const auto& key_info : key_info_list) {
+        if (key_text.empty()) {
+          key_text = key_info.ToString();
+        } else {
+          key_text += "," + key_info.ToString();
+        }
+      }
+    }
+
+    const DescriptorNodeScriptData* p_data = nullptr;
+    for (const auto& node_data : kDescriptorNodeScriptTable) {
+      if (type == node_data.type) {
+        p_data = &node_data;
+        break;
+      }
+    }
+    switch (type) {
+      case DescriptorScriptType::kDescriptorScriptPk:
+      case DescriptorScriptType::kDescriptorScriptPkh:
+      case DescriptorScriptType::kDescriptorScriptWpkh:
+      case DescriptorScriptType::kDescriptorScriptCombo:
+      case DescriptorScriptType::kDescriptorScriptMulti:
+      case DescriptorScriptType::kDescriptorScriptSortedMulti:
+        if (!output_descriptor.empty()) {
+          warn(CFD_LOG_SOURCE, "key hash type is bottom only.");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to createDescriptor. key hash type is bottom only.");
+        }
+        if (key_text.empty()) {
+          warn(CFD_LOG_SOURCE, "key list is empty");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to createDescriptor. key list is empty.");
+        }
+        if ((!p_data->multisig) && (key_info_list.size() > 1)) {
+          warn(CFD_LOG_SOURCE, "multiple key is multisig only.");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to createDescriptor. multiple key is multisig only.");
+        }
+        break;
+      case DescriptorScriptType::kDescriptorScriptSh:
+      case DescriptorScriptType::kDescriptorScriptWsh:
+        if (output_descriptor.empty()) {
+          warn(CFD_LOG_SOURCE, "Failed to script hash type.");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to script hash type. this type is unsupported of key.");
+        }
+        break;
+      case DescriptorScriptType::kDescriptorScriptNull:
+      case DescriptorScriptType::kDescriptorScriptAddr:
+      case DescriptorScriptType::kDescriptorScriptRaw:
+      default:
+        warn(CFD_LOG_SOURCE, "Failed to script type.");
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            "Failed to script type. this type is unsupported.");
+        break;
+    }
+
+    if (key_text.empty()) {
+      output_descriptor = p_data->name + "(" + output_descriptor + ")";
+    } else if (p_data->multisig) {
+      output_descriptor = p_data->name + "(" + std::to_string(require_num) +
+                          "," + key_text + ")";
+    } else {
+      output_descriptor = p_data->name + "(" + key_text + ")";
+    }
+  }
+
+  // Check descriptor script format.
+  return Parse(output_descriptor, network_parameters);
+}
 
 bool Descriptor::IsComboScript() const {
   if (root_node_.GetScriptType() !=

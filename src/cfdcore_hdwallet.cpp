@@ -545,6 +545,15 @@ ByteData ExtPrivkey::GetVersionData() const {
 
 uint32_t ExtPrivkey::GetFingerprint() const { return fingerprint_; }
 
+ByteData ExtPrivkey::GetFingerprintData() const {
+  std::vector<uint8_t> byte_data(4);
+  byte_data[3] = (fingerprint_ >> 24) & 0xff;
+  byte_data[2] = (fingerprint_ >> 16) & 0xff;
+  byte_data[1] = (fingerprint_ >> 8) & 0xff;
+  byte_data[0] = fingerprint_ & 0xff;
+  return ByteData(byte_data);
+}
+
 ByteData256 ExtPrivkey::GetPubTweakSum() const { return tweak_sum_; }
 
 // ----------------------------------------------------------------------------
@@ -689,6 +698,15 @@ ByteData ExtPubkey::GetVersionData() const {
 }
 
 uint32_t ExtPubkey::GetFingerprint() const { return fingerprint_; }
+
+ByteData ExtPubkey::GetFingerprintData() const {
+  std::vector<uint8_t> byte_data(4);
+  byte_data[3] = (fingerprint_ >> 24) & 0xff;
+  byte_data[2] = (fingerprint_ >> 16) & 0xff;
+  byte_data[1] = (fingerprint_ >> 8) & 0xff;
+  byte_data[0] = fingerprint_ & 0xff;
+  return ByteData(byte_data);
+}
 
 }  // namespace core
 }  // namespace cfd
