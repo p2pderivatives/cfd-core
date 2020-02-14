@@ -17,6 +17,9 @@
 namespace cfd {
 namespace core {
 
+class ByteData160;
+class ByteData256;
+
 /**
  * @class ByteData
  * @brief 可変サイズのByte配列データクラス
@@ -91,6 +94,41 @@ class CFD_CORE_EXPORT ByteData {
    * @return serialize data size
    */
   size_t GetSerializeSize() const;
+
+  /**
+   * @brief Join byte data list.
+   * @param[in] data  byte data.
+   * @return joined byte data.
+   */
+  template <class ByteDataClass>
+  ByteData Join(const ByteDataClass& data) const {
+    return PushBack(data);
+  }
+
+  /**
+   * @brief Join byte data list.
+   * @param[in] top   top byte data.
+   * @param[in] args  byte data list.
+   * @return joined byte data.
+   */
+  template <class ByteTop, class... ByteDataClass>
+  ByteData Join(const ByteTop& top, const ByteDataClass&... args) const {
+    ByteData result = PushBack(top);
+    return result.Join(args...);
+  }
+
+  /**
+   * @brief Push to back.
+   * @param[in] back_insert_data  back insert data.
+   * @return joined byte data.
+   */
+  template <class ByteDataClass>
+  ByteData PushBack(const ByteDataClass& back_insert_data) const {
+    std::vector<uint8_t> result(data_);
+    std::vector<uint8_t> insert_bytes = back_insert_data.GetBytes();
+    result.insert(result.end(), insert_bytes.begin(), insert_bytes.end());
+    return ByteData(result);
+  }
 
   /**
    * @brief 可変長サイズ情報(バッファ)を取得する.
@@ -178,6 +216,41 @@ class CFD_CORE_EXPORT ByteData160 {
   ByteData GetData() const;
 
   /**
+   * @brief Join byte data list.
+   * @param[in] data  byte data.
+   * @return joined byte data.
+   */
+  template <class ByteDataClass>
+  ByteData Join(const ByteDataClass& data) const {
+    return PushBack(data);
+  }
+
+  /**
+   * @brief Join byte data list.
+   * @param[in] top   top byte data.
+   * @param[in] args  byte data list.
+   * @return joined byte data.
+   */
+  template <class ByteTop, class... ByteDataClass>
+  ByteData Join(const ByteTop& top, const ByteDataClass&... args) const {
+    ByteData result = PushBack(top);
+    return result.Join(args...);
+  }
+
+  /**
+   * @brief Push to back.
+   * @param[in] back_insert_data  back insert data.
+   * @return joined byte data.
+   */
+  template <class ByteDataClass>
+  ByteData PushBack(const ByteDataClass& back_insert_data) const {
+    std::vector<uint8_t> result(data_);
+    std::vector<uint8_t> insert_bytes = back_insert_data.GetBytes();
+    result.insert(result.end(), insert_bytes.begin(), insert_bytes.end());
+    return ByteData(result);
+  }
+
+  /**
    * @brief byte data情報をserializeする.
    * @return serialize data
    */
@@ -251,6 +324,41 @@ class CFD_CORE_EXPORT ByteData256 {
    * @return byte data
    */
   ByteData GetData() const;
+
+  /**
+   * @brief Join byte data list.
+   * @param[in] data  byte data.
+   * @return joined byte data.
+   */
+  template <class ByteDataClass>
+  ByteData Join(const ByteDataClass& data) const {
+    return PushBack(data);
+  }
+
+  /**
+   * @brief Join byte data list.
+   * @param[in] top   top byte data.
+   * @param[in] args  byte data list.
+   * @return joined byte data.
+   */
+  template <class ByteTop, class... ByteDataClass>
+  ByteData Join(const ByteTop& top, const ByteDataClass&... args) const {
+    ByteData result = PushBack(top);
+    return result.Join(args...);
+  }
+
+  /**
+   * @brief Push to back.
+   * @param[in] back_insert_data  back insert data.
+   * @return joined byte data.
+   */
+  template <class ByteDataClass>
+  ByteData PushBack(const ByteDataClass& back_insert_data) const {
+    std::vector<uint8_t> result(data_);
+    std::vector<uint8_t> insert_bytes = back_insert_data.GetBytes();
+    result.insert(result.end(), insert_bytes.begin(), insert_bytes.end());
+    return ByteData(result);
+  }
 
   /**
    * @brief byte data情報をserializeする.

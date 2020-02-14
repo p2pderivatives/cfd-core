@@ -123,6 +123,7 @@
     "lint_check:darwin": "cd tools && ./lint_quiet.sh",
     "git_subm_update": "git submodule -q foreach git fetch -q && git submodule -q update -i",
     "check": "run-s doxygen_check ctest_quiet lint_check",
+    "check_debug": "run-s doxygen_check lint_check ctest_debug",
     "check_all": "run-s cmake_clean git_subm_update cmake_quiet doxygen_check ctest_quiet lint_check"
   },
   "author": "",
