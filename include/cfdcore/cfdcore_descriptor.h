@@ -65,6 +65,151 @@ enum DescriptorKeyType {
 };
 
 /**
+ * @brief key型descriptorの情報クラスです.
+ */
+class CFD_CORE_EXPORT DescriptorKeyInfo {
+ public:
+  /**
+   * @brief Get extkey text information from ext-privkey.
+   * @param[in] ext_privkey  privkey
+   * @param[in] child_path   bip32 path for child.
+   * @return extkey text information.
+   */
+  static std::string GetExtPrivkeyInformation(
+      const ExtPrivkey& ext_privkey, const std::string& child_path);
+  /**
+   * @brief Get extkey text information from ext-pubkey.
+   * @param[in] ext_pubkey   pubkey
+   * @param[in] child_path   bip32 path for child.
+   * @return extkey text information.
+   */
+  static std::string GetExtPubkeyInformation(
+      const ExtPubkey& ext_pubkey, const std::string& child_path);
+  /**
+   * @brief constructor.
+   */
+  DescriptorKeyInfo();
+  /**
+   * @brief constructor.
+   * @param[in] key         key information.
+   * @param[in] parent_key_information  parent key info.
+   */
+  explicit DescriptorKeyInfo(
+      const std::string& key, const std::string parent_key_information = "");
+  /**
+   * @brief constructor.
+   * @param[in] pubkey      pubkey
+   * @param[in] parent_key_information  parent key info.
+   */
+  explicit DescriptorKeyInfo(
+      const Pubkey& pubkey, const std::string parent_key_information = "");
+  /**
+   * @brief constructor.
+   * @param[in] privkey     privkey
+   * @param[in] wif         WIF output flag.
+   * @param[in] net_type    Mainnet or Testnet
+   * @param[in] is_compressed  compressed pubkey flag.
+   * @param[in] parent_key_information  parent key info.
+   */
+  explicit DescriptorKeyInfo(
+      const Privkey& privkey, bool wif = true,
+      NetType net_type = NetType::kMainnet, bool is_compressed = true,
+      const std::string parent_key_information = "");
+  /**
+   * @brief constructor.
+   * @param[in] ext_privkey   ext privkey
+   * @param[in] parent_key_information  parent key info.
+   * @param[in] path          path string.
+   */
+  explicit DescriptorKeyInfo(
+      const ExtPrivkey& ext_privkey,
+      const std::string parent_key_information = "",
+      const std::string path = "");
+  /**
+   * @brief constructor.
+   * @param[in] ext_pubkey   ext pubkey
+   * @param[in] parent_key_information  parent key info.
+   * @param[in] path          path string.
+   */
+  explicit DescriptorKeyInfo(
+      const ExtPubkey& ext_pubkey,
+      const std::string parent_key_information = "",
+      const std::string path = "");
+  /**
+   * @brief copy constructor.
+   * @param[in] object    DescriptorKeyReference object
+   * @return DescriptorKeyReference object
+   */
+  DescriptorKeyInfo& operator=(const DescriptorKeyInfo& object);
+
+  /**
+   * @brief getting pubkey.
+   * @return pubkey
+   */
+  Pubkey GetPubkey() const;
+  /**
+   * @brief getting privkey.
+   * @return privkey
+   */
+  Privkey GetPrivkey() const;
+  /**
+   * @brief getting bip32 path.
+   * @return bip32 path
+   */
+  std::string GetBip32Path() const;
+  /**
+   * @brief exist ext-privkey.
+   * @retval true  exist
+   * @retval false not exist
+   */
+  bool HasExtPrivkey() const;
+  /**
+   * @brief exist ext-pubkey.
+   * @retval true  exist
+   * @retval false not exist
+   */
+  bool HasExtPubkey() const;
+  /**
+   * @brief exist privkey.
+   * @retval true  exist
+   * @retval false not exist
+   */
+  bool HasPrivkey() const;
+  /**
+   * @brief getting ext-privkey.
+   * @details need ext-privkey exists.
+   * @return ext-privkey
+   */
+  ExtPrivkey GetExtPrivkey() const;
+  /**
+   * @brief getting ext-pubkey.
+   * @details need ext-pubkey exists.
+   * @return ext-pubkey
+   */
+  ExtPubkey GetExtPubkey() const;
+  /**
+   * @brief getting key type.
+   * @return key type
+   */
+  DescriptorKeyType GetKeyType() const;
+  /**
+   * @brief get message string.
+   * @return message string.
+   */
+  std::string ToString() const;
+
+ private:
+  DescriptorKeyType key_type_;  //!< node key type
+  Pubkey pubkey_;               //!< pubkey
+  Privkey privkey_;             //!< privkey
+  ExtPrivkey extprivkey_;       //!< ext privkey
+  ExtPubkey extpubkey_;         //!< ext pubkey
+  std::string parent_info_;     //!< parent info
+  std::string path_;            //!< bip32 path
+  std::string key_string_;      //!< key string
+};
+
+/**
  * @brief key型descriptorの参照クラスです.
  */
 class CFD_CORE_EXPORT DescriptorKeyReference {
@@ -454,7 +599,7 @@ class CFD_CORE_EXPORT Descriptor {
    * @brief parse output descriptor.
    * @param[in] output_descriptor   output descriptor
    * @param[in] network_parameters  network parameter
-   * @return DescriptorNode object
+   * @return Descriptor object
    */
   static Descriptor Parse(
       const std::string& output_descriptor,
@@ -465,10 +610,34 @@ class CFD_CORE_EXPORT Descriptor {
    * @brief parse output descriptor on Elements.
    * @details supported an Elements `addr` descriptor.
    * @param[in] output_descriptor   output descriptor
-   * @return DescriptorNode object
+   * @return Descriptor object
    */
   static Descriptor ParseElements(const std::string& output_descriptor);
 #endif  // CFD_DISABLE_ELEMENTS
+
+  /**
+   * @brief Create descriptor data.
+   * @param[in] type                script type.
+   * @param[in] key_info            key information.
+   * @param[in] network_parameters  network parameter.
+   * @return descriptor object.
+   */
+  static Descriptor CreateDescriptor(
+      DescriptorScriptType type, const DescriptorKeyInfo& key_info,
+      const std::vector<AddressFormatData>* network_parameters = nullptr);
+  /**
+   * @brief Create descriptor data.
+   * @param[in] type_list           script type list.
+   * @param[in] key_info_list       key information list.
+   * @param[in] require_num         multisig require num.
+   * @param[in] network_parameters  network parameter.
+   * @return descriptor object.
+   */
+  static Descriptor CreateDescriptor(
+      const std::vector<DescriptorScriptType>& type_list,
+      const std::vector<DescriptorKeyInfo>& key_info_list,
+      uint32_t require_num,
+      const std::vector<AddressFormatData>* network_parameters = nullptr);
 
   /**
    * @brief constructor.

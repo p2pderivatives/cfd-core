@@ -70,8 +70,8 @@ TxIn::TxIn(
 }
 
 uint32_t TxIn::EstimateTxInSize(
-    AddressType addr_type, Script redeem_script,
-    uint32_t *witness_stack_size) {
+    AddressType addr_type, Script redeem_script, uint32_t *witness_area_size,
+    uint32_t *no_witness_area_size) {
   bool is_pubkey = false;
   bool is_witness = true;
   bool use_unlocking_script = true;
@@ -147,11 +147,22 @@ uint32_t TxIn::EstimateTxInSize(
   } else {
     size += script_size;
   }
-  if (witness_stack_size) {
-    *witness_stack_size = static_cast<uint32_t>(witness_size);
+  if (witness_area_size != nullptr) {
+    *witness_area_size = static_cast<uint32_t>(witness_size);
+  }
+  if (no_witness_area_size != nullptr) {
+    *no_witness_area_size = static_cast<uint32_t>(size);
   }
   size += witness_size;
   return static_cast<uint32_t>(size);
+}
+
+uint32_t TxIn::EstimateTxInVsize(AddressType addr_type, Script redeem_script) {
+  uint32_t witness_size = 0;
+  uint32_t no_witness_size = 0;
+  TxIn::EstimateTxInSize(
+      addr_type, redeem_script, &witness_size, &no_witness_size);
+  return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
 // -----------------------------------------------------------------------------

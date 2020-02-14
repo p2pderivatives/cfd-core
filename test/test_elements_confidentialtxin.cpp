@@ -260,6 +260,30 @@ TEST(ConfidentialTxIn, EstimateTxInSize) {
   }
 }
 
+TEST(ConfidentialTxIn, EstimateTxInVsize) {
+  static const std::vector<TestEstimateConfidentialTxInSizeVector> test_vector = {
+    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false},
+    {AddressType::kP2shAddress, 138, 0, exp_script, 0, Script(), false, false},
+    {AddressType::kP2shP2wpkhAddress, 91, 0, Script(), 0, Script(), false, false},
+    {AddressType::kP2shP2wshAddress, 95, 0, Script("51"), 0, Script(), false, false},
+    {AddressType::kP2wpkhAddress, 69, 0, Script(), 0, Script(), false, false},
+    {AddressType::kP2wshAddress, 66, 0, exp_script, 0, Script(), false, false},
+    // pegin
+    {AddressType::kP2wpkhAddress, 184, 0, Script(), 226, Script("51"), false, false},
+    // issue
+    {AddressType::kP2wpkhAddress, 151, 0, Script(), 0, Script(), true, false},
+    {AddressType::kP2wpkhAddress, 1647, 0, Script(), 0, Script(), true, true},
+  };
+
+  for (const auto& test_data : test_vector) {
+    uint32_t vsize = 0;
+    EXPECT_NO_THROW((vsize = ConfidentialTxIn::EstimateTxInVsize(
+        test_data.addr_type, test_data.redeem_script, test_data.pegin_btc_tx,
+        test_data.fedpeg_script, test_data.is_issuance, test_data.is_blind)));
+    EXPECT_EQ(vsize, test_data.size);
+  }
+}
+
 TEST(ConfidentialTxInReference, Constractor) {
   ScriptWitness exp_witness_stack = GetExpectWitnessStack();
   ScriptWitness exp_pegin_witness = GetExpectPeginWitnessStack();

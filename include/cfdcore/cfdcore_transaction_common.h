@@ -314,10 +314,16 @@ class CFD_CORE_EXPORT AbstractTxOutReference {
   const Script GetLockingScript() const { return locking_script_; }
 
   /**
-   * @brief シリアライズ済みのサイズを取得する.
+   * @brief Get a serialized size.
    * @return serialized size
    */
   uint32_t GetSerializeSize() const;
+
+  /**
+   * @brief Get a serialized virtual size.
+   * @return serialized virtual size.
+   */
+  uint32_t GetSerializeVsize() const;
 
  protected:
   Amount value_;           ///< 金額
