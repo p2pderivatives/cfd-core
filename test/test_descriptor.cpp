@@ -625,6 +625,8 @@ TEST(DescriptorKeyInfo, Constructor_ExtPrivkey) {
   EXPECT_FALSE(key_info.HasExtPubkey());
   EXPECT_TRUE(key_info.HasExtPrivkey());
   EXPECT_STREQ(key_info.GetExtPrivkey().ToString().c_str(),  extkey.c_str());
+  EXPECT_STREQ(key_info.GetBip32Path().c_str(),  ("/" + path).c_str());
+
 }
 
 TEST(DescriptorKeyInfo, Constructor_ExtPubkey) {
@@ -647,6 +649,7 @@ TEST(DescriptorKeyInfo, Constructor_ExtPubkey) {
   EXPECT_TRUE(key_info.HasExtPubkey());
   EXPECT_FALSE(key_info.HasExtPrivkey());
   EXPECT_STREQ(key_info.GetExtPubkey().ToString().c_str(),  extkey.c_str());
+  EXPECT_STREQ(key_info.GetBip32Path().c_str(),  ("/" + path).c_str());
 }
 
 TEST(DescriptorKeyInfo, Constructor_string) {
@@ -668,6 +671,7 @@ TEST(DescriptorKeyInfo, Constructor_string) {
   EXPECT_FALSE(key_info.HasExtPubkey());
   EXPECT_TRUE(key_info.HasExtPrivkey());
   EXPECT_STREQ(key_info.GetExtPrivkey().ToString().c_str(),  extkey.c_str());
+  EXPECT_STREQ(key_info.GetBip32Path().c_str(),  ("/" + path).c_str());
 }
 
 TEST(DescriptorKeyInfo, GetExtPrivkeyInformation) {
