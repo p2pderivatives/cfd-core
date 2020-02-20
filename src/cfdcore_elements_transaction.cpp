@@ -1342,6 +1342,35 @@ IssuanceParameter ConfidentialTransaction::SetAssetIssuance(
     const Amount &token_amount, const Script &token_locking_script,
     const ConfidentialNonce &token_nonce, bool is_blind,
     const ByteData256 &contract_hash) {
+  std::vector<Amount> asset_output_amount_list;
+  std::vector<Script> asset_locking_script_list;
+  std::vector<ConfidentialNonce> asset_nonce_list;
+  std::vector<Amount> token_output_amount_list;
+  std::vector<Script> token_locking_script_list;
+  std::vector<ConfidentialNonce> token_nonce_list;
+  asset_output_amount_list.push_back(asset_amount);
+  asset_locking_script_list.push_back(asset_locking_script);
+  asset_nonce_list.push_back(asset_nonce);
+  token_output_amount_list.push_back(token_amount);
+  token_locking_script_list.push_back(token_locking_script);
+  token_nonce_list.push_back(token_nonce);
+  return SetAssetIssuance(
+      tx_in_index, asset_amount, asset_output_amount_list,
+      asset_locking_script_list, asset_nonce_list, token_amount,
+      token_output_amount_list, token_locking_script_list, token_nonce_list,
+      is_blind, contract_hash);
+}
+
+IssuanceParameter ConfidentialTransaction::SetAssetIssuance(
+    uint32_t tx_in_index, const Amount &asset_amount,
+    const std::vector<Amount> &asset_output_amount_list,
+    const std::vector<Script> &asset_locking_script_list,
+    const std::vector<ConfidentialNonce> &asset_nonce_list,
+    const Amount &token_amount,
+    const std::vector<Amount> &token_output_amount_list,
+    const std::vector<Script> &token_locking_script_list,
+    const std::vector<ConfidentialNonce> &token_nonce_list, bool is_blind,
+    const ByteData256 &contract_hash) {
   CheckTxInIndex(tx_in_index, __LINE__, __FUNCTION__);
 
   if ((vin_[tx_in_index].GetInflationKeys().GetData().GetDataSize() > 0) ||
@@ -1356,23 +1385,84 @@ IssuanceParameter ConfidentialTransaction::SetAssetIssuance(
     throw CfdException(
         kCfdIllegalArgumentError, "Issuance must have one non-zero amount.");
   }
+  if (asset_output_amount_list.empty() != asset_locking_script_list.empty()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Unmatch count. asset amount list and locking script list.");
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "Unmatch count. asset amount list and locking script list.");
+  }
+  if (!asset_output_amount_list.empty()) {
+    Amount total;
+    for (const auto &amount : asset_output_amount_list) {
+      total += amount;
+    }
+    if (total != asset_amount) {
+      warn(CFD_LOG_SOURCE, "Unmatch asset amount.");
+      throw CfdException(kCfdIllegalArgumentError, "Unmatch asset amount.");
+    }
+    for (const auto &script : asset_locking_script_list) {
+      if (script.IsEmpty()) {
+        warn(CFD_LOG_SOURCE, "Empty locking script from asset.");
+        throw CfdException(
+            kCfdIllegalArgumentError, "Empty locking script from asset.");
+      }
+    }
+  }
+  if (token_output_amount_list.empty() != token_locking_script_list.empty()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Unmatch count. token amount list and locking script list.");
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "Unmatch count. token amount list and locking script list.");
+  }
+  if (!token_output_amount_list.empty()) {
+    Amount total;
+    for (const auto &amount : token_output_amount_list) {
+      total += amount;
+    }
+    if (total != token_amount) {
+      warn(CFD_LOG_SOURCE, "Unmatch token amount.");
+      throw CfdException(kCfdIllegalArgumentError, "Unmatch token amount.");
+    }
+    for (const auto &script : token_locking_script_list) {
+      if (script.IsEmpty()) {
+        warn(CFD_LOG_SOURCE, "Empty locking script from token.");
+        throw CfdException(
+            kCfdIllegalArgumentError, "Empty locking script from token.");
+      }
+    }
+  }
 
   IssuanceParameter param = CalculateIssuanceValue(
       vin_[tx_in_index].GetTxid(), vin_[tx_in_index].GetVout(), is_blind,
       contract_hash, ByteData256());
-
-  // 指定されたTxInへの設定
   SetIssuance(
       tx_in_index, ByteData256(), contract_hash,
       ConfidentialValue(asset_amount), ConfidentialValue(token_amount),
       ByteData(), ByteData());
 
-  // TxOut追加
-  if (asset_amount.GetSatoshiValue() > 0) {
-    AddTxOut(asset_amount, param.asset, asset_locking_script, asset_nonce);
+  if ((!asset_output_amount_list.empty()) &&
+      (asset_amount.GetSatoshiValue() > 0)) {
+    for (size_t index = 0; index < asset_output_amount_list.size(); ++index) {
+      ConfidentialNonce nonce;
+      if (index < asset_nonce_list.size()) nonce = asset_nonce_list[index];
+      AddTxOut(
+          asset_output_amount_list[index], param.asset,
+          asset_locking_script_list[index], nonce);
+    }
   }
-  if (token_amount.GetSatoshiValue() > 0) {
-    AddTxOut(token_amount, param.token, token_locking_script, token_nonce);
+  if ((!token_output_amount_list.empty()) &&
+      (token_amount.GetSatoshiValue() > 0)) {
+    for (size_t index = 0; index < token_output_amount_list.size(); ++index) {
+      ConfidentialNonce nonce;
+      if (index < token_nonce_list.size()) nonce = token_nonce_list[index];
+      AddTxOut(
+          token_output_amount_list[index], param.token,
+          token_locking_script_list[index], nonce);
+    }
   }
 
   return param;
@@ -1382,6 +1472,24 @@ IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
     uint32_t tx_in_index, const Amount &asset_amount,
     const Script &asset_locking_script,
     const ConfidentialNonce &asset_blind_nonce,
+    const BlindFactor &asset_blind_factor, const BlindFactor &entropy) {
+  std::vector<Amount> asset_output_amount_list;
+  std::vector<Script> asset_locking_script_list;
+  std::vector<ConfidentialNonce> asset_blind_nonce_list;
+  asset_output_amount_list.push_back(asset_amount);
+  asset_locking_script_list.push_back(asset_locking_script);
+  asset_blind_nonce_list.push_back(asset_blind_nonce);
+  return SetAssetReissuance(
+      tx_in_index, asset_amount, asset_output_amount_list,
+      asset_locking_script_list, asset_blind_nonce_list, asset_blind_factor,
+      entropy);
+}
+
+IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
+    uint32_t tx_in_index, const Amount &asset_amount,
+    const std::vector<Amount> &asset_output_amount_list,
+    const std::vector<Script> &asset_locking_script_list,
+    const std::vector<ConfidentialNonce> &asset_blind_nonce_list,
     const BlindFactor &asset_blind_factor, const BlindFactor &entropy) {
   CheckTxInIndex(tx_in_index, __LINE__, __FUNCTION__);
 
@@ -1396,6 +1504,31 @@ IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
     warn(CFD_LOG_SOURCE, "ReIssuance must have one non-zero amount.");
     throw CfdException(
         kCfdIllegalArgumentError, "ReIssuance must have one non-zero amount.");
+  }
+  if (asset_output_amount_list.empty() != asset_locking_script_list.empty()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Unmatch count. asset amount list and locking script list.");
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "Unmatch count. asset amount list and locking script list.");
+  }
+  if (!asset_output_amount_list.empty()) {
+    Amount total;
+    for (const auto &amount : asset_output_amount_list) {
+      total += amount;
+    }
+    if (total != asset_amount) {
+      warn(CFD_LOG_SOURCE, "Unmatch asset amount.");
+      throw CfdException(kCfdIllegalArgumentError, "Unmatch asset amount.");
+    }
+    for (const auto &script : asset_locking_script_list) {
+      if (script.IsEmpty()) {
+        warn(CFD_LOG_SOURCE, "Empty locking script from asset.");
+        throw CfdException(
+            kCfdIllegalArgumentError, "Empty locking script from asset.");
+      }
+    }
   }
 
   std::vector<uint8_t> asset(kAssetSize);
@@ -1412,15 +1545,23 @@ IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
   IssuanceParameter param;
   param.entropy = entropy;
   param.asset = ConfidentialAssetId(ByteData(asset));
-
-  // 指定されたTxInへの設定
   SetIssuance(
       tx_in_index, asset_blind_factor.GetData(), entropy.GetData(),
       ConfidentialValue(asset_amount), ConfidentialValue(), ByteData(),
       ByteData());
 
-  // TxOut追加
-  AddTxOut(asset_amount, param.asset, asset_locking_script, asset_blind_nonce);
+  if ((!asset_output_amount_list.empty()) &&
+      (asset_amount.GetSatoshiValue() > 0)) {
+    for (size_t index = 0; index < asset_output_amount_list.size(); ++index) {
+      ConfidentialNonce nonce;
+      if (index < asset_blind_nonce_list.size()) {
+        nonce = asset_blind_nonce_list[index];
+      }
+      AddTxOut(
+          asset_output_amount_list[index], param.asset,
+          asset_locking_script_list[index], nonce);
+    }
+  }
   return param;
 }
 
