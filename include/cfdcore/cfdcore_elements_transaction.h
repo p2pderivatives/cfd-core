@@ -1366,7 +1366,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       NetType elements_net_type = NetType::kLiquidV1,
       Address* descriptor_derive_address = nullptr);
 
- private:
+ protected:
   std::vector<ConfidentialTxIn> vin_;    ///< TxIn配列
   std::vector<ConfidentialTxOut> vout_;  ///< TxOut配列
 
