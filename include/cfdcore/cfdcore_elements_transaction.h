@@ -1371,6 +1371,13 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   std::vector<ConfidentialTxOut> vout_;  ///< TxOut配列
 
   /**
+   * @brief HEX文字列からTransaction情報を設定する.
+   * @param[in] hex_string    TransactionバイトデータのHEX文字列
+   */
+  void SetFromHex(const std::string& hex_string);
+
+ private:
+  /**
    * @brief TxIn配列のIndex範囲をチェックする.
    * @param[in] index     TxIn配列のIndex値
    * @param[in] line      行数
@@ -1429,11 +1436,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @return バイトデータ
    */
   ByteData GetByteData(bool has_witness) const;
-  /**
-   * @brief HEX文字列からTransaction情報を設定する.
-   * @param[in] hex_string    TransactionバイトデータのHEX文字列
-   */
-  void SetFromHex(const std::string& hex_string);
   /**
    * @brief ElementsのTx状態フラグ(libwally値)を設定する。
    */
