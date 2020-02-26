@@ -165,7 +165,11 @@ std::vector<uint8_t> ByteData160::GetBytes() const { return data_; }
 
 bool ByteData160::Empty() const { return IsEmpty(); }
 
-bool ByteData160::IsEmpty() const { return data_.size() == 0; }
+bool ByteData160::IsEmpty() const {
+  std::vector<uint8_t> data(kByteData160Length);
+  memset(data.data(), 0, data.size());
+  return data_ == data;
+}
 
 bool ByteData160::Equals(const ByteData160& bytedata) const {
   if (data_ == bytedata.data_) {
@@ -219,7 +223,11 @@ std::vector<uint8_t> ByteData256::GetBytes() const { return data_; }
 
 bool ByteData256::Empty() const { return IsEmpty(); }
 
-bool ByteData256::IsEmpty() const { return data_.size() == 0; }
+bool ByteData256::IsEmpty() const {
+  std::vector<uint8_t> data(kByteData256Length);
+  memset(data.data(), 0, data.size());
+  return data_ == data;
+}
 
 bool ByteData256::Equals(const ByteData256& bytedata) const {
   if (data_ == bytedata.data_) {
