@@ -423,6 +423,8 @@ std::string BlindFactor::GetHex() const {
   return StringUtil::ByteToString(reverse_buffer);
 }
 
+bool BlindFactor::IsEmpty() const { return data_.IsEmpty(); }
+
 // -----------------------------------------------------------------------------
 // ConfidentialTxIn
 // -----------------------------------------------------------------------------
