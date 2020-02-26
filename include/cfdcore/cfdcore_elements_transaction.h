@@ -1077,9 +1077,10 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] tx_in_index       設定するTxInのindex位置
    */
   void RemovePeginWitnessStackAll(uint32_t tx_in_index);
+
   /**
    * @brief IssueAssetの情報を設定する.
-   * @param[in] tx_in_index           設定するTxInのindex位置
+   * @param[in] tx_in_index           Txin index
    * @param[in] asset_amount          issuance amount
    * @param[in] asset_locking_script  asset locking script
    * @param[in] asset_nonce           asset nonce
@@ -1096,10 +1097,35 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const Amount& token_amount, const Script& token_locking_script,
       const ConfidentialNonce& token_nonce, bool is_blind,
       const ByteData256& contract_hash);
+  /**
+   * @brief IssueAssetの情報を設定する.
+   * @param[in] tx_in_index                Txin index
+   * @param[in] asset_amount               issuance amount
+   * @param[in] asset_output_amount_list   asset output list
+   * @param[in] asset_locking_script_list  asset locking script list
+   * @param[in] asset_nonce_list           asset nonce list
+   * @param[in] token_amount               inflation keys
+   * @param[in] token_output_amount_list   token output list
+   * @param[in] token_locking_script_list  token locking script list
+   * @param[in] token_nonce_list           token nonce list
+   * @param[in] is_blind                   blinding issuance
+   * @param[in] contract_hash              asset entropy
+   * @return issuance entropy and asset parameter.
+   */
+  IssuanceParameter SetAssetIssuance(
+      uint32_t tx_in_index, const Amount& asset_amount,
+      const std::vector<Amount>& asset_output_amount_list,
+      const std::vector<Script>& asset_locking_script_list,
+      const std::vector<ConfidentialNonce>& asset_nonce_list,
+      const Amount& token_amount,
+      const std::vector<Amount>& token_output_amount_list,
+      const std::vector<Script>& token_locking_script_list,
+      const std::vector<ConfidentialNonce>& token_nonce_list, bool is_blind,
+      const ByteData256& contract_hash);
 
   /**
    * @brief ReissueAssetの情報を設定する.
-   * @param[in] tx_in_index             設定するTxInのindex位置
+   * @param[in] tx_in_index             Txin index
    * @param[in] asset_amount            reissuance amount
    * @param[in] asset_locking_script    asset locking script
    * @param[in] asset_blind_nonce       blind nonce
@@ -1111,6 +1137,23 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       uint32_t tx_in_index, const Amount& asset_amount,
       const Script& asset_locking_script,
       const ConfidentialNonce& asset_blind_nonce,
+      const BlindFactor& asset_blind_factor, const BlindFactor& entropy);
+  /**
+   * @brief ReissueAssetの情報を設定する.
+   * @param[in] tx_in_index                Txin index
+   * @param[in] asset_amount               reissuance amount
+   * @param[in] asset_output_amount_list   asset output list
+   * @param[in] asset_locking_script_list  asset locking script list
+   * @param[in] asset_blind_nonce_list     asset nonce list
+   * @param[in] asset_blind_factor         blind factor
+   * @param[in] entropy                    entropy
+   * @return reissuance entropy and asset parameter.
+   */
+  IssuanceParameter SetAssetReissuance(
+      uint32_t tx_in_index, const Amount& asset_amount,
+      const std::vector<Amount>& asset_output_amount_list,
+      const std::vector<Script>& asset_locking_script_list,
+      const std::vector<ConfidentialNonce>& asset_blind_nonce_list,
       const BlindFactor& asset_blind_factor, const BlindFactor& entropy);
 
   /**
@@ -1179,7 +1222,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] nonce               nonce.
    * @param[in] surjection_proof    surjection proof.
    * @param[in] range_proof         range proof.
-   * @return 追加したTxOutのindex位置
    */
   void SetTxOutCommitment(
       uint32_t index, const ConfidentialAssetId& asset,
@@ -1201,7 +1243,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    *   -1 to 18. -1 is public value. 0 is most private.
    * @param[in] minimum_bits              rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
-   * @return 追加したTxOutのindex位置
    */
   void BlindTransaction(
       const std::vector<BlindParameter>& txin_info_list,
@@ -1219,7 +1260,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    *   -1 to 18. -1 is public value. 0 is most private.
    * @param[in] minimum_bits              rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
-   * @return 追加したTxOutのindex位置
    */
   void BlindTxOut(
       const std::vector<BlindParameter>& txin_info_list,
