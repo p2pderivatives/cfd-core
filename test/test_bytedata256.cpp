@@ -21,7 +21,7 @@ TEST(ByteData256, DefaultConstructor) {
   EXPECT_STREQ(
       byte_data.GetHex().c_str(),
       "0000000000000000000000000000000000000000000000000000000000000000");
-  EXPECT_FALSE(byte_data.IsEmpty());
+  EXPECT_TRUE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "200000000000000000000000000000000000000000000000000000000000000000");

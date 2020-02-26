@@ -261,6 +261,12 @@ class CFD_CORE_EXPORT BlindFactor {
    * @return hex string (reverse data)
    */
   std::string GetHex() const;
+  /**
+   * @brief 空かどうかを取得する.
+   * @retval true  empty
+   * @retval false exist value
+   */
+  bool IsEmpty() const;
 
  private:
   ByteData256 data_;  //!< byte data
