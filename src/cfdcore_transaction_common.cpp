@@ -102,6 +102,8 @@ Txid AbstractTxIn::GetTxid() const { return txid_; }
 
 uint32_t AbstractTxIn::GetVout() const { return vout_; }
 
+OutPoint AbstractTxIn::GetOutPoint() const { return OutPoint(txid_, vout_); }
+
 Script AbstractTxIn::GetUnlockingScript() const { return unlocking_script_; }
 
 void AbstractTxIn::SetUnlockingScript(const Script &unlocking_script) {
