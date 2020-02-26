@@ -75,8 +75,15 @@ class CFD_CORE_EXPORT ScriptWitness {
    * @brief データが空か取得する.
    * @retval true  データが空
    * @retval false データが存在
+   * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
+  /**
+   * @brief データが空か取得する.
+   * @retval true  データが空
+   * @retval false データが存在
+   */
+  bool IsEmpty() const;
 
   /**
    * @brief witness stack情報をserializeする.

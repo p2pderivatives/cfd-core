@@ -72,8 +72,15 @@ class CFD_CORE_EXPORT ByteData {
    * @brief データが空か取得する.
    * @retval true  データが空
    * @retval false データが存在
+   * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
+  /**
+   * @brief データが空か取得する.
+   * @retval true  データが空
+   * @retval false データが存在
+   */
+  bool IsEmpty() const;
 
   /**
    * @brief ByteData比較
@@ -198,8 +205,15 @@ class CFD_CORE_EXPORT ByteData160 {
    * @brief データが空か取得する.
    * @retval true  データが空
    * @retval false データが存在
+   * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
+  /**
+   * @brief データが空か取得する.
+   * @retval true  データが空
+   * @retval false データが存在
+   */
+  bool IsEmpty() const;
 
   /**
    * @brief ByteData比較
@@ -308,8 +322,15 @@ class CFD_CORE_EXPORT ByteData256 {
    * @brief データが空か取得する.
    * @retval true  データが空
    * @retval false データが存在
+   * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
+  /**
+   * @brief データが空か取得する.
+   * @retval true  データが空
+   * @retval false データが存在
+   */
+  bool IsEmpty() const;
 
   /**
    * @brief ByteData比較

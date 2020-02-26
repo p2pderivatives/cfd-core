@@ -55,7 +55,9 @@ void ScriptWitness::SetWitnessStack(uint32_t index, const ByteData &data) {
   witness_stack_[index] = data;
 }
 
-bool ScriptWitness::Empty() const { return (witness_stack_.size() == 0); }
+bool ScriptWitness::Empty() const { return IsEmpty(); }
+
+bool ScriptWitness::IsEmpty() const { return (witness_stack_.size() == 0); }
 
 ByteData ScriptWitness::Serialize() const {
   std::vector<ByteData> buffer_array;

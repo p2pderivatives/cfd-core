@@ -18,7 +18,7 @@ TEST(ScriptWitness, GetterSetter) {
   // check serialize data
   EXPECT_NO_THROW((serialize_data = witness.Serialize()));
   EXPECT_STREQ(serialize_data.GetHex().c_str(), "00");
-  EXPECT_TRUE(witness.Empty());
+  EXPECT_TRUE(witness.IsEmpty());
 
   EXPECT_NO_THROW(witness.AddWitnessStack(ByteData("00")));
   EXPECT_EQ(witness.GetWitnessNum(), 1);
@@ -26,7 +26,7 @@ TEST(ScriptWitness, GetterSetter) {
   // check serialize data
   EXPECT_NO_THROW((serialize_data = witness.Serialize()));
   EXPECT_STREQ(serialize_data.GetHex().c_str(), "010100");
-  EXPECT_FALSE(witness.Empty());
+  EXPECT_FALSE(witness.IsEmpty());
 
   EXPECT_NO_THROW(witness.AddWitnessStack(ByteData("1111")));
   EXPECT_EQ(witness.GetWitnessNum(), 2);
@@ -35,7 +35,7 @@ TEST(ScriptWitness, GetterSetter) {
   // check serialize data
   EXPECT_NO_THROW((serialize_data = witness.Serialize()));
   EXPECT_STREQ(serialize_data.GetHex().c_str(), "020100021111");
-  EXPECT_FALSE(witness.Empty());
+  EXPECT_FALSE(witness.IsEmpty());
 
   EXPECT_NO_THROW(witness.AddWitnessStack(ByteData("222222")));
   EXPECT_EQ(witness.GetWitnessNum(), 3);
@@ -45,7 +45,7 @@ TEST(ScriptWitness, GetterSetter) {
   // check serialize data
   EXPECT_NO_THROW((serialize_data = witness.Serialize()));
   EXPECT_STREQ(serialize_data.GetHex().c_str(), "03010002111103222222");
-  EXPECT_FALSE(witness.Empty());
+  EXPECT_FALSE(witness.IsEmpty());
 
   EXPECT_NO_THROW(witness.SetWitnessStack(1, ByteData("33333333")));
   EXPECT_EQ(witness.GetWitnessNum(), 3);
@@ -55,7 +55,7 @@ TEST(ScriptWitness, GetterSetter) {
   // check serialize data
   EXPECT_NO_THROW((serialize_data = witness.Serialize()));
   EXPECT_STREQ(serialize_data.GetHex().c_str(), "030100043333333303222222");
-  EXPECT_FALSE(witness.Empty());
+  EXPECT_FALSE(witness.IsEmpty());
 
   EXPECT_THROW(witness.SetWitnessStack(3, ByteData("4444444444")),
                CfdException);
@@ -66,7 +66,7 @@ TEST(ScriptWitness, GetterSetter) {
   // check serialize data
   EXPECT_NO_THROW((serialize_data = witness.Serialize()));
   EXPECT_STREQ(serialize_data.GetHex().c_str(), "030100043333333303222222");
-  EXPECT_FALSE(witness.Empty());
+  EXPECT_FALSE(witness.IsEmpty());
 }
 
 #endif  // CFD_DISABLE_ELEMENTS

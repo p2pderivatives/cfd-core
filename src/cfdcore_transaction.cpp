@@ -678,7 +678,7 @@ void Transaction::RemoveTxOut(uint32_t index) {
 ByteData256 Transaction::GetSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
     const Amount &value, WitnessVersion version) const {
-  if (script_data.Empty()) {
+  if (script_data.IsEmpty()) {
     warn(CFD_LOG_SOURCE, "empty script");
     throw CfdException(
         kCfdIllegalArgumentError, "Failed to GetSignatureHash. empty script.");
