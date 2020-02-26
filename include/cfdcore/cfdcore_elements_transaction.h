@@ -1179,7 +1179,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    * @param[in] nonce               nonce.
    * @param[in] surjection_proof    surjection proof.
    * @param[in] range_proof         range proof.
-   * @return 追加したTxOutのindex位置
    */
   void SetTxOutCommitment(
       uint32_t index, const ConfidentialAssetId& asset,
@@ -1201,7 +1200,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    *   -1 to 18. -1 is public value. 0 is most private.
    * @param[in] minimum_bits              rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
-   * @return 追加したTxOutのindex位置
    */
   void BlindTransaction(
       const std::vector<BlindParameter>& txin_info_list,
@@ -1219,7 +1217,6 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    *   -1 to 18. -1 is public value. 0 is most private.
    * @param[in] minimum_bits              rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
-   * @return 追加したTxOutのindex位置
    */
   void BlindTxOut(
       const std::vector<BlindParameter>& txin_info_list,
