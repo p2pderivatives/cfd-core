@@ -503,11 +503,13 @@ TEST(ConfidentialTransaction, SetUnlockingScriptTest) {
 TEST(ConfidentialTransaction, TxOutTest) {
   ConfidentialTransaction tx(exp_tx_empty_hex);
   uint32_t index = 0;
+  uint32_t get_index = 0;
   EXPECT_NO_THROW((index = tx.AddTxIn(exp_txid, exp_index, exp_sequence)));
 
   // AddTxOut, GetTxOut, GetTxOutCount
   EXPECT_EQ(tx.GetTxOutCount(), 0);
   int64_t exp_satoshi = 12345678;
+  EXPECT_THROW((get_index = tx.GetTxOutIndex(exp_locking_script)), CfdException);
 
   Amount amt = Amount::CreateBySatoshiAmount(exp_satoshi);
   ConfidentialAssetId asset(exp_assetid);
@@ -515,6 +517,8 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_NO_THROW((index = tx.AddTxOut(amt, asset, exp_locking_script)));
   EXPECT_EQ(index, 0);
   EXPECT_EQ(tx.GetTxOutCount(), 1);
+  EXPECT_NO_THROW(get_index = tx.GetTxOutIndex(exp_locking_script));
+  EXPECT_EQ(index, get_index);
 
   EXPECT_THROW((txout_ref = tx.GetTxOut(index + 5)), CfdException);
   EXPECT_NO_THROW((txout_ref = tx.GetTxOut(index)));
@@ -530,12 +534,13 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_STREQ(txout_ref.GetRangeProof().GetHex().c_str(), "");
 
   // AddTxOut
+  Script exp_locking_script2("00146a98a3f2935718df72518c00768ec67c589e0b28");
   ConfidentialNonce nonce(
       "991a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f3");
   ByteData surjection_proof("1234567890");
   ByteData range_proof("1234567890123456789012345678901234567890");
   EXPECT_NO_THROW(
-      (index = tx.AddTxOut(amt, asset, exp_locking_script, nonce,
+      (index = tx.AddTxOut(amt, asset, exp_locking_script2, nonce,
                            surjection_proof, range_proof)));
   EXPECT_EQ(index, 1);
   EXPECT_EQ(tx.GetTxOutCount(), 2);
@@ -546,7 +551,7 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_STREQ(txout_ref.GetConfidentialValue().GetHex().c_str(),
                "010000000000bc614e");
   EXPECT_STREQ(txout_ref.GetLockingScript().GetHex().c_str(),
-               exp_locking_script.GetHex().c_str());
+               exp_locking_script2.GetHex().c_str());
   EXPECT_STREQ(
       txout_ref.GetNonce().GetHex().c_str(),
       "01991a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f3");
@@ -554,6 +559,8 @@ TEST(ConfidentialTransaction, TxOutTest) {
                surjection_proof.GetHex().c_str());
   EXPECT_STREQ(txout_ref.GetRangeProof().GetHex().c_str(),
                range_proof.GetHex().c_str());
+  EXPECT_NO_THROW(get_index = tx.GetTxOutIndex(exp_locking_script2));
+  EXPECT_EQ(index, get_index);
 
   // GetTxOutList
   std::vector<ConfidentialTxOutReference> txout_list;
@@ -578,7 +585,7 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_STREQ(txout_ref.GetConfidentialValue().GetHex().c_str(),
                "010000000000bc614e");
   EXPECT_STREQ(txout_ref.GetLockingScript().GetHex().c_str(),
-               exp_locking_script.GetHex().c_str());
+               exp_locking_script2.GetHex().c_str());
   EXPECT_STREQ(
       txout_ref.GetNonce().GetHex().c_str(),
       "01991a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f3");
