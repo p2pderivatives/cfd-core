@@ -1005,6 +1005,20 @@ uint32_t ConfidentialTransaction::GetTxInIndex(
   throw CfdException(kCfdIllegalArgumentError, "Txid is not found.");
 }
 
+uint32_t ConfidentialTransaction::GetTxOutIndex(
+    const Script &locking_script) const {
+  std::string search_str = locking_script.GetHex();
+  uint32_t index = 0;
+  for (; index < static_cast<uint32_t>(vout_.size()); ++index) {
+    std::string script = vout_[index].GetLockingScript().GetHex();
+    if (script == search_str) {
+      return index;
+    }
+  }
+  warn(CFD_LOG_SOURCE, "locking script is not found.");
+  throw CfdException(kCfdIllegalArgumentError, "locking script is not found.");
+}
+
 uint32_t ConfidentialTransaction::GetTxInCount() const {
   return static_cast<uint32_t>(vin_.size());
 }

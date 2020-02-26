@@ -374,6 +374,12 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @return 条件に合致するTxInのindex番号
    */
   virtual uint32_t GetTxInIndex(const Txid& txid, uint32_t vout) const = 0;
+  /**
+   * @brief TxOutのindexを取得する.
+   * @param[in] locking_script  locking script
+   * @return 条件に合致するTxOutのindex番号
+   */
+  virtual uint32_t GetTxOutIndex(const Script& locking_script) const = 0;
 
   /**
    * @brief Transactionの合計バイトサイズを取得する.
