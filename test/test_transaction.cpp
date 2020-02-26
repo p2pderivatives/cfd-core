@@ -117,9 +117,15 @@ TEST(Transaction, ConstructorGetter) {
     EXPECT_EQ(tx.GetTxOutCount(), 2);
     EXPECT_NO_THROW(std::vector<TxOutReference> txouts = tx.GetTxOutList());
     EXPECT_NO_THROW(tx.GetTxOut(0));
+    EXPECT_EQ(
+        tx.GetTxOutIndex(Script("a9142699570770f32e0cf3e1d12d81064fbc45899e8a87")),
+        1);
     EXPECT_THROW(tx.GetTxOut(2), CfdException);
     EXPECT_EQ(tx.GetWallyFlag(), 1);
     EXPECT_EQ(tx.HasWitness(), true);
+    EXPECT_THROW(
+        tx.GetTxOutIndex(Script("a9142699570970f32e0cf3e1d12d81064fbc45899e8a87")),
+        CfdException);
   }
 
   {
