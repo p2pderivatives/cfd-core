@@ -188,6 +188,7 @@ TEST(Privkey, IsValid_false) {
   Privkey privkey;
   bool is_valid = privkey.IsValid();
   EXPECT_FALSE(is_valid);
+  EXPECT_TRUE(privkey.IsInvalid());
 }
 
 TEST(Privkey, IsValid_true) {

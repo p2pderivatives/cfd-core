@@ -19,6 +19,7 @@ TEST(ScriptWitness, GetterSetter) {
   EXPECT_NO_THROW((serialize_data = witness.Serialize()));
   EXPECT_STREQ(serialize_data.GetHex().c_str(), "00");
   EXPECT_TRUE(witness.IsEmpty());
+  EXPECT_TRUE(witness.Empty());
 
   EXPECT_NO_THROW(witness.AddWitnessStack(ByteData("00")));
   EXPECT_EQ(witness.GetWitnessNum(), 1);
