@@ -121,6 +121,7 @@
     "lint_check:win32": "cd tools && lint_all_quiet.bat",
     "lint_check:linux": "cd tools && ./lint_quiet.sh",
     "lint_check:darwin": "cd tools && ./lint_quiet.sh",
+    "build_and_test": "run-s cmake_build_parallel ctest lint_check doxygen_check",
     "git_subm_update": "git submodule -q foreach git fetch -q && git submodule -q update -i",
     "check": "run-s doxygen_check ctest_quiet lint_check",
     "check_debug": "run-s doxygen_check lint_check ctest_debug",
