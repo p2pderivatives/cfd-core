@@ -503,11 +503,13 @@ TEST(ConfidentialTransaction, SetUnlockingScriptTest) {
 TEST(ConfidentialTransaction, TxOutTest) {
   ConfidentialTransaction tx(exp_tx_empty_hex);
   uint32_t index = 0;
+  uint32_t get_index = 0;
   EXPECT_NO_THROW((index = tx.AddTxIn(exp_txid, exp_index, exp_sequence)));
 
   // AddTxOut, GetTxOut, GetTxOutCount
   EXPECT_EQ(tx.GetTxOutCount(), 0);
   int64_t exp_satoshi = 12345678;
+  EXPECT_THROW((get_index = tx.GetTxOutIndex(exp_locking_script)), CfdException);
 
   Amount amt = Amount::CreateBySatoshiAmount(exp_satoshi);
   ConfidentialAssetId asset(exp_assetid);
@@ -515,6 +517,8 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_NO_THROW((index = tx.AddTxOut(amt, asset, exp_locking_script)));
   EXPECT_EQ(index, 0);
   EXPECT_EQ(tx.GetTxOutCount(), 1);
+  EXPECT_NO_THROW(get_index = tx.GetTxOutIndex(exp_locking_script));
+  EXPECT_EQ(index, get_index);
 
   EXPECT_THROW((txout_ref = tx.GetTxOut(index + 5)), CfdException);
   EXPECT_NO_THROW((txout_ref = tx.GetTxOut(index)));
@@ -530,12 +534,13 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_STREQ(txout_ref.GetRangeProof().GetHex().c_str(), "");
 
   // AddTxOut
+  Script exp_locking_script2("00146a98a3f2935718df72518c00768ec67c589e0b28");
   ConfidentialNonce nonce(
       "991a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f3");
   ByteData surjection_proof("1234567890");
   ByteData range_proof("1234567890123456789012345678901234567890");
   EXPECT_NO_THROW(
-      (index = tx.AddTxOut(amt, asset, exp_locking_script, nonce,
+      (index = tx.AddTxOut(amt, asset, exp_locking_script2, nonce,
                            surjection_proof, range_proof)));
   EXPECT_EQ(index, 1);
   EXPECT_EQ(tx.GetTxOutCount(), 2);
@@ -546,7 +551,7 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_STREQ(txout_ref.GetConfidentialValue().GetHex().c_str(),
                "010000000000bc614e");
   EXPECT_STREQ(txout_ref.GetLockingScript().GetHex().c_str(),
-               exp_locking_script.GetHex().c_str());
+               exp_locking_script2.GetHex().c_str());
   EXPECT_STREQ(
       txout_ref.GetNonce().GetHex().c_str(),
       "01991a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f3");
@@ -554,6 +559,8 @@ TEST(ConfidentialTransaction, TxOutTest) {
                surjection_proof.GetHex().c_str());
   EXPECT_STREQ(txout_ref.GetRangeProof().GetHex().c_str(),
                range_proof.GetHex().c_str());
+  EXPECT_NO_THROW(get_index = tx.GetTxOutIndex(exp_locking_script2));
+  EXPECT_EQ(index, get_index);
 
   // GetTxOutList
   std::vector<ConfidentialTxOutReference> txout_list;
@@ -578,7 +585,7 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_STREQ(txout_ref.GetConfidentialValue().GetHex().c_str(),
                "010000000000bc614e");
   EXPECT_STREQ(txout_ref.GetLockingScript().GetHex().c_str(),
-               exp_locking_script.GetHex().c_str());
+               exp_locking_script2.GetHex().c_str());
   EXPECT_STREQ(
       txout_ref.GetNonce().GetHex().c_str(),
       "01991a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f3");
@@ -852,6 +859,152 @@ TEST(ConfidentialTransaction, SetAssetIssuanceTest) {
       "0a002ed099bd2d52f4bb04d36ebc159c838f0557461d462127845b996e61cb70");
 }
 
+TEST(ConfidentialTransaction, SetAssetIssuanceTest_multi) {
+  ConfidentialTransaction tx_base(
+      "0200000001017f3da365db9401a4d3facf68d2ccb6372bb714491987e5d035d2b474721078c601000000171600149a417c11cb67e1dc522997f07e1ff89e960d5ff1fdffffff020135e7a177b434ee0799be6dcffc945a1d892f2e0fdfc5975ba0f80d3bdbab9c84010000000002f9c1ec0017a914c9cbab5b0f3430e824b1961bf8e876be43d3fee0870135e7a177b434ee0799be6dcffc945a1d892f2e0fdfc5975ba0f80d3bdbab9c8401000000000000e07400000000000000000247304402207ab059e55e3e4337e88e1a6db00b7549110065eb5770880b1081dcdcdcf1c9a402207a3a0bc7d0d40661f54eff63c67838260a489984138d24eeee04b689f393bf2e012103753cff6c6123d25d99a3d02dc050a2c6b3ea40bcc04029c4330a4d30cb5390770000000000");
+  ConfidentialTransaction expect_tx1(
+      "0200000001017f3da365db9401a4d3facf68d2ccb6372bb714491987e5d035d2b474721078c601000080171600149a417c11cb67e1dc522997f07e1ff89e960d5ff1fdffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000002540be40001000000003b9aca00020135e7a177b434ee0799be6dcffc945a1d892f2e0fdfc5975ba0f80d3bdbab9c84010000000002f9c1ec0017a914c9cbab5b0f3430e824b1961bf8e876be43d3fee0870135e7a177b434ee0799be6dcffc945a1d892f2e0fdfc5975ba0f80d3bdbab9c8401000000000000e07400000000000000000247304402207ab059e55e3e4337e88e1a6db00b7549110065eb5770880b1081dcdcdcf1c9a402207a3a0bc7d0d40661f54eff63c67838260a489984138d24eeee04b689f393bf2e012103753cff6c6123d25d99a3d02dc050a2c6b3ea40bcc04029c4330a4d30cb5390770000000000");
+  ConfidentialTransaction expect_tx2(
+      "0200000001017f3da365db9401a4d3facf68d2ccb6372bb714491987e5d035d2b474721078c601000080171600149a417c11cb67e1dc522997f07e1ff89e960d5ff1fdffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000002540be40001000000003b9aca00060135e7a177b434ee0799be6dcffc945a1d892f2e0fdfc5975ba0f80d3bdbab9c84010000000002f9c1ec0017a914c9cbab5b0f3430e824b1961bf8e876be43d3fee0870135e7a177b434ee0799be6dcffc945a1d892f2e0fdfc5975ba0f80d3bdbab9c8401000000000000e07400000107ec1ec7027d89071814d5ccd1f5ea4cee45e598287fc8f59acbb1d9129081dc0100000001bf08eb00001976a914144f003aa8dd6408ba0e8ee91757cf1f1976315c88ac0107ec1ec7027d89071814d5ccd1f5ea4cee45e598287fc8f59acbb1d9129081dc01000000009502f90002074a50df2248e62bbd18a4a4abf2c8923f0740da61a28dc9e9156092c90e20aa160014144f003aa8dd6408ba0e8ee91757cf1f1976315c01aaf1579c847497d406605b4ef875a2b37164f4c5b9e5d2a23b2b2a16e132ec05010000000017d78400001976a914ae8cab151547d6f6e25b62b41200368dfdabe62b88ac01aaf1579c847497d406605b4ef875a2b37164f4c5b9e5d2a23b2b2a16e132ec05010000000023c3460002d297469a08ddce74d2954809504da9af5c806ea91aac8f382857b575b006c590160014ae8cab151547d6f6e25b62b41200368dfdabe62b0000000000000247304402207ab059e55e3e4337e88e1a6db00b7549110065eb5770880b1081dcdcdcf1c9a402207a3a0bc7d0d40661f54eff63c67838260a489984138d24eeee04b689f393bf2e012103753cff6c6123d25d99a3d02dc050a2c6b3ea40bcc04029c4330a4d30cb53907700000000000000000000000000");
+
+  std::vector<Amount> asset_amount_list;
+  std::vector<Script> asset_script_list;
+  std::vector<ConfidentialNonce> asset_nonce_list;
+  std::vector<Amount> token_amount_list;
+  std::vector<Script> token_script_list;
+  std::vector<ConfidentialNonce> token_nonce_list;
+
+  // empty check
+  ConfidentialTransaction tx(tx_base);
+  Amount asset_amount = Amount::CreateByCoinAmount(100.0);
+  Amount token_amount = Amount::CreateByCoinAmount(10.0);
+  Script asset_script("76a914144f003aa8dd6408ba0e8ee91757cf1f1976315c88ac");
+  Script token_script("76a914ae8cab151547d6f6e25b62b41200368dfdabe62b88ac");
+  ConfidentialNonce asset_nonce;
+  ConfidentialNonce token_nonce;
+  ByteData256 contract_hash;
+  bool is_blind = false;
+  IssuanceParameter param;
+  EXPECT_NO_THROW(
+      (param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash)));
+  EXPECT_STREQ(tx.GetHex().c_str(), expect_tx1.GetHex().c_str());
+  EXPECT_STREQ(
+      param.entropy.GetHex().c_str(),
+      "0a002ed099bd2d52f4bb04d36ebc159c838f0557461d462127845b996e61cb70");
+
+  // 2-output check
+  tx = ConfidentialTransaction(tx_base);
+  Amount asset_amount1 = Amount::CreateByCoinAmount(75.0);
+  Amount asset_amount2 = Amount::CreateByCoinAmount(25.0);
+  Script asset_script1("76a914144f003aa8dd6408ba0e8ee91757cf1f1976315c88ac");
+  Script asset_script2("0014144f003aa8dd6408ba0e8ee91757cf1f1976315c");
+  ConfidentialNonce asset_nonce1;
+  ConfidentialNonce asset_nonce2("02074a50df2248e62bbd18a4a4abf2c8923f0740da61a28dc9e9156092c90e20aa");
+  Amount token_amount1 = Amount::CreateByCoinAmount(4.0);
+  Amount token_amount2 = Amount::CreateByCoinAmount(6.0);
+  Script token_script1("76a914ae8cab151547d6f6e25b62b41200368dfdabe62b88ac");
+  Script token_script2("0014ae8cab151547d6f6e25b62b41200368dfdabe62b");
+  ConfidentialNonce token_nonce1;
+  ConfidentialNonce token_nonce2("02d297469a08ddce74d2954809504da9af5c806ea91aac8f382857b575b006c590");
+  asset_amount_list.push_back(asset_amount1);
+  asset_script_list.push_back(asset_script1);
+  asset_nonce_list.push_back(asset_nonce1);
+  asset_amount_list.push_back(asset_amount2);
+  asset_script_list.push_back(asset_script2);
+  asset_nonce_list.push_back(asset_nonce2);
+  token_amount_list.push_back(token_amount1);
+  token_script_list.push_back(token_script1);
+  token_nonce_list.push_back(token_nonce1);
+  token_amount_list.push_back(token_amount2);
+  token_script_list.push_back(token_script2);
+  token_nonce_list.push_back(token_nonce2);
+  EXPECT_NO_THROW(
+      (param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash)));
+  EXPECT_STREQ(tx.GetHex().c_str(), expect_tx2.GetHex().c_str());
+  EXPECT_STREQ(
+      param.entropy.GetHex().c_str(),
+      "0a002ed099bd2d52f4bb04d36ebc159c838f0557461d462127845b996e61cb70");
+
+  // error (count unmatch)
+  {
+    tx = ConfidentialTransaction(tx_base);
+    asset_amount_list.clear();
+    asset_script_list.clear();
+    asset_nonce_list.clear();
+    token_amount_list.clear();
+    token_script_list.clear();
+    token_nonce_list.clear();
+    asset_amount_list.push_back(asset_amount);
+    EXPECT_THROW(param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash), CfdException);
+    asset_amount_list.clear();
+    asset_script_list.push_back(asset_script1);
+    EXPECT_THROW(param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash), CfdException);
+    asset_script_list.clear();
+    token_amount_list.push_back(token_amount);
+    EXPECT_THROW(param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash), CfdException);
+    token_amount_list.clear();
+    token_script_list.push_back(token_script1);
+    EXPECT_THROW(param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash), CfdException);
+    token_script_list.clear();
+  }
+  // error (amount unmatch)
+  {
+    asset_amount_list.push_back(asset_amount1);
+    asset_script_list.push_back(asset_script1);
+    asset_nonce_list.push_back(asset_nonce1);
+    EXPECT_THROW(param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash), CfdException);
+    asset_amount_list.clear();
+    asset_script_list.clear();
+    asset_nonce_list.clear();
+
+    asset_amount_list.push_back(asset_amount);
+    asset_script_list.push_back(asset_script1);
+    asset_nonce_list.push_back(asset_nonce1);
+    token_amount_list.push_back(token_amount1);
+    token_script_list.push_back(token_script1);
+    token_nonce_list.push_back(token_nonce1);
+    EXPECT_THROW(param = tx.SetAssetIssuance(0, asset_amount, asset_amount_list,
+                                   asset_script_list, asset_nonce_list,
+                                   token_amount, token_amount_list,
+                                   token_script_list, token_nonce_list,
+                                   is_blind, contract_hash), CfdException);
+    asset_amount_list.clear();
+    asset_script_list.clear();
+    asset_nonce_list.clear();
+    token_amount_list.clear();
+    token_script_list.clear();
+    token_nonce_list.clear();
+  }
+}
+
 TEST(ConfidentialTransaction, SetAssetReissuanceTest) {
   ConfidentialTransaction tx_base(
       "0200000000025e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0000000000ffffffff5e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0200000000ffffffff03017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000029b9270003f4f10478f5fae2c77c44fdb2a304109a9ae8ba7cab1c125deba9e618ca737e851976a91484c2ef274919355bb532a5bbdbfa95490c5d749388ac017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c1801000000003b97049c03b69e5ef61aef08565404bc3c98d6e4dfd1e02eb94138617d9b3eb12ec790885317a91401e940d9dcd77a5043356941641aa2fd6ec6a68887017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000000002710000000000000");
@@ -874,6 +1027,75 @@ TEST(ConfidentialTransaction, SetAssetReissuanceTest) {
   {
     EXPECT_THROW(param = expect_tx.SetAssetReissuance(1, amount, script, nonce, blind_factor, entropy), CfdException);
     EXPECT_THROW(param = tx_base.SetAssetReissuance(1, Amount::CreateByCoinAmount(0), script, nonce, blind_factor, entropy), CfdException);
+  }
+}
+
+TEST(ConfidentialTransaction, SetAssetReissuanceListTest_multi) {
+  ConfidentialTransaction tx_base(
+      "0200000000025e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0000000000ffffffff5e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0200000000ffffffff03017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000029b9270003f4f10478f5fae2c77c44fdb2a304109a9ae8ba7cab1c125deba9e618ca737e851976a91484c2ef274919355bb532a5bbdbfa95490c5d749388ac017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c1801000000003b97049c03b69e5ef61aef08565404bc3c98d6e4dfd1e02eb94138617d9b3eb12ec790885317a91401e940d9dcd77a5043356941641aa2fd6ec6a68887017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000000002710000000000000");
+  ConfidentialTransaction expect_tx1(
+      "0200000000025e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0000000000ffffffff5e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0200008000ffffffffcf9a1b9aeb2de6a7b7c3177433dced0951fd728dffbe8c935ccb80698f2e08c80683fe0819a4f9770c8a7cd5824e82975c825e017aff8ba0d6a5eb4959cf9c6f010000000029b927000003017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000029b9270003f4f10478f5fae2c77c44fdb2a304109a9ae8ba7cab1c125deba9e618ca737e851976a91484c2ef274919355bb532a5bbdbfa95490c5d749388ac017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c1801000000003b97049c03b69e5ef61aef08565404bc3c98d6e4dfd1e02eb94138617d9b3eb12ec790885317a91401e940d9dcd77a5043356941641aa2fd6ec6a68887017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000000002710000000000000");
+  ConfidentialTransaction expect_tx2(
+      "0200000000025e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0000000000ffffffff5e67a3542db02871642bdf0923d33ac5bd1105f3421520297f01617c6323918d0200008000ffffffffcf9a1b9aeb2de6a7b7c3177433dced0951fd728dffbe8c935ccb80698f2e08c80683fe0819a4f9770c8a7cd5824e82975c825e017aff8ba0d6a5eb4959cf9c6f010000000029b927000005017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000029b9270003f4f10478f5fae2c77c44fdb2a304109a9ae8ba7cab1c125deba9e618ca737e851976a91484c2ef274919355bb532a5bbdbfa95490c5d749388ac017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c1801000000003b97049c03b69e5ef61aef08565404bc3c98d6e4dfd1e02eb94138617d9b3eb12ec790885317a91401e940d9dcd77a5043356941641aa2fd6ec6a68887017981c1f171d7973a1fd922652f559f47d6d1506a4be2394b27a54951957f6c18010000000000002710000001cdb0ed311810e61036ac9255674101497850f5eee5e4320be07479c05473cbac010000000011e1a30003f234757d0e00e6a7a7a3b4b2b31fb0328d7b9f755cd1093d9f61892fef3116871976a91435ef6d4b59f26089dfe2abca21408e15fee42a3388ac01cdb0ed311810e61036ac9255674101497850f5eee5e4320be07479c05473cbac010000000017d7840002074a50df2248e62bbd18a4a4abf2c8923f0740da61a28dc9e9156092c90e20aa16001435ef6d4b59f26089dfe2abca21408e15fee42a3300000000");
+
+  std::vector<Amount> amount_list;
+  std::vector<Script> script_list;
+  std::vector<ConfidentialNonce> nonce_list;
+
+  // empty check
+  ConfidentialTransaction tx(tx_base);
+  Amount amount = Amount::CreateByCoinAmount(7.0);
+  BlindFactor blind_factor("c8082e8f6980cb5c938cbeff8d72fd5109eddc337417c3b7a7e62deb9a1b9acf");
+  BlindFactor entropy("6f9ccf5949eba5d6a08bff7a015e825c97824e82d57c8a0c77f9a41908fe8306");
+  IssuanceParameter param;
+  EXPECT_NO_THROW(
+      (param = tx.SetAssetReissuance(1, amount, amount_list, script_list,
+          nonce_list, blind_factor, entropy)));
+  EXPECT_STREQ(tx.GetHex().c_str(), expect_tx1.GetHex().c_str());
+
+  // 2-output check
+  tx = ConfidentialTransaction(tx_base);
+  Amount amount1 = Amount::CreateByCoinAmount(3.0);
+  Amount amount2 = Amount::CreateByCoinAmount(4.0);
+  Script script1("76a91435ef6d4b59f26089dfe2abca21408e15fee42a3388ac");
+  Script script2("001435ef6d4b59f26089dfe2abca21408e15fee42a33");
+  ConfidentialNonce nonce1("03f234757d0e00e6a7a7a3b4b2b31fb0328d7b9f755cd1093d9f61892fef311687");
+  ConfidentialNonce nonce2("02074a50df2248e62bbd18a4a4abf2c8923f0740da61a28dc9e9156092c90e20aa");
+  amount_list.push_back(amount1);
+  script_list.push_back(script1);
+  nonce_list.push_back(nonce1);
+  amount_list.push_back(amount2);
+  script_list.push_back(script2);
+  nonce_list.push_back(nonce2);
+  EXPECT_NO_THROW(
+      (param = tx.SetAssetReissuance(1, amount, amount_list, script_list,
+          nonce_list, blind_factor, entropy)));
+  EXPECT_STREQ(tx.GetHex().c_str(), expect_tx2.GetHex().c_str());
+
+  // error (count unmatch)
+  {
+    tx = ConfidentialTransaction(tx_base);
+    amount_list.clear();
+    script_list.clear();
+    nonce_list.clear();
+    amount_list.push_back(amount);
+    EXPECT_THROW(param = tx.SetAssetReissuance(1, amount, amount_list, script_list,
+          nonce_list, blind_factor, entropy), CfdException);
+    amount_list.clear();
+    script_list.push_back(script1);
+    EXPECT_THROW(param = tx_base.SetAssetReissuance(1, amount, amount_list, script_list,
+          nonce_list, blind_factor, entropy), CfdException);
+    script_list.clear();
+  }
+  // error (amount unmatch)
+  {
+    tx = ConfidentialTransaction(tx_base);
+    amount_list.push_back(amount1);
+    script_list.push_back(script1);
+    nonce_list.push_back(nonce1);
+    EXPECT_THROW(param = tx.SetAssetReissuance(1, amount, amount_list, script_list,
+          nonce_list, blind_factor, entropy), CfdException);
+    amount_list.clear();
   }
 }
 

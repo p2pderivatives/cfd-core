@@ -20,7 +20,7 @@ TEST(ByteData160, DefaultConstructor) {
 
   EXPECT_STREQ(byte_data.GetHex().c_str(),
                "0000000000000000000000000000000000000000");
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_TRUE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "140000000000000000000000000000000000000000");
@@ -34,7 +34,7 @@ TEST(ByteData160, HexConstructor) {
   ByteData160 byte_data = ByteData160(target);
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), target.c_str());
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "141234567890123456789012345678901234567890");
@@ -66,7 +66,7 @@ TEST(ByteData160, ByteDataConstructor) {
   ByteData160 byte_data = ByteData160(data);
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), data.GetHex().c_str());
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "141234567890123456789012345678901234567890");

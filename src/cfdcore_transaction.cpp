@@ -493,6 +493,19 @@ uint32_t Transaction::GetTxInIndex(const Txid &txid, uint32_t vout) const {
   throw CfdException(kCfdIllegalArgumentError, "Txid is not found.");
 }
 
+uint32_t Transaction::GetTxOutIndex(const Script &locking_script) const {
+  std::string search_str = locking_script.GetHex();
+  uint32_t index = 0;
+  for (; index < static_cast<uint32_t>(vout_.size()); ++index) {
+    std::string script = vout_[index].GetLockingScript().GetHex();
+    if (script == search_str) {
+      return index;
+    }
+  }
+  warn(CFD_LOG_SOURCE, "locking script is not found.");
+  throw CfdException(kCfdIllegalArgumentError, "locking script is not found.");
+}
+
 uint32_t Transaction::GetTxInCount() const {
   return static_cast<uint32_t>(vin_.size());
 }
@@ -678,7 +691,7 @@ void Transaction::RemoveTxOut(uint32_t index) {
 ByteData256 Transaction::GetSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
     const Amount &value, WitnessVersion version) const {
-  if (script_data.Empty()) {
+  if (script_data.IsEmpty()) {
     warn(CFD_LOG_SOURCE, "empty script");
     throw CfdException(
         kCfdIllegalArgumentError, "Failed to GetSignatureHash. empty script.");

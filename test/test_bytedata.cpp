@@ -22,7 +22,7 @@ TEST(ByteData, DefaultConstructor) {
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), "");
   EXPECT_EQ(byte_data.GetDataSize(), size);
-  EXPECT_TRUE(byte_data.Empty());
+  EXPECT_TRUE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "00");
@@ -35,7 +35,7 @@ TEST(ByteData, HexConstructor) {
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), target.c_str());
   EXPECT_EQ(byte_data.GetDataSize(), (target.size() / 2));
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   // TODO: fujita Serialize
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
@@ -59,7 +59,7 @@ TEST(ByteData, BytesConstructor) {
                "0102030405060708090001020304050607080900");
   EXPECT_TRUE(is_equals);
   EXPECT_EQ(byte_data.GetDataSize(), target.size());
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "140102030405060708090001020304050607080900");
@@ -81,7 +81,7 @@ TEST(ByteData, ByteDataConstructor) {
   EXPECT_STREQ(byte_data.GetHex().c_str(),
                "0102030405060708090001020304050607080900");
   EXPECT_EQ(byte_data.GetDataSize(), size);
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "140102030405060708090001020304050607080900");

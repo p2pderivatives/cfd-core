@@ -355,12 +355,19 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @param[in] tx_in_index       設定するTxInのindex位置
    */
   void RemoveScriptWitnessStackAll(uint32_t tx_in_index);
+
   /**
    * @brief TxOutを取得する.
    * @param[in] index     取得するindex位置
    * @return TxOutReference
    */
   const TxOutReference GetTxOut(uint32_t index) const;
+  /**
+   * @brief TxOutのindexを取得する.
+   * @param[in] locking_script  locking script
+   * @return 条件に合致するTxOutのindex番号
+   */
+  virtual uint32_t GetTxOutIndex(const Script& locking_script) const;
   /**
    * @brief 保持しているTxOutの数を取得する.
    * @return TxOut数
