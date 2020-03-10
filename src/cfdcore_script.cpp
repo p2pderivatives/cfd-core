@@ -21,11 +21,7 @@
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_util.h"
-#define CFDCORE_NOT_USE_LIBWALLY_SCRIPT
 #include "cfdcore_wally_util.h"  // NOLINT
-#undef CFDCORE_NOT_USE_LIBWALLY_SCRIPT
-
-#include "wally_core.h"  // NOLINT
 
 namespace cfd {
 namespace core {

@@ -76,6 +76,7 @@ target_compile_options(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE
     CFD_CORE_BUILD=1
+    WALLY_DISABLE_OP_CODE=1
     ${CFD_ELEMENTS_USE}
     ${ELEMENTS_COMP_OPT}
     ${CFDCORE_DEBUG_OPT}

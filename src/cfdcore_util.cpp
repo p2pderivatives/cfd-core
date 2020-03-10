@@ -12,7 +12,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "wally_core.h"  // NOLINT
 
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"

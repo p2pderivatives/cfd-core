@@ -24,8 +24,6 @@
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
 #include "wally_elements.h"      // NOLINT
-#include "wally_transaction.h"   // NOLINT
-// #include "wally_script.h" // NOLINT
 
 namespace cfd {
 namespace core {
