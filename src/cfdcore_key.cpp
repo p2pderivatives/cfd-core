@@ -15,7 +15,6 @@
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
-#include "wally_address.h"       // NOLINT
 
 namespace cfd {
 namespace core {
