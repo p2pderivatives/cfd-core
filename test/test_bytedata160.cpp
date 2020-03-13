@@ -13,13 +13,14 @@
 
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
+using cfd::core::ByteData256;
 
 TEST(ByteData160, DefaultConstructor) {
   ByteData160 byte_data;
 
   EXPECT_STREQ(byte_data.GetHex().c_str(),
                "0000000000000000000000000000000000000000");
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_TRUE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "140000000000000000000000000000000000000000");
@@ -33,7 +34,7 @@ TEST(ByteData160, HexConstructor) {
   ByteData160 byte_data = ByteData160(target);
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), target.c_str());
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "141234567890123456789012345678901234567890");
@@ -65,7 +66,7 @@ TEST(ByteData160, ByteDataConstructor) {
   ByteData160 byte_data = ByteData160(data);
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), data.GetHex().c_str());
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "141234567890123456789012345678901234567890");
@@ -114,4 +115,32 @@ TEST(ByteData160, EqualsUnMatch) {
   bool is_equals = byte_data1.Equals(byte_data2);
 
   EXPECT_FALSE(is_equals);
+}
+
+TEST(ByteData160, PushBack) {
+  ByteData160 base("1111111111111111111111111111111111111111");
+  ByteData data1("2233");
+  ByteData160 data2("4444444444444444444444444444444444444444");
+  ByteData256 data3("5555555555555555555555555555555555555555555555555555555555555555");
+  ByteData result;
+
+  EXPECT_NO_THROW(result = base.PushBack(data1));
+  EXPECT_STREQ(result.GetHex().c_str(), "11111111111111111111111111111111111111112233");
+
+  EXPECT_NO_THROW(result = base.PushBack(data2));
+  EXPECT_STREQ(result.GetHex().c_str(), "11111111111111111111111111111111111111114444444444444444444444444444444444444444");
+
+  EXPECT_NO_THROW(result = base.PushBack(data3));
+  EXPECT_STREQ(result.GetHex().c_str(), "11111111111111111111111111111111111111115555555555555555555555555555555555555555555555555555555555555555");
+}
+
+TEST(ByteData160, Join) {
+  ByteData160 base("1111111111111111111111111111111111111111");
+  ByteData data1("2233");
+  ByteData160 data2("4444444444444444444444444444444444444444");
+  ByteData256 data3("5555555555555555555555555555555555555555555555555555555555555555");
+  ByteData result;
+
+  EXPECT_NO_THROW(result = base.Join(data1, data2, data3));
+  EXPECT_STREQ(result.GetHex().c_str(), "1111111111111111111111111111111111111111223344444444444444444444444444444444444444445555555555555555555555555555555555555555555555555555555555555555");
 }

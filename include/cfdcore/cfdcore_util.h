@@ -85,6 +85,30 @@ class CFD_CORE_EXPORT SigHashType {
    */
   uint32_t GetSigHashFlag() const;
 
+  /**
+   * @brief Get SigHash algorithm.
+   * @return SigHash algorithm
+   */
+  SigHashAlgorithm GetSigHashAlgorithm() const;
+  /**
+   * @brief has SIGHASH_ANYONECANPAY flag.
+   * @retval true  set SIGHASH_ANYONECANPAY
+   * @retval false unuse SIGHASH_ANYONECANPAY
+   */
+  bool IsAnyoneCanPay() const;
+  /**
+   * @brief has SIGHASH_FORKID flag.
+   * @retval true  set SIGHASH_FORKID
+   * @retval false unuse SIGHASH_FORKID
+   */
+  bool IsForkId() const;
+
+  /**
+   * @brief Set parameter from SigHash flag.
+   * @param[in] flag  SigHash flag
+   */
+  void SetFromSigHashFlag(uint8_t flag);
+
  private:
   /**
    * @brief Sighashアルゴリズム
@@ -361,7 +385,7 @@ class CFD_CORE_EXPORT CryptoUtil {
    * @return DER format signature
    */
   static ByteData ConvertSignatureToDer(
-      const ByteData &signature, SigHashType sighash_type);
+      const ByteData &signature, const SigHashType &sighash_type);
   /**
    * @brief Convert signature to DER format
    * @param[in] hex_string hex string of signature
@@ -369,7 +393,15 @@ class CFD_CORE_EXPORT CryptoUtil {
    * @return DER format signature
    */
   static ByteData ConvertSignatureToDer(
-      const std::string &hex_string, SigHashType sighash_type);
+      const std::string &hex_string, const SigHashType &sighash_type);
+  /**
+   * @brief Convert signature from DER format
+   * @param[in] der_data  DER format signature
+   * @param[in,out] sighash_type signature hash type(SIGHASH_TYPE)
+   * @return DER format signature
+   */
+  static ByteData ConvertSignatureFromDer(
+      const ByteData &der_data, SigHashType *sighash_type);
   /**
    * @brief ByteDataをBase64エンコードする.
    * @param[in] data エンコードするByteData

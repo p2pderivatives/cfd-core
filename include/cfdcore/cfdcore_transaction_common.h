@@ -75,8 +75,15 @@ class CFD_CORE_EXPORT ScriptWitness {
    * @brief データが空か取得する.
    * @retval true  データが空
    * @retval false データが存在
+   * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
+  /**
+   * @brief データが空か取得する.
+   * @retval true  データが空
+   * @retval false データが存在
+   */
+  bool IsEmpty() const;
 
   /**
    * @brief witness stack情報をserializeする.
@@ -87,6 +94,93 @@ class CFD_CORE_EXPORT ScriptWitness {
  private:
   std::vector<ByteData> witness_stack_;  ///< witness stack.
 };
+
+/**
+ * @brief class for serialize txin data model.
+ */
+class CFD_CORE_EXPORT OutPoint {
+ public:
+  /**
+   * @brief constructor (for vector)
+   */
+  OutPoint();
+  /**
+   * @brief constructor.
+   * @param[in] txid            txid
+   * @param[in] vout            vout
+   */
+  explicit OutPoint(const Txid& txid, uint32_t vout);
+
+  /**
+   * @brief get txid.
+   * @return Txid
+   */
+  const Txid GetTxid() const;
+  /**
+   * @brief get vout.
+   * @return vout
+   */
+  uint32_t GetVout() const;
+
+  /**
+   * @brief check valid object.
+   * @retval true
+   * @retval false
+   */
+  bool IsValid() const;
+
+  /**
+   * @brief 等価比較オペレータ
+   * @param[in] object     比較対象
+   * @retval true 等価
+   * @retval false 不等価
+   */
+  bool operator==(const OutPoint& object) const;
+  /**
+   * @brief 不等価比較オペレータ
+   * @param[in] object     比較対象
+   * @retval true 不等価
+   * @retval false 等価
+   */
+  bool operator!=(const OutPoint& object) const;
+
+ private:
+  Txid txid_;      //!< txid
+  uint32_t vout_;  //!< vout
+};
+
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator<=(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>(const OutPoint& source, const OutPoint& dest);
+/**
+ * @brief 不等価比較オペレータ
+ * @param[in] source     比較元
+ * @param[in] dest       比較対象
+ * @retval true 不等価
+ * @retval false 等価
+ */
+CFD_CORE_EXPORT bool operator>=(const OutPoint& source, const OutPoint& dest);
 
 /**
  * @brief TxInの基本情報を保持する基底クラス
@@ -126,6 +220,11 @@ class CFD_CORE_EXPORT AbstractTxIn {
    * @return vout
    */
   uint32_t GetVout() const;
+  /**
+   * @brief outpointを取得する.
+   * @return outpoint
+   */
+  OutPoint GetOutPoint() const;
   /**
    * @brief unlocking scriptを取得する.
    * @return unlocking script
@@ -211,6 +310,11 @@ class CFD_CORE_EXPORT AbstractTxInReference {
    * @return vout
    */
   uint32_t GetVout() const { return vout_; }
+  /**
+   * @brief outpointを取得する.
+   * @return outpoint
+   */
+  OutPoint GetOutPoint() const { return OutPoint(txid_, vout_); }
   /**
    * @brief unlocking scriptを取得する.
    * @return unlocking script
@@ -314,10 +418,16 @@ class CFD_CORE_EXPORT AbstractTxOutReference {
   const Script GetLockingScript() const { return locking_script_; }
 
   /**
-   * @brief シリアライズ済みのサイズを取得する.
+   * @brief Get a serialized size.
    * @return serialized size
    */
   uint32_t GetSerializeSize() const;
+
+  /**
+   * @brief Get a serialized virtual size.
+   * @return serialized virtual size.
+   */
+  uint32_t GetSerializeVsize() const;
 
  protected:
   Amount value_;           ///< 金額
@@ -361,6 +471,12 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @return 条件に合致するTxInのindex番号
    */
   virtual uint32_t GetTxInIndex(const Txid& txid, uint32_t vout) const = 0;
+  /**
+   * @brief TxOutのindexを取得する.
+   * @param[in] locking_script  locking script
+   * @return 条件に合致するTxOutのindex番号
+   */
+  virtual uint32_t GetTxOutIndex(const Script& locking_script) const = 0;
 
   /**
    * @brief Transactionの合計バイトサイズを取得する.
@@ -605,93 +721,6 @@ class CFD_CORE_EXPORT SignatureUtil {
   SignatureUtil();
   // constructor抑止
 };
-
-/**
- * @brief class for serialize txin data model.
- */
-class CFD_CORE_EXPORT OutPoint {
- public:
-  /**
-   * @brief constructor (for vector)
-   */
-  OutPoint();
-  /**
-   * @brief constructor.
-   * @param[in] txid            txid
-   * @param[in] vout            vout
-   */
-  explicit OutPoint(const Txid& txid, uint32_t vout);
-
-  /**
-   * @brief get txid.
-   * @return Txid
-   */
-  const Txid GetTxid() const;
-  /**
-   * @brief get vout.
-   * @return vout
-   */
-  uint32_t GetVout() const;
-
-  /**
-   * @brief check valid object.
-   * @retval true
-   * @retval false
-   */
-  bool IsValid() const;
-
-  /**
-   * @brief 等価比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 等価
-   * @retval false 不等価
-   */
-  bool operator==(const OutPoint& object) const;
-  /**
-   * @brief 不等価比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 不等価
-   * @retval false 等価
-   */
-  bool operator!=(const OutPoint& object) const;
-
- private:
-  Txid txid_;      //!< txid
-  uint32_t vout_;  //!< vout
-};
-
-/**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
- */
-CFD_CORE_EXPORT bool operator<(const OutPoint& source, const OutPoint& dest);
-/**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
- */
-CFD_CORE_EXPORT bool operator<=(const OutPoint& source, const OutPoint& dest);
-/**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
- */
-CFD_CORE_EXPORT bool operator>(const OutPoint& source, const OutPoint& dest);
-/**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
- */
-CFD_CORE_EXPORT bool operator>=(const OutPoint& source, const OutPoint& dest);
 
 }  // namespace core
 }  // namespace cfd

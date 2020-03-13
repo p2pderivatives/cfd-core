@@ -31,6 +31,9 @@ TEST(AbstractTxIn, ConstractorGetterSetter) {
     EXPECT_STREQ(expect_txid.GetHex().c_str(),
         actual.GetTxid().GetHex().c_str());
     EXPECT_EQ(expect_index, actual.GetVout());
+    EXPECT_STREQ(expect_txid.GetHex().c_str(),
+        actual.GetOutPoint().GetTxid().GetHex().c_str());
+    EXPECT_EQ(expect_index, actual.GetOutPoint().GetVout());
     EXPECT_EQ(expect_sequence, actual.GetSequence());
     EXPECT_STREQ(expect_script_hex.c_str(),
         actual.GetUnlockingScript().GetScript().GetHex().c_str());
@@ -61,6 +64,9 @@ TEST(AbstractTxIn, WitnessStack) {
         EXPECT_STREQ(expect_txid.GetHex().c_str(),
             actual.GetTxid().GetHex().c_str());
         EXPECT_EQ(expect_index, actual.GetVout());
+        EXPECT_STREQ(expect_txid.GetHex().c_str(),
+            actual.GetOutPoint().GetTxid().GetHex().c_str());
+        EXPECT_EQ(expect_index, actual.GetOutPoint().GetVout());
         EXPECT_EQ(expect_sequence, actual.GetSequence());
         EXPECT_STREQ(expect_script_hex.c_str(),
             actual.GetUnlockingScript().GetScript().GetHex().c_str());

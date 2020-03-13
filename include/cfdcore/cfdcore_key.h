@@ -208,7 +208,7 @@ class CFD_CORE_EXPORT Privkey {
    * @param[in] is_compressed privatekeyから導出するpubkeyのcompress有無
    * @return WIF文字列
    */
-  std::string ConvertWif(NetType net_type, bool is_compressed = true);
+  std::string ConvertWif(NetType net_type, bool is_compressed = true) const;
 
   /**
    * @brief Private keyからPubkeyインスタンスを生成する.
@@ -247,8 +247,16 @@ class CFD_CORE_EXPORT Privkey {
    * @brief PrivateKeyの設定状態が不正であるかを返却する.
    * @retval true 状態が不正
    * @retval false 状態は正常
+   * @deprecated API整理時に削除予定
    */
   bool IsInvalid() const;
+
+  /**
+   * @brief PrivateKeyの設定状態が正常であるかを返却する.
+   * @retval true 状態は正常
+   * @retval false 状態が不正
+   */
+  bool IsValid() const;
 
   /**
    * @brief Check this privkey and argument key byte is match or not.

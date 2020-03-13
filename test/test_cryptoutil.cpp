@@ -462,6 +462,15 @@ TEST(CryptoUtil, ConvertSignatureToDerHexEmpty) {
   ASSERT_TRUE(false);
 }
 
+// ConvertSignatureFromDer-------------------------------------------------------
+TEST(CryptoUtil, ConvertSignatureFromDer) {
+  std::string der_sig = "30440220773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca4702201907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b2422601";
+  std::string hex_sig = "773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca471907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b24226";
+  SigHashType sig_type;
+  ByteData signature = CryptoUtil::ConvertSignatureFromDer(ByteData(der_sig), &sig_type);
+  EXPECT_STREQ(signature.GetHex().c_str(), hex_sig.c_str());
+}
+
 // Base64 encode tool
 // https://cryptii.com/pipes/base64-to-hex
 // EncodeBase64----------------------------------------------------------------

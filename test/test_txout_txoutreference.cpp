@@ -66,3 +66,11 @@ TEST(TxOutReference, GetSerializeSize) {
     EXPECT_EQ(txout_ref.GetSerializeSize(), 34);
   }
 }
+
+TEST(TxOutReference, GetSerializeVsize) {
+  int64_t satoshi = 1000000;
+  TxOut txout(Amount::CreateBySatoshiAmount(satoshi), exp_script);
+  TxOutReference txout_ref(txout);
+
+  EXPECT_EQ(txout_ref.GetSerializeVsize(), 34);
+}
