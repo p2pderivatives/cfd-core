@@ -15,8 +15,6 @@
 #include "cfdcore/cfdcore_transaction_common.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
-#include "wally_script.h"        // NOLINT
-#include "wally_transaction.h"   // NOLINT
 
 namespace cfd {
 namespace core {
@@ -55,7 +53,9 @@ void ScriptWitness::SetWitnessStack(uint32_t index, const ByteData &data) {
   witness_stack_[index] = data;
 }
 
-bool ScriptWitness::Empty() const { return (witness_stack_.size() == 0); }
+bool ScriptWitness::Empty() const { return IsEmpty(); }
+
+bool ScriptWitness::IsEmpty() const { return (witness_stack_.size() == 0); }
 
 ByteData ScriptWitness::Serialize() const {
   std::vector<ByteData> buffer_array;
@@ -99,6 +99,8 @@ AbstractTxIn::AbstractTxIn(
 Txid AbstractTxIn::GetTxid() const { return txid_; }
 
 uint32_t AbstractTxIn::GetVout() const { return vout_; }
+
+OutPoint AbstractTxIn::GetOutPoint() const { return OutPoint(txid_, vout_); }
 
 Script AbstractTxIn::GetUnlockingScript() const { return unlocking_script_; }
 
@@ -190,6 +192,10 @@ uint32_t AbstractTxOutReference::GetSerializeSize() const {
   size_t result = 8;  // Amount分
   result += locking_script_.GetData().GetSerializeSize();
   return static_cast<uint32_t>(result);
+}
+
+uint32_t AbstractTxOutReference::GetSerializeVsize() const {
+  return AbstractTransaction::GetVsizeFromSize(GetSerializeSize(), 0);
 }
 
 // -----------------------------------------------------------------------------

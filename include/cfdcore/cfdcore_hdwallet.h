@@ -356,6 +356,11 @@ class CFD_CORE_EXPORT ExtPrivkey {
    */
   uint32_t GetFingerprint() const;
   /**
+   * @brief fingerprint部を取得する.
+   * @return fingerprint data (4byte)
+   */
+  ByteData GetFingerprintData() const;
+  /**
    * @brief 派生Pubkeyを生成する過程で生成されたtweak値の合成値を取得する。
    * @return tweak sum
    */
@@ -502,6 +507,11 @@ class CFD_CORE_EXPORT ExtPubkey {
    * @return fingerprint data (4byte)
    */
   uint32_t GetFingerprint() const;
+  /**
+   * @brief fingerprint部を取得する.
+   * @return fingerprint data (4byte)
+   */
+  ByteData GetFingerprintData() const;
 
  private:
   ByteData serialize_data_;   //!< serialize data

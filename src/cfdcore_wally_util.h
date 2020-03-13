@@ -22,9 +22,7 @@
 #include "wally_core.h"         // NOLINT
 #include "wally_crypto.h"       // NOLINT
 #include "wally_transaction.h"  // NOLINT
-#ifndef CFDCORE_NOT_USE_LIBWALLY_SCRIPT
-//#include "wally_script.h"       // NOLINT
-#endif  // CFDCORE_NOT_USE_LIBWALLY_SCRIPT
+#include "wally_script.h"       // NOLINT
 
 namespace cfd {
 namespace core {

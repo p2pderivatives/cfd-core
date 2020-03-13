@@ -15,7 +15,6 @@
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
-#include "wally_address.h"       // NOLINT
 
 namespace cfd {
 namespace core {
@@ -151,7 +150,7 @@ std::string Privkey::GetHex() const { return data_.GetHex(); }
 
 ByteData Privkey::GetData() const { return data_.GetBytes(); }
 
-std::string Privkey::ConvertWif(NetType net_type, bool is_compressed) {
+std::string Privkey::ConvertWif(NetType net_type, bool is_compressed) const {
   uint32_t prefix = (net_type == kMainnet ? kPrefixMainnet : kPrefixTestnet);
   uint32_t flags =
       (is_compressed ? WALLY_WIF_FLAG_COMPRESSED
@@ -255,12 +254,9 @@ Privkey Privkey::CreateNegate() const {
   return Privkey(negated);
 }
 
-bool Privkey::IsInvalid() const {
-  if (IsValid(data_.GetBytes())) {
-    return false;
-  }
-  return true;
-}
+bool Privkey::IsInvalid() const { return !IsValid(); }
+
+bool Privkey::IsValid() const { return IsValid(data_.GetBytes()); }
 
 bool Privkey::Equals(const Privkey& privkey) const {
   return data_.Equals(privkey.data_);

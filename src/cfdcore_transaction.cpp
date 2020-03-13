@@ -15,7 +15,6 @@
 #include "cfdcore/cfdcore_transaction.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
-#include "wally_script.h"        // NOLINT
 
 namespace cfd {
 namespace core {
@@ -70,8 +69,8 @@ TxIn::TxIn(
 }
 
 uint32_t TxIn::EstimateTxInSize(
-    AddressType addr_type, Script redeem_script,
-    uint32_t *witness_stack_size) {
+    AddressType addr_type, Script redeem_script, uint32_t *witness_area_size,
+    uint32_t *no_witness_area_size) {
   bool is_pubkey = false;
   bool is_witness = true;
   bool use_unlocking_script = true;
@@ -147,11 +146,22 @@ uint32_t TxIn::EstimateTxInSize(
   } else {
     size += script_size;
   }
-  if (witness_stack_size) {
-    *witness_stack_size = static_cast<uint32_t>(witness_size);
+  if (witness_area_size != nullptr) {
+    *witness_area_size = static_cast<uint32_t>(witness_size);
+  }
+  if (no_witness_area_size != nullptr) {
+    *no_witness_area_size = static_cast<uint32_t>(size);
   }
   size += witness_size;
   return static_cast<uint32_t>(size);
+}
+
+uint32_t TxIn::EstimateTxInVsize(AddressType addr_type, Script redeem_script) {
+  uint32_t witness_size = 0;
+  uint32_t no_witness_size = 0;
+  TxIn::EstimateTxInSize(
+      addr_type, redeem_script, &witness_size, &no_witness_size);
+  return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
 // -----------------------------------------------------------------------------
@@ -482,6 +492,19 @@ uint32_t Transaction::GetTxInIndex(const Txid &txid, uint32_t vout) const {
   throw CfdException(kCfdIllegalArgumentError, "Txid is not found.");
 }
 
+uint32_t Transaction::GetTxOutIndex(const Script &locking_script) const {
+  std::string search_str = locking_script.GetHex();
+  uint32_t index = 0;
+  for (; index < static_cast<uint32_t>(vout_.size()); ++index) {
+    std::string script = vout_[index].GetLockingScript().GetHex();
+    if (script == search_str) {
+      return index;
+    }
+  }
+  warn(CFD_LOG_SOURCE, "locking script is not found.");
+  throw CfdException(kCfdIllegalArgumentError, "locking script is not found.");
+}
+
 uint32_t Transaction::GetTxInCount() const {
   return static_cast<uint32_t>(vin_.size());
 }
@@ -667,7 +690,7 @@ void Transaction::RemoveTxOut(uint32_t index) {
 ByteData256 Transaction::GetSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
     const Amount &value, WitnessVersion version) const {
-  if (script_data.Empty()) {
+  if (script_data.IsEmpty()) {
     warn(CFD_LOG_SOURCE, "empty script");
     throw CfdException(
         kCfdIllegalArgumentError, "Failed to GetSignatureHash. empty script.");

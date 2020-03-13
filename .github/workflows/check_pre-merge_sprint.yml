@@ -20,7 +20,7 @@ jobs:
         generator: [vs2019, mingw]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: cmake_version
       run: cmake --version
     - name: cmake_generage-vs2019
@@ -39,7 +39,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: cmake_version
       run: cmake --version
     - name: cmake_generage-macos
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: cmake-useCache-ubuntu
       uses: actions/cache@v1
       id: cache
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: install_doxygen
       run: sudo apt install doxygen graphviz
     - name: doxygen_check

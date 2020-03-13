@@ -66,6 +66,24 @@ TEST(TxIn, EstimateTxInSize) {
   }
 }
 
+TEST(TxIn, EstimateTxInVsize) {
+  static const std::vector<TestEstimateTxInSizeVector> test_vector = {
+    {AddressType::kP2pkhAddress, 149, 0, Script()},
+    {AddressType::kP2shAddress, 141, 0, exp_script},
+    {AddressType::kP2shP2wpkhAddress, 90, 0, Script()},
+    {AddressType::kP2shP2wshAddress, 94, 0, Script("51")},
+    {AddressType::kP2wpkhAddress, 68, 0, Script()},
+    {AddressType::kP2wshAddress, 66, 0, exp_script},
+  };
+
+  for (const auto& test_data : test_vector) {
+    uint32_t vsize = 0;
+    EXPECT_NO_THROW((vsize = TxIn::EstimateTxInVsize(
+        test_data.addr_type, test_data.redeem_script)));
+    EXPECT_EQ(vsize, test_data.size);
+  }
+}
+
 TEST(TxInReference, Constractor) {
   {
     TxIn txin(exp_txid, exp_index, exp_sequence);

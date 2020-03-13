@@ -13,6 +13,8 @@
 // TEST(test_suite_name, test_name)
 
 using cfd::core::ByteData;
+using cfd::core::ByteData160;
+using cfd::core::ByteData256;
 
 TEST(ByteData, DefaultConstructor) {
   ByteData byte_data;
@@ -20,7 +22,7 @@ TEST(ByteData, DefaultConstructor) {
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), "");
   EXPECT_EQ(byte_data.GetDataSize(), size);
-  EXPECT_TRUE(byte_data.Empty());
+  EXPECT_TRUE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "00");
@@ -33,7 +35,7 @@ TEST(ByteData, HexConstructor) {
 
   EXPECT_STREQ(byte_data.GetHex().c_str(), target.c_str());
   EXPECT_EQ(byte_data.GetDataSize(), (target.size() / 2));
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   // TODO: fujita Serialize
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
@@ -57,7 +59,7 @@ TEST(ByteData, BytesConstructor) {
                "0102030405060708090001020304050607080900");
   EXPECT_TRUE(is_equals);
   EXPECT_EQ(byte_data.GetDataSize(), target.size());
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "140102030405060708090001020304050607080900");
@@ -79,7 +81,7 @@ TEST(ByteData, ByteDataConstructor) {
   EXPECT_STREQ(byte_data.GetHex().c_str(),
                "0102030405060708090001020304050607080900");
   EXPECT_EQ(byte_data.GetDataSize(), size);
-  EXPECT_FALSE(byte_data.Empty());
+  EXPECT_FALSE(byte_data.IsEmpty());
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "140102030405060708090001020304050607080900");
@@ -172,4 +174,32 @@ TEST(ByteData, GetVariableIntTest) {
     EXPECT_STREQ(var_int_bytes.GetHex().c_str(), citr->second.c_str());
     ++citr;
   }
+}
+
+TEST(ByteData, PushBack) {
+  ByteData base("0011");
+  ByteData data1("2233");
+  ByteData160 data2("4444444444444444444444444444444444444444");
+  ByteData256 data3("5555555555555555555555555555555555555555555555555555555555555555");
+  ByteData result;
+
+  EXPECT_NO_THROW(result = base.PushBack(data1));
+  EXPECT_STREQ(result.GetHex().c_str(), "00112233");
+
+  EXPECT_NO_THROW(result = base.PushBack(data2));
+  EXPECT_STREQ(result.GetHex().c_str(), "00114444444444444444444444444444444444444444");
+
+  EXPECT_NO_THROW(result = base.PushBack(data3));
+  EXPECT_STREQ(result.GetHex().c_str(), "00115555555555555555555555555555555555555555555555555555555555555555");
+}
+
+TEST(ByteData, Join) {
+  ByteData base("0011");
+  ByteData data1("2233");
+  ByteData160 data2("4444444444444444444444444444444444444444");
+  ByteData256 data3("5555555555555555555555555555555555555555555555555555555555555555");
+  ByteData result;
+
+  EXPECT_NO_THROW(result = base.Join(data1, data2, data3));
+  EXPECT_STREQ(result.GetHex().c_str(), "0011223344444444444444444444444444444444444444445555555555555555555555555555555555555555555555555555555555555555");
 }

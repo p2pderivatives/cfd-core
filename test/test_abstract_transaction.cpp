@@ -62,6 +62,9 @@ class TestTransaction : public AbstractTransaction {
   virtual uint32_t GetTxInIndex(const Txid& , uint32_t ) const {
     return 0;
   }
+  virtual uint32_t GetTxOutIndex(const Script& ) const {
+    return 0;
+  }
   virtual uint32_t GetWallyFlag() const {
     return 0;
   }

@@ -24,8 +24,6 @@
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
 #include "wally_elements.h"      // NOLINT
-#include "wally_transaction.h"   // NOLINT
-// #include "wally_script.h" // NOLINT
 
 namespace cfd {
 namespace core {
@@ -423,6 +421,8 @@ std::string BlindFactor::GetHex() const {
   return StringUtil::ByteToString(reverse_buffer);
 }
 
+bool BlindFactor::IsEmpty() const { return data_.IsEmpty(); }
+
 // -----------------------------------------------------------------------------
 // ConfidentialTxIn
 // -----------------------------------------------------------------------------
@@ -549,7 +549,7 @@ ByteData256 ConfidentialTxIn::GetWitnessHash() const {
 uint32_t ConfidentialTxIn::EstimateTxInSize(
     AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
     Script fedpeg_script, bool is_issuance, bool is_blind,
-    uint32_t *witness_stack_size) {
+    uint32_t *witness_area_size, uint32_t *no_witness_area_size) {
   // issuance時の追加サイズ: entity(32),hash(32),amount(8+1),key(8+1)
   static constexpr const uint32_t kIssuanceAppendSize = 82;
   // blind issuance時の追加サイズ: entity,hash,amount(33),key(33)
@@ -560,9 +560,8 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
   // btc(9),asset(33),block(33),fedpegSize(-),txSize(3),txoutproof(152)
   static constexpr const uint32_t kPeginWitnessSize = 230;
   uint32_t witness_size = 0;
-  uint32_t size =
-      TxIn::EstimateTxInSize(addr_type, redeem_script, &witness_size);
-  size -= witness_size;  // non segwit size
+  uint32_t size = 0;
+  TxIn::EstimateTxInSize(addr_type, redeem_script, &witness_size, &size);
 
   if (is_issuance) {
     if (is_blind) {
@@ -593,10 +592,24 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
     }
   }
 
-  if (witness_stack_size) {
-    *witness_stack_size = witness_size;
+  if (witness_area_size != nullptr) {
+    *witness_area_size = witness_size;
+  }
+  if (no_witness_area_size != nullptr) {
+    *no_witness_area_size = size;
   }
   return size + witness_size;
+}
+
+uint32_t ConfidentialTxIn::EstimateTxInVsize(
+    AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
+    Script fedpeg_script, bool is_issuance, bool is_blind) {
+  uint32_t witness_size = 0;
+  uint32_t no_witness_size = 0;
+  ConfidentialTxIn::EstimateTxInSize(
+      addr_type, redeem_script, pegin_btc_tx_size, fedpeg_script, is_issuance,
+      is_blind, &witness_size, &no_witness_size);
+  return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
 // -----------------------------------------------------------------------------
@@ -760,7 +773,8 @@ ConfidentialTxOutReference::ConfidentialTxOutReference(
 }
 
 uint32_t ConfidentialTxOutReference::GetSerializeSize(
-    bool is_blinded, uint32_t *witness_stack_size) const {
+    bool is_blinded, uint32_t *witness_area_size,
+    uint32_t *no_witness_area_size) const {
   static constexpr const uint32_t kTxOutSurjection = 131 + 1;
   static constexpr const uint32_t kTxOutRangeproof = 2893 + 3;
   uint32_t result = 0;
@@ -789,11 +803,21 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
     witness_size += 1;  // range proof
   }
 
-  if (witness_stack_size) {
-    *witness_stack_size = witness_size;
+  if (witness_area_size != nullptr) {
+    *witness_area_size = witness_size;
+  }
+  if (no_witness_area_size != nullptr) {
+    *no_witness_area_size = result;
   }
   result += witness_size;
   return result;
+}
+
+uint32_t ConfidentialTxOutReference::GetSerializeVsize(bool is_blinded) const {
+  uint32_t witness_size = 0;
+  uint32_t no_witness_size = 0;
+  GetSerializeSize(is_blinded, &witness_size, &no_witness_size);
+  return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
 // -----------------------------------------------------------------------------
@@ -979,6 +1003,20 @@ uint32_t ConfidentialTransaction::GetTxInIndex(
   }
   warn(CFD_LOG_SOURCE, "Txid is not found.");
   throw CfdException(kCfdIllegalArgumentError, "Txid is not found.");
+}
+
+uint32_t ConfidentialTransaction::GetTxOutIndex(
+    const Script &locking_script) const {
+  std::string search_str = locking_script.GetHex();
+  uint32_t index = 0;
+  for (; index < static_cast<uint32_t>(vout_.size()); ++index) {
+    std::string script = vout_[index].GetLockingScript().GetHex();
+    if (script == search_str) {
+      return index;
+    }
+  }
+  warn(CFD_LOG_SOURCE, "locking script is not found.");
+  throw CfdException(kCfdIllegalArgumentError, "locking script is not found.");
 }
 
 uint32_t ConfidentialTransaction::GetTxInCount() const {
@@ -1318,6 +1356,35 @@ IssuanceParameter ConfidentialTransaction::SetAssetIssuance(
     const Amount &token_amount, const Script &token_locking_script,
     const ConfidentialNonce &token_nonce, bool is_blind,
     const ByteData256 &contract_hash) {
+  std::vector<Amount> asset_output_amount_list;
+  std::vector<Script> asset_locking_script_list;
+  std::vector<ConfidentialNonce> asset_nonce_list;
+  std::vector<Amount> token_output_amount_list;
+  std::vector<Script> token_locking_script_list;
+  std::vector<ConfidentialNonce> token_nonce_list;
+  asset_output_amount_list.push_back(asset_amount);
+  asset_locking_script_list.push_back(asset_locking_script);
+  asset_nonce_list.push_back(asset_nonce);
+  token_output_amount_list.push_back(token_amount);
+  token_locking_script_list.push_back(token_locking_script);
+  token_nonce_list.push_back(token_nonce);
+  return SetAssetIssuance(
+      tx_in_index, asset_amount, asset_output_amount_list,
+      asset_locking_script_list, asset_nonce_list, token_amount,
+      token_output_amount_list, token_locking_script_list, token_nonce_list,
+      is_blind, contract_hash);
+}
+
+IssuanceParameter ConfidentialTransaction::SetAssetIssuance(
+    uint32_t tx_in_index, const Amount &asset_amount,
+    const std::vector<Amount> &asset_output_amount_list,
+    const std::vector<Script> &asset_locking_script_list,
+    const std::vector<ConfidentialNonce> &asset_nonce_list,
+    const Amount &token_amount,
+    const std::vector<Amount> &token_output_amount_list,
+    const std::vector<Script> &token_locking_script_list,
+    const std::vector<ConfidentialNonce> &token_nonce_list, bool is_blind,
+    const ByteData256 &contract_hash) {
   CheckTxInIndex(tx_in_index, __LINE__, __FUNCTION__);
 
   if ((vin_[tx_in_index].GetInflationKeys().GetData().GetDataSize() > 0) ||
@@ -1332,23 +1399,84 @@ IssuanceParameter ConfidentialTransaction::SetAssetIssuance(
     throw CfdException(
         kCfdIllegalArgumentError, "Issuance must have one non-zero amount.");
   }
+  if (asset_output_amount_list.empty() != asset_locking_script_list.empty()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Unmatch count. asset amount list and locking script list.");
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "Unmatch count. asset amount list and locking script list.");
+  }
+  if (!asset_output_amount_list.empty()) {
+    Amount total;
+    for (const auto &amount : asset_output_amount_list) {
+      total += amount;
+    }
+    if (total != asset_amount) {
+      warn(CFD_LOG_SOURCE, "Unmatch asset amount.");
+      throw CfdException(kCfdIllegalArgumentError, "Unmatch asset amount.");
+    }
+    for (const auto &script : asset_locking_script_list) {
+      if (script.IsEmpty()) {
+        warn(CFD_LOG_SOURCE, "Empty locking script from asset.");
+        throw CfdException(
+            kCfdIllegalArgumentError, "Empty locking script from asset.");
+      }
+    }
+  }
+  if (token_output_amount_list.empty() != token_locking_script_list.empty()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Unmatch count. token amount list and locking script list.");
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "Unmatch count. token amount list and locking script list.");
+  }
+  if (!token_output_amount_list.empty()) {
+    Amount total;
+    for (const auto &amount : token_output_amount_list) {
+      total += amount;
+    }
+    if (total != token_amount) {
+      warn(CFD_LOG_SOURCE, "Unmatch token amount.");
+      throw CfdException(kCfdIllegalArgumentError, "Unmatch token amount.");
+    }
+    for (const auto &script : token_locking_script_list) {
+      if (script.IsEmpty()) {
+        warn(CFD_LOG_SOURCE, "Empty locking script from token.");
+        throw CfdException(
+            kCfdIllegalArgumentError, "Empty locking script from token.");
+      }
+    }
+  }
 
   IssuanceParameter param = CalculateIssuanceValue(
       vin_[tx_in_index].GetTxid(), vin_[tx_in_index].GetVout(), is_blind,
       contract_hash, ByteData256());
-
-  // 指定されたTxInへの設定
   SetIssuance(
       tx_in_index, ByteData256(), contract_hash,
       ConfidentialValue(asset_amount), ConfidentialValue(token_amount),
       ByteData(), ByteData());
 
-  // TxOut追加
-  if (asset_amount.GetSatoshiValue() > 0) {
-    AddTxOut(asset_amount, param.asset, asset_locking_script, asset_nonce);
+  if ((!asset_output_amount_list.empty()) &&
+      (asset_amount.GetSatoshiValue() > 0)) {
+    for (size_t index = 0; index < asset_output_amount_list.size(); ++index) {
+      ConfidentialNonce nonce;
+      if (index < asset_nonce_list.size()) nonce = asset_nonce_list[index];
+      AddTxOut(
+          asset_output_amount_list[index], param.asset,
+          asset_locking_script_list[index], nonce);
+    }
   }
-  if (token_amount.GetSatoshiValue() > 0) {
-    AddTxOut(token_amount, param.token, token_locking_script, token_nonce);
+  if ((!token_output_amount_list.empty()) &&
+      (token_amount.GetSatoshiValue() > 0)) {
+    for (size_t index = 0; index < token_output_amount_list.size(); ++index) {
+      ConfidentialNonce nonce;
+      if (index < token_nonce_list.size()) nonce = token_nonce_list[index];
+      AddTxOut(
+          token_output_amount_list[index], param.token,
+          token_locking_script_list[index], nonce);
+    }
   }
 
   return param;
@@ -1358,6 +1486,24 @@ IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
     uint32_t tx_in_index, const Amount &asset_amount,
     const Script &asset_locking_script,
     const ConfidentialNonce &asset_blind_nonce,
+    const BlindFactor &asset_blind_factor, const BlindFactor &entropy) {
+  std::vector<Amount> asset_output_amount_list;
+  std::vector<Script> asset_locking_script_list;
+  std::vector<ConfidentialNonce> asset_blind_nonce_list;
+  asset_output_amount_list.push_back(asset_amount);
+  asset_locking_script_list.push_back(asset_locking_script);
+  asset_blind_nonce_list.push_back(asset_blind_nonce);
+  return SetAssetReissuance(
+      tx_in_index, asset_amount, asset_output_amount_list,
+      asset_locking_script_list, asset_blind_nonce_list, asset_blind_factor,
+      entropy);
+}
+
+IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
+    uint32_t tx_in_index, const Amount &asset_amount,
+    const std::vector<Amount> &asset_output_amount_list,
+    const std::vector<Script> &asset_locking_script_list,
+    const std::vector<ConfidentialNonce> &asset_blind_nonce_list,
     const BlindFactor &asset_blind_factor, const BlindFactor &entropy) {
   CheckTxInIndex(tx_in_index, __LINE__, __FUNCTION__);
 
@@ -1372,6 +1518,31 @@ IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
     warn(CFD_LOG_SOURCE, "ReIssuance must have one non-zero amount.");
     throw CfdException(
         kCfdIllegalArgumentError, "ReIssuance must have one non-zero amount.");
+  }
+  if (asset_output_amount_list.empty() != asset_locking_script_list.empty()) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Unmatch count. asset amount list and locking script list.");
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "Unmatch count. asset amount list and locking script list.");
+  }
+  if (!asset_output_amount_list.empty()) {
+    Amount total;
+    for (const auto &amount : asset_output_amount_list) {
+      total += amount;
+    }
+    if (total != asset_amount) {
+      warn(CFD_LOG_SOURCE, "Unmatch asset amount.");
+      throw CfdException(kCfdIllegalArgumentError, "Unmatch asset amount.");
+    }
+    for (const auto &script : asset_locking_script_list) {
+      if (script.IsEmpty()) {
+        warn(CFD_LOG_SOURCE, "Empty locking script from asset.");
+        throw CfdException(
+            kCfdIllegalArgumentError, "Empty locking script from asset.");
+      }
+    }
   }
 
   std::vector<uint8_t> asset(kAssetSize);
@@ -1388,15 +1559,23 @@ IssuanceParameter ConfidentialTransaction::SetAssetReissuance(
   IssuanceParameter param;
   param.entropy = entropy;
   param.asset = ConfidentialAssetId(ByteData(asset));
-
-  // 指定されたTxInへの設定
   SetIssuance(
       tx_in_index, asset_blind_factor.GetData(), entropy.GetData(),
       ConfidentialValue(asset_amount), ConfidentialValue(), ByteData(),
       ByteData());
 
-  // TxOut追加
-  AddTxOut(asset_amount, param.asset, asset_locking_script, asset_blind_nonce);
+  if ((!asset_output_amount_list.empty()) &&
+      (asset_amount.GetSatoshiValue() > 0)) {
+    for (size_t index = 0; index < asset_output_amount_list.size(); ++index) {
+      ConfidentialNonce nonce;
+      if (index < asset_blind_nonce_list.size()) {
+        nonce = asset_blind_nonce_list[index];
+      }
+      AddTxOut(
+          asset_output_amount_list[index], param.asset,
+          asset_locking_script_list[index], nonce);
+    }
+  }
   return param;
 }
 
@@ -1713,8 +1892,8 @@ void ConfidentialTransaction::BlindTransaction(
       bool token_blind = false;
       if ((!issuance_blinding_keys.empty()) &&
           (issuance_blinding_keys.size() > index)) {
-        asset_blind = !issuance_blinding_keys[index].asset_key.IsInvalid();
-        token_blind = !issuance_blinding_keys[index].token_key.IsInvalid();
+        asset_blind = issuance_blinding_keys[index].asset_key.IsValid();
+        token_blind = issuance_blinding_keys[index].token_key.IsValid();
       }
       IssuanceParameter issue = CalculateIssuanceValue(
           vin_[index].GetTxid(), vin_[index].GetVout(), token_blind,
@@ -1816,8 +1995,8 @@ void ConfidentialTransaction::BlindTransaction(
     bool token_blind = false;
     if ((!issuance_blinding_keys.empty()) &&
         (issuance_blinding_keys.size() > index)) {
-      asset_blind = !issuance_blinding_keys[index].asset_key.IsInvalid();
-      token_blind = !issuance_blinding_keys[index].token_key.IsInvalid();
+      asset_blind = issuance_blinding_keys[index].asset_key.IsValid();
+      token_blind = issuance_blinding_keys[index].token_key.IsValid();
     }
     IssuanceParameter issue = CalculateIssuanceValue(
         vin_[index].GetTxid(), vin_[index].GetVout(), token_blind,
@@ -2123,7 +2302,7 @@ std::vector<UnblindParameter> ConfidentialTransaction::UnblindTxIn(
   if (tx_in.GetInflationKeysRangeproof().GetDataSize() != 0) {
     if (tx_in.GetInflationKeys().HasBlinding()) {
       token_unblind = CalculateUnblindIssueData(
-          (token_blinding_key.IsInvalid()) ? blinding_key : token_blinding_key,
+          (token_blinding_key.IsValid()) ? token_blinding_key : blinding_key,
           token_rangeproof, tx_in.GetInflationKeys(), Script(), issue.token);
       token_rangeproof = ByteData();
     }
@@ -2191,7 +2370,7 @@ std::vector<UnblindParameter> ConfidentialTransaction::UnblindTxOut(
     // skip if vout is txout for fee
     if (vout_[index].GetLockingScript().IsEmpty()) {
       // fall-through
-    } else if (blinding_keys[index].IsInvalid()) {
+    } else if (!blinding_keys[index].IsValid()) {
       // fall-through
     } else {
       results.push_back(UnblindTxOut(index, blinding_keys[index]));
@@ -2309,7 +2488,7 @@ Privkey ConfidentialTransaction::GetIssuanceBlindingKey(
 ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
     uint32_t txin_index, const ByteData &script_data, SigHashType sighash_type,
     const ConfidentialValue &value, WitnessVersion version) const {
-  if (script_data.Empty()) {
+  if (script_data.IsEmpty()) {
     warn(CFD_LOG_SOURCE, "empty script");
     throw CfdException(
         kCfdIllegalArgumentError, "Failed to GetSignatureHash. empty script.");
@@ -2406,7 +2585,7 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   if (bip32_counter > kPegoutBip32CountMaximum) {
     throw CfdException(kCfdIllegalArgumentError, "bip32_counter over error.");
   }
-  if ((!online_pubkey.IsValid()) || master_online_key.IsInvalid() ||
+  if ((!online_pubkey.IsValid()) || (!master_online_key.IsValid()) ||
       (!master_online_key.GeneratePubkey().Equals(online_pubkey))) {
     throw CfdException(kCfdIllegalArgumentError, "Illegal online key error.");
   }

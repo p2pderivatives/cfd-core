@@ -106,15 +106,26 @@ class CFD_CORE_EXPORT TxIn : public AbstractTxIn {
   static constexpr const size_t kMinimumTxInSize = 41;
 
   /**
-   * @brief TxInのサイズを見積もる。
-   * @param[in] addr_type       address type
-   * @param[in] redeem_script   redeem script
-   * @param[out] witness_stack_size   witness stack size
-   * @return TxInのサイズ
+   * @brief estimate txin's size, and witness size.
+   * @param[in] addr_type         address type
+   * @param[in] redeem_script     redeem script
+   * @param[out] witness_area_size     witness area size
+   * @param[out] no_witness_area_size  no witness area size
+   * @return TxIn size.
    */
   static uint32_t EstimateTxInSize(
       AddressType addr_type, Script redeem_script = Script(),
-      uint32_t* witness_stack_size = nullptr);
+      uint32_t* witness_area_size = nullptr,
+      uint32_t* no_witness_area_size = nullptr);
+
+  /**
+   * @brief estimate txin's virtual size direct.
+   * @param[in] addr_type       address type
+   * @param[in] redeem_script   redeem script
+   * @return TxIn virtual size.
+   */
+  static uint32_t EstimateTxInVsize(
+      AddressType addr_type, Script redeem_script = Script());
 
   /**
    * @brief コンストラクタ.
@@ -344,12 +355,19 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @param[in] tx_in_index       設定するTxInのindex位置
    */
   void RemoveScriptWitnessStackAll(uint32_t tx_in_index);
+
   /**
    * @brief TxOutを取得する.
    * @param[in] index     取得するindex位置
    * @return TxOutReference
    */
   const TxOutReference GetTxOut(uint32_t index) const;
+  /**
+   * @brief TxOutのindexを取得する.
+   * @param[in] locking_script  locking script
+   * @return 条件に合致するTxOutのindex番号
+   */
+  virtual uint32_t GetTxOutIndex(const Script& locking_script) const;
   /**
    * @brief 保持しているTxOutの数を取得する.
    * @return TxOut数

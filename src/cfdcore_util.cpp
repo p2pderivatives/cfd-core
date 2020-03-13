@@ -12,7 +12,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "wally_core.h"  // NOLINT
 
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
@@ -25,6 +24,9 @@ namespace core {
 using logger::info;
 using logger::warn;
 
+//////////////////////////////////
+/// SigHashType
+//////////////////////////////////
 SigHashType::SigHashType()
     : hash_algorithm_(SigHashAlgorithm::kSigHashAll),
       is_anyone_can_pay_(false),
@@ -56,6 +58,31 @@ uint32_t SigHashType::GetSigHashFlag() const {
     flag |= kSigHashForkId;
   }
   return flag;
+}
+
+SigHashAlgorithm SigHashType::GetSigHashAlgorithm() const {
+  return hash_algorithm_;
+}
+
+bool SigHashType::IsAnyoneCanPay() const { return is_anyone_can_pay_; }
+
+bool SigHashType::IsForkId() const { return is_fork_id_; }
+
+void SigHashType::SetFromSigHashFlag(uint8_t flag) {
+  uint32_t sighash_byte = flag;
+  bool is_anyone_can_pay = false;
+  bool is_fork_id = false;
+  if (sighash_byte & SigHashType::kSigHashAnyOneCanPay) {
+    sighash_byte &= ~kSigHashAnyOneCanPay;
+    is_anyone_can_pay = true;
+  }
+  if (sighash_byte & SigHashType::kSigHashForkId) {
+    sighash_byte &= ~kSigHashForkId;
+    is_fork_id = true;
+  }
+  hash_algorithm_ = static_cast<SigHashAlgorithm>(sighash_byte);
+  is_anyone_can_pay_ = is_anyone_can_pay;
+  is_fork_id_ = is_fork_id;
 }
 
 //////////////////////////////////
@@ -427,7 +454,7 @@ ByteData CryptoUtil::NormalizeSignature(const ByteData &signature) {
 }
 
 ByteData CryptoUtil::ConvertSignatureToDer(
-    const ByteData &signature, SigHashType sighash_type) {
+    const ByteData &signature, const SigHashType &sighash_type) {
   std::vector<uint8_t> sig = signature.GetBytes();
   // SigHashType分を追加して領域確保
   std::vector<uint8_t> output(EC_SIGNATURE_DER_MAX_LEN + 1);
@@ -455,8 +482,30 @@ ByteData CryptoUtil::ConvertSignatureToDer(
 }
 
 ByteData CryptoUtil::ConvertSignatureToDer(
-    const std::string &hex_string, SigHashType sighash_type) {
+    const std::string &hex_string, const SigHashType &sighash_type) {
   return ConvertSignatureToDer(ByteData(hex_string), sighash_type);
+}
+
+ByteData CryptoUtil::ConvertSignatureFromDer(
+    const ByteData &der_data, SigHashType *sighash_type) {
+  std::vector<uint8_t> der_sig = der_data.GetBytes();
+  if (der_sig.size() <= (EC_SIGNATURE_DER_MAX_LEN + 1)) {
+    uint8_t sighash_byte = der_sig[der_sig.size() - 1];
+    der_sig.resize(der_sig.size() - 1);
+
+    if (sighash_type != nullptr) {
+      sighash_type->SetFromSigHashFlag(sighash_byte);
+    }
+  }
+
+  std::vector<uint8_t> output(EC_SIGNATURE_LEN);
+  int ret = wally_ec_sig_from_der(
+      der_sig.data(), der_sig.size(), output.data(), output.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_ec_sig_from_der NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "der decode error.");
+  }
+  return ByteData(output);
 }
 
 /**

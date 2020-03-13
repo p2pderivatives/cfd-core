@@ -10,6 +10,7 @@
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_coin.h"
 #include "cfdcore/cfdcore_key.h"
+#include "cfdcore/cfdcore_hdwallet.h"
 
 using cfd::core::Txid;
 using cfd::core::ByteData;
@@ -19,14 +20,18 @@ using cfd::core::DescriptorNode;
 using cfd::core::DescriptorNodeType;
 using cfd::core::DescriptorScriptReference;
 using cfd::core::DescriptorScriptType;
+using cfd::core::DescriptorKeyInfo;
 using cfd::core::DescriptorKeyReference;
 using cfd::core::DescriptorKeyType;
+using cfd::core::ExtPrivkey;
+using cfd::core::ExtPubkey;
 using cfd::core::Script;
 using cfd::core::NetType;
 using cfd::core::HashType;
 using cfd::core::Address;
 using cfd::core::AddressFormatData;
 using cfd::core::AddressType;
+using cfd::core::Privkey;
 using cfd::core::Pubkey;
 
 TEST(Descriptor, Parse_pk) {
@@ -507,3 +512,194 @@ TEST(Descriptor, xpriv_derive_hardened) {
   }
 }
 
+TEST(Descriptor, CheckChecksum) {
+  std::string base_descriptor = "sh(wpkh([ef57314e/0'/0'/4']03d3f817091de0bbe51e19b53303b12e463f664894d49cb5bf5bb19c88fbc54d8d))";
+  std::string success_descriptor = base_descriptor + "#euerft8t";
+  std::string fail_descriptor = base_descriptor + "#euerfa8t";
+  Descriptor desc;
+  std::string desc_str = "";
+
+  EXPECT_NO_THROW(desc = Descriptor::Parse(success_descriptor));
+  EXPECT_NO_THROW(desc_str = desc.ToString());
+  EXPECT_STREQ(desc_str.c_str(), success_descriptor.c_str());
+
+  EXPECT_THROW((desc = Descriptor::Parse(fail_descriptor)), CfdException);
+
+  EXPECT_NO_THROW(desc = Descriptor::Parse(base_descriptor));
+  EXPECT_NO_THROW(desc_str = desc.ToString());
+  EXPECT_STREQ(desc_str.c_str(), success_descriptor.c_str());
+}
+
+TEST(Descriptor, CreateDescriptor_wpkh) {
+  std::string ext_descriptor = "wpkh([1422fcb3/0'/0'/68']02bedf98a38247c1718fdff7e07561b4dc15f10323ebb0accab581778e72c2e995)#r5cw72t3";
+  std::string parent_info = "[1422fcb3/0'/0'/68']";
+  std::string pubkey_str = "02bedf98a38247c1718fdff7e07561b4dc15f10323ebb0accab581778e72c2e995";
+  DescriptorKeyInfo key_info;
+  Descriptor desc;
+  std::string desc_str = "";
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(Pubkey(pubkey_str), parent_info));
+  EXPECT_NO_THROW(desc = Descriptor::CreateDescriptor(DescriptorScriptType::kDescriptorScriptWpkh, key_info));
+  EXPECT_NO_THROW(desc_str = desc.ToString());
+  EXPECT_STREQ(desc_str.c_str(), ext_descriptor.c_str());
+}
+
+TEST(Descriptor, CreateDescriptor_sh_wsh_sortedmulti) {
+  std::string ext_descriptor = "sh(wsh(sortedmulti(2,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*,[1422fcb3/0'/0'/68']02bedf98a38247c1718fdff7e07561b4dc15f10323ebb0accab581778e72c2e995)))";
+
+  std::vector<DescriptorScriptType> type_list;
+  type_list.push_back(DescriptorScriptType::kDescriptorScriptSh);
+  type_list.push_back(DescriptorScriptType::kDescriptorScriptWsh);
+  type_list.push_back(DescriptorScriptType::kDescriptorScriptSortedMulti);
+  std::vector<DescriptorKeyInfo> key_list;
+  key_list.emplace_back(DescriptorKeyInfo("xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*"));
+  key_list.emplace_back(DescriptorKeyInfo("xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*"));
+  key_list.emplace_back(DescriptorKeyInfo("02bedf98a38247c1718fdff7e07561b4dc15f10323ebb0accab581778e72c2e995", "[1422fcb3/0'/0'/68']"));
+
+  Descriptor desc;
+  std::string desc_str = "";
+  EXPECT_NO_THROW(desc = Descriptor::CreateDescriptor(type_list, key_list, 2));
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_STREQ(desc_str.c_str(), ext_descriptor.c_str());
+}
+
+TEST(DescriptorKeyInfo, Constructor_Pubkey) {
+  Pubkey pubkey("03d3f817091de0bbe51e19b53303b12e463f664894d49cb5bf5bb19c88fbc54d8d");
+  std::string parent_info = "[ef57314e/0'/0'/4']";
+  DescriptorKeyInfo key_info;
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(pubkey));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), pubkey.GetHex().c_str());
+  EXPECT_EQ(key_info.GetKeyType(),  DescriptorKeyType::kDescriptorKeyPublic);
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(pubkey, parent_info));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), (parent_info + pubkey.GetHex()).c_str());
+  EXPECT_FALSE(key_info.HasPrivkey());
+  EXPECT_FALSE(key_info.HasExtPubkey());
+  EXPECT_FALSE(key_info.HasExtPrivkey());
+  EXPECT_STREQ(key_info.GetPubkey().GetHex().c_str(),  pubkey.GetHex().c_str());
+}
+
+TEST(DescriptorKeyInfo, Constructor_Privkey) {
+  Privkey privkey("0b64eb8f5ddfffed8ffd09339cbb9de1b9ceee2a76760173fe4b130a91e56383");
+  std::string privkey_wif_str = "cPoefvB147bYpWCf9JqRBVMXENt4isSBAn91RYeiBh1jUp3ThhKN";
+  Privkey privkey_wif = Privkey::FromWif(privkey_wif_str, NetType::kRegtest, true);
+  std::string parent_info = "[ef57314e/0'/0'/4']";
+  DescriptorKeyInfo key_info;
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(privkey, false));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), privkey.GetHex().c_str());
+  EXPECT_EQ(key_info.GetKeyType(),  DescriptorKeyType::kDescriptorKeyPublic);
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(privkey_wif, true, NetType::kRegtest, true, parent_info));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), (parent_info + privkey_wif_str).c_str());
+  EXPECT_TRUE(key_info.HasPrivkey());
+  EXPECT_FALSE(key_info.HasExtPubkey());
+  EXPECT_FALSE(key_info.HasExtPrivkey());
+  EXPECT_STREQ(key_info.GetPrivkey().GetHex().c_str(),  privkey_wif.GetHex().c_str());
+}
+
+TEST(DescriptorKeyInfo, Constructor_ExtPrivkey) {
+  std::string extkey = "tprv8fFXTTUs3e5Q1CGAPnabXXFUJor2q2jXo3VCceUggUNGMgCQ4FsLgPemcq2FPym15qZ2kjNx414T3Ypha1gAL3GHUH3uN3xDB3ymD434uWh";
+  ExtPrivkey privkey(extkey);
+  std::string parent_info = "[ef57314e/0']";
+  std::string path = "0'/1/*";
+  DescriptorKeyInfo key_info;
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(privkey));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), extkey.c_str());
+  EXPECT_EQ(key_info.GetKeyType(),  DescriptorKeyType::kDescriptorKeyBip32Priv);
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(privkey, parent_info, path));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), (parent_info + extkey + "/" + path).c_str());
+  EXPECT_FALSE(key_info.HasPrivkey());
+  EXPECT_FALSE(key_info.HasExtPubkey());
+  EXPECT_TRUE(key_info.HasExtPrivkey());
+  EXPECT_STREQ(key_info.GetExtPrivkey().ToString().c_str(),  extkey.c_str());
+  EXPECT_STREQ(key_info.GetBip32Path().c_str(),  ("/" + path).c_str());
+
+}
+
+TEST(DescriptorKeyInfo, Constructor_ExtPubkey) {
+  std::string extkey = "tpubDDNapBCUaChXpE91grWNGp8xWg84GcS1iRSR7iynAFTv6JAGnKTEUB3vkHtsV4NbkZf6SfjYM6PvW3kZ77KLUZ2GTYNBN4PJRWCKN1ERjJe";
+  ExtPubkey pubkey(extkey);
+  std::string parent_info = "[ef57314e/0'/1]";
+  std::string path = "0/1/*";
+  DescriptorKeyInfo key_info;
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(pubkey));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), extkey.c_str());
+  EXPECT_EQ(key_info.GetKeyType(),  DescriptorKeyType::kDescriptorKeyBip32);
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(pubkey, parent_info, path));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), (parent_info + extkey + "/" + path).c_str());
+  EXPECT_FALSE(key_info.HasPrivkey());
+  EXPECT_TRUE(key_info.HasExtPubkey());
+  EXPECT_FALSE(key_info.HasExtPrivkey());
+  EXPECT_STREQ(key_info.GetExtPubkey().ToString().c_str(),  extkey.c_str());
+  EXPECT_STREQ(key_info.GetBip32Path().c_str(),  ("/" + path).c_str());
+}
+
+TEST(DescriptorKeyInfo, Constructor_string) {
+  std::string extkey = "tprv8fFXTTUs3e5Q1CGAPnabXXFUJor2q2jXo3VCceUggUNGMgCQ4FsLgPemcq2FPym15qZ2kjNx414T3Ypha1gAL3GHUH3uN3xDB3ymD434uWh";
+  std::string parent_info = "[ef57314e/0'/1]";
+  std::string path = "0'/1/*";
+  DescriptorKeyInfo key_info;
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(extkey));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), extkey.c_str());
+  EXPECT_EQ(key_info.GetKeyType(),  DescriptorKeyType::kDescriptorKeyBip32Priv);
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(extkey + "/" + path, parent_info));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), (parent_info + extkey + "/" + path).c_str());
+  EXPECT_FALSE(key_info.HasPrivkey());
+  EXPECT_FALSE(key_info.HasExtPubkey());
+  EXPECT_TRUE(key_info.HasExtPrivkey());
+  EXPECT_STREQ(key_info.GetExtPrivkey().ToString().c_str(),  extkey.c_str());
+  EXPECT_STREQ(key_info.GetBip32Path().c_str(),  ("/" + path).c_str());
+}
+
+TEST(DescriptorKeyInfo, GetExtPrivkeyInformation) {
+  std::string extkey = "tprv8fFXTTUs3e5Q1CGAPnabXXFUJor2q2jXo3VCceUggUNGMgCQ4FsLgPemcq2FPym15qZ2kjNx414T3Ypha1gAL3GHUH3uN3xDB3ymD434uWh";
+  ExtPrivkey privkey(extkey);
+  std::string path = "0'/1";
+  std::string ext_str = "[f4a831a2]";
+  std::string ext_path_str = "[f4a831a2/" + path + "]";
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPrivkeyInformation(privkey, ""));
+  EXPECT_STREQ(key_str.c_str(), ext_str.c_str());
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPrivkeyInformation(privkey, path));
+  EXPECT_STREQ(key_str.c_str(), ext_path_str.c_str());
+}
+
+TEST(DescriptorKeyInfo, GetExtPubkeyInformation) {
+  std::string extkey = "tpubDDNapBCUaChXpE91grWNGp8xWg84GcS1iRSR7iynAFTv6JAGnKTEUB3vkHtsV4NbkZf6SfjYM6PvW3kZ77KLUZ2GTYNBN4PJRWCKN1ERjJe";
+  ExtPubkey pubkey(extkey);
+  std::string path = "0/1";
+  std::string ext_str = "[b7665978]";
+  std::string ext_path_str = "[b7665978/" + path + "]";
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPubkeyInformation(pubkey, ""));
+  EXPECT_STREQ(key_str.c_str(), ext_str.c_str());
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPubkeyInformation(pubkey, path));
+  EXPECT_STREQ(key_str.c_str(), ext_path_str.c_str());
+}

@@ -6,67 +6,14 @@ set(PACKAGE_VERSION   1.0.0)
 ####################
 # options
 ####################
-if(CMAKE_JS_INC)
-option(ENABLE_SHARED "enable shared library (ON or OFF. default:ON)" ON)
-else()
-option(ENABLE_SHARED "enable shared library (ON or OFF. default:OFF)" OFF)
-endif()
-# use "cmake -DCMAKE_BUILD_TYPE=Debug" or "cmake-js -D"
-# option(ENABLE_DEBUG "enable debugging (ON or OFF. default:OFF)" OFF)
-option(ENABLE_TESTS "enable code tests (ON or OFF. default:ON)" ON)
-option(ENABLE_ELEMENTS "enable elements code (ON or OFF. default:ON)" ON)
-option(ENABLE_BITCOIN  "enable bitcoin code (ON or OFF. default:ON)" ON)
-option(ENABLE_SWIG_PYTHON "enable the SWIG python interface (ON or OFF. default:OFF)" OFF)
-option(ENABLE_SWIG_JAVA "enable the SWIG java (JNI) interface (ON or OFF. default:OFF)" OFF)
-
-if(CMAKE_JS_INC)
-option(ENABLE_JS_WRAPPER "enable the Javascript interface wrappers (ON or OFF. default:ON)" ON)
-else()
-set(ENABLE_JS_WRAPPER  OFF)
-endif()
-
-if(NOT WIN32)
-#option(TARGET_RPATH "target rpath list (separator is ';') (default:)" "")
-set(TARGET_RPATH "" CACHE STRING "target rpath list (separator is ';') (default:)")
-option(ENABLE_COVERAGE "enable code coverage (ON or OFF. default:OFF)" OFF)
-option(ENABLE_EXPORT_ALL "enable export all functions (for testing) (ON or OFF. default:OFF)" OFF)
-else()
-set(TARGET_RPATH "")
-set(ENABLE_COVERAGE FALSE)
-endif()
-
-set(GENERATE_WALLY  ON)
+include(./cmake/CfdCommonOption.cmake)
+include(./cmake/CfdWallyOption.cmake)
 
 
 ####################
 # common setting
 ####################
-set(WORK_WINDOWS_BINARY_DIR_NAME  $<IF:$<CONFIG:Debug>,Debug,Release>)
-if(NOT CFD_OBJ_BINARY_DIR)
-set(CFD_OBJ_BINARY_DIR   ${CMAKE_BINARY_DIR}/${WORK_WINDOWS_BINARY_DIR_NAME})
-set(CFD_ROOT_BINARY_DIR  ${CMAKE_BINARY_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${CFD_OBJ_BINARY_DIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${CFD_OBJ_BINARY_DIR}) # for linux
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CFD_OBJ_BINARY_DIR})
-endif()
-# for libwally
-set(WALLY_OBJ_BINARY_DIR   ${CFD_OBJ_BINARY_DIR})
-set(WALLY_ROOT_BINARY_DIR  ${CFD_ROOT_BINARY_DIR})
-
-
-####################
-# function
-####################
-function(transform_makefile_srclist INPUT_FILE OUTPUT_FILE)
-  file(READ ${INPUT_FILE} MAKEFILE_INC_TEXT)
-
-  string(REGEX REPLACE "\\\\\n" "@@@@LF@@@@" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
-  string(REGEX REPLACE "([a-zA-Z_][a-zA-Z0-9_]*)[\t ]*=[\t ]*([^\n]*)" "SET(\\1 \\2)" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
-  string(REPLACE "@@@@LF@@@@" "\n" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
-  string(REGEX REPLACE "\\$\\(([a-zA-Z_][a-zA-Z0-9_]*)\\)" "\${\\1}" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
-  string(REGEX REPLACE "@([a-zA-Z_][a-zA-Z0-9_]*)@" "\${\\1}" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
-  file(WRITE ${OUTPUT_FILE} ${MAKEFILE_INC_TEXT})
-endfunction()
+include(./cmake/CfdCommonSetting.cmake)
 
 
 ####################
