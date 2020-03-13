@@ -135,11 +135,22 @@ inline void ConvertFromUniValue(
 template <typename T>
 inline void ConvertFromUniValue(
     T& value, const UniValue& json_value) {  // NOLINT
-  if (json_value.isNum()) {
+  UniValue json_value_copy = json_value;
+  if (json_value_copy.isStr()) {
+    auto str = json_value.get_str();
+    auto begin_pos = str.begin();
+    if (*begin_pos == '-') ++begin_pos;
+    bool is_digits_only = std::all_of(begin_pos, str.end(), ::isdigit);
+    if (is_digits_only && (str.length() <= 20)) {  // max of uint64 and int64
+      json_value_copy = UniValue(UniValue::VNUM, json_value.get_str());
+    }
+  }
+
+  if (json_value_copy.isNum()) {
     using cfd::core::CfdError;
     using cfd::core::CfdException;
     using cfd::core::logger::warn;
-    const int64_t num = json_value.get_int64();
+    const int64_t num = json_value_copy.get_int64();
     if (std::is_unsigned<T>::value) {
       uint64_t unsigned_num = static_cast<uint64_t>(num);
       uint64_t maximum = static_cast<uint64_t>(std::numeric_limits<T>::max());
