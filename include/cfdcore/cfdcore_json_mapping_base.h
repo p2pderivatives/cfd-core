@@ -10,6 +10,7 @@
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_JSON_MAPPING_BASE_H_
 #ifdef __cplusplus
 
+#include <errno.h>
 #include <stdint.h>
 #include <functional>
 #include <limits>
@@ -63,6 +64,15 @@ inline std::string ConvertToString(const uint32_t& value) {  // NOLINT
  * @param[in] value   変換元の値
  * @return 文字列変換後の値
  */
+inline std::string ConvertToString(const uint64_t& value) {  // NOLINT
+  return std::to_string(value);
+}
+
+/**
+ * @brief 文字列変換を行います。
+ * @param[in] value   変換元の値
+ * @return 文字列変換後の値
+ */
 template <typename T>
 inline std::string ConvertToString(const T& value) {  // NOLINT
   UniValue json_value(static_cast<T>(value));
@@ -78,10 +88,16 @@ inline std::string ConvertToString(const T& value) {  // NOLINT
 inline void ConvertFromUniValue(
     std::string& value,            // NOLINT
     const UniValue& json_value) {  // NOLINT
+  using cfd::core::CfdError;
+  using cfd::core::CfdException;
+  using cfd::core::logger::warn;
   if (json_value.isStr()) {
     value = json_value.getValStr();
   } else {
-    value = "";
+    warn(CFD_LOG_SOURCE, "Invalid json format.");
+    throw CfdException(
+        CfdError::kCfdOutOfRangeError,
+        "Json value convert error. Invalid json format.");
   }
 }
 
@@ -92,10 +108,16 @@ inline void ConvertFromUniValue(
  */
 inline void ConvertFromUniValue(
     bool& value, const UniValue& json_value) {  // NOLINT
+  using cfd::core::CfdError;
+  using cfd::core::CfdException;
+  using cfd::core::logger::warn;
   if (json_value.isBool()) {
     value = json_value.getBool();
   } else {
-    value = false;
+    warn(CFD_LOG_SOURCE, "Invalid json format.");
+    throw CfdException(
+        CfdError::kCfdOutOfRangeError,
+        "Json value convert error. Invalid json format.");
   }
 }
 
@@ -106,10 +128,16 @@ inline void ConvertFromUniValue(
  */
 inline void ConvertFromUniValue(
     double& value, const UniValue& json_value) {  // NOLINT
+  using cfd::core::CfdError;
+  using cfd::core::CfdException;
+  using cfd::core::logger::warn;
   if (json_value.isNum()) {
     value = json_value.get_real();
   } else {
-    value = 0;
+    warn(CFD_LOG_SOURCE, "Invalid json format.");
+    throw CfdException(
+        CfdError::kCfdOutOfRangeError,
+        "Json value convert error. Invalid json format.");
   }
 }
 
@@ -120,10 +148,54 @@ inline void ConvertFromUniValue(
  */
 inline void ConvertFromUniValue(
     float& value, const UniValue& json_value) {  // NOLINT
+  using cfd::core::CfdError;
+  using cfd::core::CfdException;
+  using cfd::core::logger::warn;
   if (json_value.isNum()) {
     value = static_cast<float>(json_value.get_real());
   } else {
-    value = 0;
+    warn(CFD_LOG_SOURCE, "Invalid json format.");
+    throw CfdException(
+        CfdError::kCfdOutOfRangeError,
+        "Json value convert error. Invalid json format.");
+  }
+}
+
+/**
+ * @brief UniValueオブジェクトからfloat型に変換します。
+ * @param[out] value      変換後の設定値
+ * @param[in] json_value  UniValueオブジェクト
+ */
+inline void ConvertFromUniValue(
+    uint64_t& value, const UniValue& json_value) {  // NOLINT
+  using cfd::core::CfdError;
+  using cfd::core::CfdException;
+  using cfd::core::logger::warn;
+  if (json_value.isStr() || json_value.isNum()) {
+    const auto& str = json_value.getValStr();
+    bool is_digits_only = std::all_of(str.begin(), str.end(), ::isdigit);
+    if (!is_digits_only || str.empty()) {
+      warn(CFD_LOG_SOURCE, "Invalid json_value. : json_value={}", str);
+      throw CfdException(
+          CfdError::kCfdOutOfRangeError,
+          "Json value convert error. Value out of range.");
+    }
+
+    char* endp = NULL;
+    errno = 0;
+    value = static_cast<uint64_t>(std::strtoull(str.c_str(), &endp, 10));
+    if ((errno == ERANGE) || ((endp != nullptr) && (*endp != '\0'))) {
+      errno = 0;
+      warn(CFD_LOG_SOURCE, "Invalid json_value. : json_value={}", value);
+      throw CfdException(
+          CfdError::kCfdOutOfRangeError,
+          "Json value convert error. Value out of range.");
+    }
+  } else {
+    warn(CFD_LOG_SOURCE, "Invalid json format.");
+    throw CfdException(
+        CfdError::kCfdOutOfRangeError,
+        "Json value convert error. Invalid json format.");
   }
 }
 
@@ -135,21 +207,22 @@ inline void ConvertFromUniValue(
 template <typename T>
 inline void ConvertFromUniValue(
     T& value, const UniValue& json_value) {  // NOLINT
+  using cfd::core::CfdError;
+  using cfd::core::CfdException;
+  using cfd::core::logger::warn;
   UniValue json_value_copy = json_value;
   if (json_value_copy.isStr()) {
     auto str = json_value.get_str();
     auto begin_pos = str.begin();
     if (*begin_pos == '-') ++begin_pos;
     bool is_digits_only = std::all_of(begin_pos, str.end(), ::isdigit);
-    if (is_digits_only && (str.length() <= 20)) {  // max of uint64 and int64
+    // check max of int64 : execute call get_int64()
+    if (is_digits_only) {
       json_value_copy = UniValue(UniValue::VNUM, json_value.get_str());
     }
   }
 
   if (json_value_copy.isNum()) {
-    using cfd::core::CfdError;
-    using cfd::core::CfdException;
-    using cfd::core::logger::warn;
     const int64_t num = json_value_copy.get_int64();
     if (std::is_unsigned<T>::value) {
       uint64_t unsigned_num = static_cast<uint64_t>(num);
@@ -172,7 +245,10 @@ inline void ConvertFromUniValue(
     }
     value = static_cast<T>(num);
   } else {
-    value = 0;
+    warn(CFD_LOG_SOURCE, "Invalid json format.");
+    throw CfdException(
+        CfdError::kCfdOutOfRangeError,
+        "Json value convert error. Invalid json format.");
   }
 }
 

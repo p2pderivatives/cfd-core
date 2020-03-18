@@ -126,6 +126,21 @@ bool ByteData::IsLarge(const ByteData& source, const ByteData& destination) {
   return source.data_ < destination.data_;
 }
 
+void ByteData::Push(const ByteData& back_insert_data) {
+  std::vector<uint8_t> insert_bytes = back_insert_data.GetBytes();
+  data_.insert(data_.end(), insert_bytes.begin(), insert_bytes.end());
+}
+
+void ByteData::Push(const ByteData160& back_insert_data) {
+  std::vector<uint8_t> insert_bytes = back_insert_data.GetBytes();
+  data_.insert(data_.end(), insert_bytes.begin(), insert_bytes.end());
+}
+
+void ByteData::Push(const ByteData256& back_insert_data) {
+  std::vector<uint8_t> insert_bytes = back_insert_data.GetBytes();
+  data_.insert(data_.end(), insert_bytes.begin(), insert_bytes.end());
+}
+
 //////////////////////////////////
 /// ByteData160
 //////////////////////////////////
