@@ -88,6 +88,13 @@ ByteData WallyUtil::CombinePubkeySecp256k1Ec(
   return secp256k1.CombinePubkeySecp256k1Ec(pubkey_list);
 }
 
+ByteData WallyUtil::CompressPubkey(const ByteData& uncompressed_pubkey) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+
+  Secp256k1 secp256k1(context);
+  return secp256k1.CompressPubkeySecp256k1Ec(uncompressed_pubkey);
+}
+
 ByteData WallyUtil::AddTweakPrivkey(
     const ByteData& privkey, const ByteData256& tweak) {
   struct secp256k1_context_struct* context = wally_get_secp_context();

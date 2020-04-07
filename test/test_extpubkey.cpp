@@ -11,6 +11,7 @@ using cfd::core::ByteData;
 using cfd::core::ByteData256;
 using cfd::core::ExtPubkey;
 using cfd::core::Pubkey;
+using cfd::core::NetType;
 
 static const uint32_t extpubkey_kVersionMainnetPubkey = ExtPubkey::kVersionMainnetPubkey;
 static const uint32_t extpubkey_kVersionTestnetPubkey = ExtPubkey::kVersionTestnetPubkey;
@@ -83,12 +84,36 @@ TEST(ExtPubkey, DerivePubkeyTest) {
   EXPECT_TRUE(child.IsValid());
   EXPECT_EQ(4, child.GetDepth());
   EXPECT_STREQ("03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3", child.GetPubkey().GetHex().c_str());
+  EXPECT_STREQ("839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e", child.GetChainCode().GetHex().c_str());
+  EXPECT_STREQ("a53a8ff3", child.GetFingerprintData().GetHex().c_str());
 #ifndef CFD_DISABLE_ELEMENTS
   EXPECT_STREQ("68a454a64c91bd4086e5008e843dbe1c583d193afd9bdbbcdd8afcb1bdd3cafe", child.GetPubTweakSum().GetHex().c_str());
 #endif  // CFD_DISABLE_ELEMENTS
 
   EXPECT_NO_THROW((child1 = extkey.DerivePubkey(0)));
+  EXPECT_STREQ("043587cf", child1.GetVersionData().GetHex().c_str());
+  EXPECT_EQ(extpubkey_kVersionTestnetPubkey, child1.GetVersion());
+  EXPECT_TRUE(child1.IsValid());
+  EXPECT_EQ(3, child1.GetDepth());
+  EXPECT_STREQ("02ca30dbb25a2cf96344a04ae2144fb28a17f006c34cfb973b9f21623db27c5cd3", child1.GetPubkey().GetHex().c_str());
+  EXPECT_STREQ("87ced156b5641d416892046bbd1257c492c030967868aa8dc7a7067490fa08d5", child1.GetChainCode().GetHex().c_str());
+  EXPECT_STREQ("b7665978", child1.GetFingerprintData().GetHex().c_str());
+#ifndef CFD_DISABLE_ELEMENTS
+  EXPECT_STREQ("6a5e09c61652134b024da66a8517fe2e280c6faaa7c3a99314f60b1081410f0c", child1.GetPubTweakSum().GetHex().c_str());
+#endif  // CFD_DISABLE_ELEMENTS
+
   EXPECT_NO_THROW((child2 = child1.DerivePubkey(44)));
+  EXPECT_STREQ("043587cf", child2.GetVersionData().GetHex().c_str());
+  EXPECT_EQ(extpubkey_kVersionTestnetPubkey, child2.GetVersion());
+  EXPECT_TRUE(child2.IsValid());
+  EXPECT_EQ(4, child2.GetDepth());
+  EXPECT_STREQ("03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3", child2.GetPubkey().GetHex().c_str());
+  EXPECT_STREQ("839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e", child2.GetChainCode().GetHex().c_str());
+  EXPECT_STREQ("a53a8ff3", child2.GetFingerprintData().GetHex().c_str());
+#ifndef CFD_DISABLE_ELEMENTS
+  EXPECT_STREQ("68a454a64c91bd4086e5008e843dbe1c583d193afd9bdbbcdd8afcb1bdd3cafe", child2.GetPubTweakSum().GetHex().c_str());
+#endif  // CFD_DISABLE_ELEMENTS
+
   EXPECT_STREQ(child2.GetData().GetHex().c_str(), child.GetData().GetHex().c_str());
   EXPECT_STREQ(child2.GetVersionData().GetHex().c_str(), child.GetVersionData().GetHex().c_str());
   EXPECT_EQ(child2.GetVersion(), child.GetVersion());
@@ -96,6 +121,9 @@ TEST(ExtPubkey, DerivePubkeyTest) {
   EXPECT_STREQ(child2.ToString().c_str(), child.ToString().c_str());
   EXPECT_EQ(child2.GetDepth(), child.GetDepth());
   EXPECT_STREQ(child2.GetPubkey().GetHex().c_str(), child.GetPubkey().GetHex().c_str());
+#ifndef CFD_DISABLE_ELEMENTS
+  EXPECT_STREQ(child2.GetPubTweakSum().GetHex().c_str(), child.GetPubTweakSum().GetHex().c_str());
+#endif  // CFD_DISABLE_ELEMENTS
 
   try {
     child2 = extkey.DerivePubkey("m/0/44");
@@ -121,5 +149,26 @@ TEST(ExtPubkey, DerivePubTweakTest) {
   EXPECT_NO_THROW((tweak_sum = extkey.DerivePubTweak(key_paths)));
 #ifndef CFD_DISABLE_ELEMENTS
   EXPECT_STREQ("2f0b491d070c810a9779a8398063ba6e20302604dc36cf6bf6f935e34c68fa22", tweak_sum.GetHex().c_str());
+#endif  // CFD_DISABLE_ELEMENTS
+}
+
+TEST(ExtPubkey, CreateExtPubkeyFromPubkey) {
+  ExtPubkey extkey;
+
+  EXPECT_NO_THROW((extkey = ExtPubkey(NetType::kTestnet,
+      Pubkey("02ca30dbb25a2cf96344a04ae2144fb28a17f006c34cfb973b9f21623db27c5cd3"),
+      ByteData256("87ced156b5641d416892046bbd1257c492c030967868aa8dc7a7067490fa08d5"),
+      3, 44)));
+  EXPECT_STREQ("tpubDF7yNiHQHdfns9Mc3XM7PYcS2dqrPqcit3FLkebvHxS4atZxifANou2KTvpQQQP82ANDCkPc5MPQZ28pjYGgmDXGy1iyzaiX6MTBv8i4cua", extkey.ToString().c_str());
+  EXPECT_STREQ("043587cf", extkey.GetVersionData().GetHex().c_str());
+  EXPECT_EQ(extpubkey_kVersionTestnetPubkey, extkey.GetVersion());
+  EXPECT_TRUE(extkey.IsValid());
+  EXPECT_EQ(4, extkey.GetDepth());
+  EXPECT_STREQ("03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3", extkey.GetPubkey().GetHex().c_str());
+  EXPECT_STREQ("839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e", extkey.GetChainCode().GetHex().c_str());
+  EXPECT_STREQ("a53a8ff3", extkey.GetFingerprintData().GetHex().c_str());
+#ifndef CFD_DISABLE_ELEMENTS
+  // TODO(k-matsuzawa): check test.
+  // EXPECT_STREQ("68a454a64c91bd4086e5008e843dbe1c583d193afd9bdbbcdd8afcb1bdd3cafe", extkey.GetPubTweakSum().GetHex().c_str());
 #endif  // CFD_DISABLE_ELEMENTS
 }

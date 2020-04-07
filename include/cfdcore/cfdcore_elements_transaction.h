@@ -20,6 +20,9 @@
 namespace cfd {
 namespace core {
 
+//! blind initial parameter (minimum bits)
+constexpr const int kDefaultBlindMinimumBits = 52;
+
 /**
  * @brief nonce情報を保持するクラス
  */
@@ -1262,7 +1265,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const std::vector<IssuanceBlindingKeyPair>& issuance_blinding_keys,
       const std::vector<Pubkey>& txout_confidential_keys,
       int64_t minimum_range_value = 1, int exponent = 0,
-      int minimum_bits = 36);
+      int minimum_bits = kDefaultBlindMinimumBits);
   /**
    * @brief TransactionのTxOutのblindingを行う.
    * @param[in] txin_info_list            txin blind info list.
@@ -1278,7 +1281,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const std::vector<BlindParameter>& txin_info_list,
       const std::vector<Pubkey>& txout_confidential_keys,
       int64_t minimum_range_value = 1, int exponent = 0,
-      int minimum_bits = 36);
+      int minimum_bits = kDefaultBlindMinimumBits);
   /**
    * @brief indexで指定されたInputに対して、unblind処理を行う.
    * @param tx_in_index TxInのindex値

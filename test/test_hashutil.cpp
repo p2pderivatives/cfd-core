@@ -44,17 +44,6 @@ TEST(HashUtil, Hash160Bytes) {
                "9bc4860bb936abf262d7a51f74b4304833fee3b2");
 }
 
-TEST(HashUtil, Hash160BytesException) {
-  try {
-    std::vector<uint8_t> target;
-    ByteData160 byte_data = HashUtil::Hash160(target);
-  } catch (const cfd::core::CfdException &cfd_except) {
-    EXPECT_STREQ(cfd_except.what(), "hash160 calc error.");
-    return;
-  }
-  ASSERT_TRUE(false);
-}
-
 TEST(HashUtil, Hash160ByteData) {
   ByteData target("0123456789abcdef");
   ByteData160 byte_data = HashUtil::Hash160(target);
@@ -110,17 +99,6 @@ TEST(HashUtil, Sha256Bytes) {
   EXPECT_STREQ(
       byte_data.GetHex().c_str(),
       "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81");
-}
-
-TEST(HashUtil, Sha256BytesException) {
-  try {
-    std::vector<uint8_t> target;
-    ByteData256 byte_data = HashUtil::Sha256(target);
-  } catch (const cfd::core::CfdException &cfd_except) {
-    EXPECT_STREQ(cfd_except.what(), "sha256 calc error.");
-    return;
-  }
-  ASSERT_TRUE(false);
 }
 
 TEST(HashUtil, Sha256ByteData) {
@@ -185,17 +163,6 @@ TEST(HashUtil, Sha256DBytes) {
       "19c6197e2140b9d034fb20b9ac7bb753a41233caf1e1dafda7316a99cef41416");
 }
 
-TEST(HashUtil, Sha256DBytesException) {
-  try {
-    std::vector<uint8_t> target;
-    ByteData256 byte_data = HashUtil::Sha256D(target);
-  } catch (const cfd::core::CfdException &cfd_except) {
-    EXPECT_STREQ(cfd_except.what(), "sha256d calc error.");
-    return;
-  }
-  ASSERT_TRUE(false);
-}
-
 TEST(HashUtil, Sha256DByteData) {
   ByteData target("0123456789abcdef");
   ByteData256 byte_data = HashUtil::Sha256D(target);
@@ -256,17 +223,6 @@ TEST(HashUtil, Sha512Bytes) {
   EXPECT_STREQ(
       byte_data.GetHex().c_str(),
       "27864cc5219a951a7a6e52b8c8dddf6981d098da1658d96258c870b2c88dfbcb51841aea172a28bafa6a79731165584677066045c959ed0f9929688d04defc29");
-}
-
-TEST(HashUtil, Sha512BytesException) {
-  try {
-    std::vector<uint8_t> target;
-    ByteData byte_data = HashUtil::Sha512(target);
-  } catch (const cfd::core::CfdException &cfd_except) {
-    EXPECT_STREQ(cfd_except.what(), "sha512 calc error.");
-    return;
-  }
-  ASSERT_TRUE(false);
 }
 
 TEST(HashUtil, Sha512ByteData) {

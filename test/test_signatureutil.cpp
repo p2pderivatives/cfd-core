@@ -1,4 +1,3 @@
-#ifndef CFD_DISABLE_ELEMENTS
 #include "gtest/gtest.h"
 #include <vector>
 
@@ -65,4 +64,3 @@ TEST(SignatureUtil, VerifyEcSignature) {
   EXPECT_FALSE(
       SignatureUtil::VerifyEcSignature(sighash, pubkey, bad_signature2));
 }
-#endif  // CFD_DISABLE_ELEMENTS

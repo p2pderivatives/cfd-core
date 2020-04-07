@@ -76,6 +76,13 @@ class CFD_CORE_EXPORT Amount {
    * @exception CfdException if invalid value passed
    */
   explicit Amount(double coin_amount);
+  /**
+   * @brief Create Amount instance by amount satoshi units
+   * @param[in] amount amount in satoshi units
+   * @param[in] ignore_check ignore valid check
+   * @exception CfdException if invalid value passed
+   */
+  explicit Amount(int64_t amount, bool ignore_check);
 
   /**
    * @brief 自身のインスタンスからsatoshi単位のAmount額を取得する.
@@ -172,6 +179,8 @@ class CFD_CORE_EXPORT Amount {
  private:
   //! satoshi単位のAmount
   int64_t amount_;
+  //! ignore valid check flag.
+  bool ignore_check_;
 
   /**
    * @brief 引数で与えられたAmount額が不正なものでないかを検証する.

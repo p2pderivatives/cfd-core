@@ -69,6 +69,11 @@ TEST(Amount, LimitTest) {
       (amt = Amount::CreateBySatoshiAmount(uppper_limit_satoshi_val + 1)),
       CfdException);
 
+  // unlimit test
+  const int64_t uppper_limitover_satoshi = int64_t{90000000000000000};
+  ASSERT_NO_THROW((amt = Amount(uppper_limitover_satoshi, true)));
+  EXPECT_EQ(uppper_limitover_satoshi, amt.GetSatoshiValue());
+
   // exception check CreateCoinAmount
   // lower
   ASSERT_THROW(

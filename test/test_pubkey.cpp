@@ -7,6 +7,7 @@
 
 using cfd::core::CfdException;
 using cfd::core::ByteData;
+using cfd::core::ByteData256;
 using cfd::core::Pubkey;
 
 typedef struct {
@@ -176,4 +177,38 @@ TEST(Pubkey, NegateTest) {
   Pubkey negate = pubkey.CreateNegate();
   EXPECT_FALSE(pubkey.Equals(negate));
   EXPECT_TRUE(pubkey.Equals(negate.CreateNegate()));
+}
+
+TEST(Pubkey, CompressUncompressTest) {
+  std::string key_uncompressed = "076468efc14b8512007bb720d6e7d4217a6686095a79b57e50dd48355110422955400e1a8f159b5dcea116049d09eb756b80d52aeaabb195b343cf713f62f01a73";
+  std::string ext_key_uncompressed = "046468efc14b8512007bb720d6e7d4217a6686095a79b57e50dd48355110422955400e1a8f159b5dcea116049d09eb756b80d52aeaabb195b343cf713f62f01a73";
+  std::string ext_key_compressed = "036468efc14b8512007bb720d6e7d4217a6686095a79b57e50dd48355110422955";
+  Pubkey pubkey = Pubkey(key_uncompressed);
+  Pubkey comp_pubkey = pubkey.Compress();
+  EXPECT_STREQ(comp_pubkey.GetHex().c_str(), ext_key_compressed.c_str());
+
+  Pubkey uncomp_pubkey = comp_pubkey.Uncompress();
+  EXPECT_STREQ(uncomp_pubkey.GetHex().c_str(), ext_key_uncompressed.c_str());
+}
+
+TEST(Pubkey, VerifyEcSignature) {
+  Pubkey pubkey(
+      "031777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb");
+  ByteData256 sighash(
+      "2a67f03e63a6a422125878b40b82da593be8d4efaafe88ee528af6e5a9955c6e");
+  ByteData signature(
+      "0e68b55347fe37338beb3c28920267c5915a0c474d1dcafc65b087b9b3819cae6ae5e8fb"
+      "12d669a63127abb4724070f8bd232a9efe3704e6544296a843a64f2c");
+  ByteData bad_signature1(
+      "0e68b55347fe37338beb3c28920267c5915a0c474d1dcafc65b087b9b3819cae6ae5e8fb"
+      "12d669a63127abb4724070f8bd232a9efe3704e6544296a843a64f");
+  ByteData bad_signature2(
+      "0e68b55347fe37338ceb3c28920267c5915a0c474d1dcafc65b087b9b3819cae6ae5e8fb"
+      "12d669a63127abb4724070f8bd232a9efe3704e6544296a843a64f2c");
+
+  EXPECT_TRUE(pubkey.VerifyEcSignature(sighash, signature));
+
+  EXPECT_FALSE(pubkey.VerifyEcSignature(sighash, bad_signature1));
+
+  EXPECT_FALSE(pubkey.VerifyEcSignature(sighash, bad_signature2));
 }

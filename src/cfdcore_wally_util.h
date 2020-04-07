@@ -52,6 +52,13 @@ class WallyUtil {
       const std::vector<ByteData>& pubkey_list);
 
   /**
+   * @brief compress pubkey.
+   * @param[in] uncompressed_pubkey  uncompressed pubkey.
+   * @return data of compressed Pubkey
+   */
+  static ByteData CompressPubkey(const ByteData& uncompressed_pubkey);
+
+  /**
    * @brief 加算によるPrivkey調整処理
    * @param[in] privkey           Privkey
    * @param[in] tweak             調整値
