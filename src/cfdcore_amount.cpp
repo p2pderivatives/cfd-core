@@ -24,10 +24,19 @@ Amount::Amount() : amount_(0) {
   // do nothing
 }
 
-Amount::Amount(int64_t amount) : amount_(amount) { CheckValidAmount(amount_); }
+Amount::Amount(int64_t amount) : amount_(amount), ignore_check_(false) {
+  CheckValidAmount(amount_);
+}
 
 Amount::Amount(double amount)
     : Amount(static_cast<int64_t>(amount * kCoinBase)) {}
+
+Amount::Amount(int64_t amount, bool ignore_check)
+    : amount_(amount), ignore_check_(ignore_check) {
+  if (!ignore_check_) {
+    CheckValidAmount(amount_);
+  }
+}
 
 void Amount::CheckValidAmount(int64_t satoshi_amount) {
   if (!IsValidAmount(satoshi_amount)) {

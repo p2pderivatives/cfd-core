@@ -14,6 +14,7 @@
 
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
+using cfd::core::CfdException;
 using cfd::core::RandomNumberUtil;
 using cfd::core::Privkey;
 using cfd::core::Pubkey;
@@ -234,4 +235,33 @@ TEST(Privkey, NegateTest) {
   Privkey negate = privkey.CreateNegate();
   EXPECT_FALSE(privkey.Equals(negate));
   EXPECT_TRUE(privkey.Equals(negate.CreateNegate()));
+}
+
+TEST(Privkey, CalculateEcSignature) {
+  ByteData256 sighash(
+      "2a67f03e63a6a422125878b40b82da593be8d4efaafe88ee528af6e5a9955c6e");
+  Privkey privkey(
+      "305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+
+  // has_grind_r true
+  ByteData sig;
+  EXPECT_NO_THROW(
+      sig = privkey.CalculateEcSignature(sighash, true));
+  EXPECT_STREQ(
+      sig.GetHex().c_str(),
+      "0e68b55347fe37338beb3c28920267c5915a0c474d1dcafc65b087b9b3819cae6ae5e8fb12d669a63127abb4724070f8bd232a9efe3704e6544296a843a64f2c");
+
+  // has_grind_r false
+  EXPECT_NO_THROW(
+      sig = privkey.CalculateEcSignature(sighash, false));
+  EXPECT_STREQ(
+      sig.GetHex().c_str(),
+      "0e68b55347fe37338beb3c28920267c5915a0c474d1dcafc65b087b9b3819cae6ae5e8fb12d669a63127abb4724070f8bd232a9efe3704e6544296a843a64f2c");
+
+  ByteData err_sig;
+  Privkey emptyPrivkey;
+  EXPECT_THROW(
+      (err_sig = emptyPrivkey.CalculateEcSignature(sighash, true)),
+      CfdException);
+  EXPECT_STREQ(err_sig.GetHex().c_str(), "");
 }

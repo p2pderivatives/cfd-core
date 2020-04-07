@@ -7,6 +7,7 @@
 #ifndef CFD_CORE_SRC_CFDCORE_SECP256K1_H_
 #define CFD_CORE_SRC_CFDCORE_SECP256K1_H_
 
+#include <cstdint>
 #include <vector>
 #include "cfdcore/cfdcore_bytedata.h"
 
@@ -19,6 +20,12 @@ namespace core {
  */
 class Secp256k1 {
  public:
+  /**
+   * @brief Get surjectionproof input limit count.
+   * @return limit count.
+   */
+  static uint32_t GetSurjectionproofInputLimit();
+
   /**
    * \~english
    * @brief Construct
@@ -40,6 +47,13 @@ class Secp256k1 {
    * @return 合成したPubkeyデータ
    */
   ByteData CombinePubkeySecp256k1Ec(const std::vector<ByteData>& pubkey_list);
+
+  /**
+   * @brief compress pubkey.
+   * @param[in] uncompressed_pubkey  uncompressed pubkey.
+   * @return data of compressed Pubkey
+   */
+  ByteData CompressPubkeySecp256k1Ec(const ByteData& uncompressed_pubkey);
 
   /**
    * \~english 

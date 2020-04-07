@@ -489,6 +489,12 @@ ByteData CryptoUtil::ConvertSignatureToDer(
 ByteData CryptoUtil::ConvertSignatureFromDer(
     const ByteData &der_data, SigHashType *sighash_type) {
   std::vector<uint8_t> der_sig = der_data.GetBytes();
+
+  if (der_sig.size() == 0) {
+    warn(CFD_LOG_SOURCE, "Empty signature.");
+    throw CfdException(kCfdIllegalStateError, "der decode error.");
+  }
+
   if (der_sig.size() <= (EC_SIGNATURE_DER_MAX_LEN + 1)) {
     uint8_t sighash_byte = der_sig[der_sig.size() - 1];
     der_sig.resize(der_sig.size() - 1);

@@ -414,6 +414,71 @@ ExtPrivkey::ExtPrivkey(
   tweak_sum_ = tweak_sum;
 }
 
+ExtPrivkey::ExtPrivkey(
+    NetType network_type, const Privkey& parent_key,
+    const ByteData256& parent_chain_code, uint8_t parent_depth,
+    uint32_t child_num) {
+  if (!parent_key.IsValid()) {
+    warn(CFD_LOG_SOURCE, "invalid pubkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to pubkey. ExtPubkey invalid pubkey.");
+  }
+
+  // create simple parent data
+  struct ext_key parent = {};
+  memset(&parent, 0, sizeof(parent));
+  parent.version = kVersionTestnetPrivkey;
+  if ((network_type == NetType::kMainnet) ||
+      (network_type == NetType::kLiquidV1)) {
+    parent.version = kVersionMainnetPrivkey;
+  }
+  parent.depth = parent_depth;
+  Pubkey pubkey = parent_key.GeneratePubkey(true);
+  std::vector<uint8_t> privkey_bytes = parent_key.GetData().GetBytes();
+  std::vector<uint8_t> pubkey_bytes = pubkey.GetData().GetBytes();
+  std::vector<uint8_t> pubkey_hash = HashUtil::Hash160(pubkey).GetBytes();
+  std::vector<uint8_t> chain_bytes = parent_chain_code.GetData().GetBytes();
+  parent.priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
+  memcpy(&parent.priv_key[1], privkey_bytes.data(), privkey_bytes.size());
+  memcpy(parent.pub_key, pubkey_bytes.data(), pubkey_bytes.size());
+  memcpy(parent.hash160, pubkey_hash.data(), pubkey_hash.size());
+  memcpy(parent.chain_code, chain_bytes.data(), chain_bytes.size());
+
+  struct ext_key extkey = {};
+  memset(&extkey, 0, sizeof(extkey));
+  int ret = bip32_key_from_parent(
+      &parent, child_num, BIP32_FLAG_KEY_PRIVATE, &extkey);
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "bip32_key_from_parent error. ret={}", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "ExtPubkey generatekey error.");
+  }
+
+  std::vector<uint8_t> data(BIP32_SERIALIZED_LEN);
+  ret = bip32_key_serialize(
+      &extkey, BIP32_FLAG_KEY_PRIVATE | BIP32_FLAG_KEY_TWEAK_SUM, data.data(),
+      data.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "bip32_key_serialize error. ret={}", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "ExtPrivkey serialize error.");
+  }
+  serialize_data_ = ByteData(data);
+  tweak_sum_ = ByteData256();
+
+  AnalyzeBip32KeyData(
+      &extkey, nullptr, nullptr, &version_, &depth_, &child_num_, &chaincode_,
+      &privkey_, nullptr, &fingerprint_);
+
+#ifndef CFD_DISABLE_ELEMENTS
+  // collect pub_key_tweak_sum from ext_key
+  std::vector<uint8_t> tweak_sum(sizeof(extkey.pub_key_tweak_sum));
+  memcpy(tweak_sum.data(), extkey.pub_key_tweak_sum, tweak_sum.size());
+  tweak_sum_ = ByteData256(tweak_sum);
+#endif  // CFD_DISABLE_ELEMENTS
+}
+
 ByteData ExtPrivkey::GetData() const { return serialize_data_; }
 
 std::string ExtPrivkey::ToString() const {
@@ -592,6 +657,72 @@ ExtPubkey::ExtPubkey(
       &chaincode_, nullptr, &pubkey_, &fingerprint_);
   serialize_data_ = ByteData(data);
   tweak_sum_ = tweak_sum;
+}
+
+ExtPubkey::ExtPubkey(
+    NetType network_type, const Pubkey& parent_key,
+    const ByteData256& parent_chain_code, uint8_t parent_depth,
+    uint32_t child_num) {
+  if (!parent_key.IsValid()) {
+    warn(CFD_LOG_SOURCE, "invalid pubkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to pubkey. ExtPubkey invalid pubkey.");
+  }
+  Pubkey key = parent_key;
+  if (!key.IsCompress()) {
+    key = key.Compress();
+  }
+
+  // create simple parent data
+  struct ext_key parent = {};
+  memset(&parent, 0, sizeof(parent));
+  parent.version = kVersionTestnetPubkey;
+  if ((network_type == NetType::kMainnet) ||
+      (network_type == NetType::kLiquidV1)) {
+    parent.version = kVersionMainnetPubkey;
+  }
+  parent.depth = parent_depth;
+  parent.priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
+  std::vector<uint8_t> pubkey_bytes = key.GetData().GetBytes();
+  std::vector<uint8_t> pubkey_hash = HashUtil::Hash160(key).GetBytes();
+  std::vector<uint8_t> chain_bytes = parent_chain_code.GetData().GetBytes();
+  memcpy(parent.pub_key, pubkey_bytes.data(), pubkey_bytes.size());
+  memcpy(parent.hash160, pubkey_hash.data(), pubkey_hash.size());
+  memcpy(parent.chain_code, chain_bytes.data(), chain_bytes.size());
+
+  struct ext_key extkey = {};
+  memset(&extkey, 0, sizeof(extkey));
+  int ret = bip32_key_from_parent(
+      &parent, child_num, BIP32_FLAG_KEY_PUBLIC | BIP32_FLAG_KEY_TWEAK_SUM,
+      &extkey);
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "bip32_key_from_parent error. ret={}", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "ExtPubkey generatekey error.");
+  }
+
+  std::vector<uint8_t> data(BIP32_SERIALIZED_LEN);
+  ret = bip32_key_serialize(
+      &extkey, BIP32_FLAG_KEY_PUBLIC, data.data(), data.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "bip32_key_serialize error. ret={}", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "ExtPrivkey serialize error.");
+  }
+  serialize_data_ = ByteData(data);
+  tweak_sum_ = ByteData256();
+
+  AnalyzeBip32KeyData(
+      &extkey, nullptr, nullptr, &version_, &depth_, &child_num_, &chaincode_,
+      nullptr, &pubkey_, &fingerprint_);
+
+#ifndef CFD_DISABLE_ELEMENTS
+  // collect pub_key_tweak_sum from ext_key
+  std::vector<uint8_t> tweak_sum(sizeof(extkey.pub_key_tweak_sum));
+  memcpy(tweak_sum.data(), extkey.pub_key_tweak_sum, tweak_sum.size());
+  tweak_sum_ = ByteData256(tweak_sum);
+#endif  // CFD_DISABLE_ELEMENTS
 }
 
 ByteData ExtPubkey::GetData() const { return serialize_data_; }

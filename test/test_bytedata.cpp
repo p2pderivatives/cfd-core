@@ -26,6 +26,7 @@ TEST(ByteData, DefaultConstructor) {
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "00");
+  EXPECT_TRUE(byte_data.Empty());   // TODO(k-matsuzawa): deprecated API
 }
 
 TEST(ByteData, HexConstructor) {

@@ -251,6 +251,18 @@ class CFD_CORE_EXPORT ExtPrivkey {
    */
   explicit ExtPrivkey(
       const std::string& base58_data, const ByteData256& tweak_sum);
+  /**
+   * @brief コンストラクタ
+   * @param[in] network_type       network type
+   * @param[in] parent_key         parent privkey
+   * @param[in] parent_chain_code  parent chain code
+   * @param[in] parent_depth       parent depth
+   * @param[in] child_num          child num
+   */
+  explicit ExtPrivkey(
+      NetType network_type, const Privkey& parent_key,
+      const ByteData256& parent_chain_code, uint8_t parent_depth,
+      uint32_t child_num);
 
   /**
    * @brief 拡張keyのSerialize情報を取得する.
@@ -419,6 +431,18 @@ class CFD_CORE_EXPORT ExtPubkey {
    */
   explicit ExtPubkey(
       const std::string& base58_data, const ByteData256& tweak_sum);
+  /**
+   * @brief コンストラクタ
+   * @param[in] network_type       network type
+   * @param[in] parent_key         parent pubkey
+   * @param[in] parent_chain_code  parent chain code
+   * @param[in] parent_depth       parent depth
+   * @param[in] child_num          child num
+   */
+  explicit ExtPubkey(
+      NetType network_type, const Pubkey& parent_key,
+      const ByteData256& parent_chain_code, uint8_t parent_depth,
+      uint32_t child_num);
 
   /**
    * @brief 拡張keyのSerialize情報を取得する.

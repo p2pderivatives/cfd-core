@@ -135,6 +135,27 @@ class CFD_CORE_EXPORT Pubkey {
   Pubkey CreateNegate() const;
 
   /**
+   * @brief Create new uncompressed public key.
+   * @return new instance of pubkey key with uncompressed.
+   */
+  Pubkey Compress() const;
+
+  /**
+   * @brief Create new uncompressed public key.
+   * @return new instance of pubkey key with uncompressed.
+   */
+  Pubkey Uncompress() const;
+
+  /**
+   * @brief Verify if a signature with respect to a public key and a message.
+   * @param[in] signature_hash  the message to verify the signature against.
+   * @param[in] signature       the signature to verify.
+   * @return true if the signature is valid, false if not.
+   */
+  bool VerifyEcSignature(
+      const ByteData256& signature_hash, const ByteData& signature) const;
+
+  /**
    * @brief 公開鍵として正しい形式であるかを検証する.
    * @param[in] byte_data 公開鍵のByteData
    * @retval true   正常フォーマット
@@ -265,6 +286,15 @@ class CFD_CORE_EXPORT Privkey {
    * @retval false  not match
    */
   bool Equals(const Privkey& privkey) const;
+
+  /**
+   * @brief calculate ec signature from sighash.
+   * @param[in] signature_hash  signature hash
+   * @param[in] has_grind_r     use EC_FLAG_GRIND_R.(default: true)
+   * @return signature
+   */
+  ByteData CalculateEcSignature(
+      const ByteData256& signature_hash, bool has_grind_r = true) const;
 
   /**
    * @brief WIFからPrivKeyインスタンスを生成する.
