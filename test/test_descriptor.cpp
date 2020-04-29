@@ -446,7 +446,6 @@ TEST(Descriptor, GetNode_sh_wsh) {
   std::string descriptor = "sh(wsh(pkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)))";
   Descriptor desc;
   Script locking_script;
-  std::string desc_str = "";
   DescriptorScriptReference script_ref;
   DescriptorNode node;
 
@@ -482,7 +481,6 @@ TEST(Descriptor, xpriv_derive_hardened) {
   std::string descriptor = "sh(wsh(pkh(xprvA5P4YtgFjzqM4QpXJZ8Zr7Wkhng7ugTybA3KWMAqDfAamqu5nqJ3zKRhB29cxuqCc8hPagZcN5BsuoXx4Xn7iYHnQvEdyMwZRFgoJXs8CDN/0'/44/*')))";
   Descriptor desc;
   Script locking_script;
-  std::string desc_str = "";
   DescriptorScriptReference script_ref;
   DescriptorNode node;
 

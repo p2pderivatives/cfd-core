@@ -30,9 +30,13 @@ jobs:
       if: matrix.generator == 'mingw'
       run: cmake -S . -B build -G "MSYS Makefiles"
     - name: cmake_configure
-      run: cmake -DENABLE_SHARED=on -DENABLE_TESTS=off --build build
+      run: cmake -DENABLE_SHARED=on -DENABLE_TESTS=on --build build
     - name: cmake_build
       run: cmake --build build --config Release --parallel 2
+    - name: ctest
+      run: |
+        cd build
+        ctest -C Release --output-on-failure
 
   cmake-mac:
     name: cmake build-mac
@@ -47,17 +51,18 @@ jobs:
         cmake -S . -B build -G "Unix Makefiles"
         cmake -DENABLE_SHARED=on --build build
     - name: cmake_build
-      run: cmake --build build --config Release
+      run: cmake --build build --config Release --parallel 2
     - name: ctest
       run: |
         cd build
         ctest -C Release --output-on-failure
-    - name: lint_check
-      run: ./tools/lint_quiet.sh
 
   cmake-ubuntu-coverage:
     name: cmake build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        elements: [elements-on, elements-off]
 
     steps:
     - uses: actions/checkout@v2
@@ -66,8 +71,9 @@ jobs:
       id: cache
       with:
         path: cache/cmake
-        key: ${{ runner.os }}-cmake-3.15.5-x64
-        restore-keys: ${{ runner.os }}-cmake-3.15.5-x64
+        key: ${{ runner.os }}-cmake-3.15.5-x64-0
+        restore-keys: |
+          ${{ runner.os }}-cmake-3.15.5-x64-
     - name: cmake-download-ubuntu
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -85,25 +91,38 @@ jobs:
         echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
         cd ../..
     - name: ubuntu-apt-install
-      run: sudo apt install lcov
-    - name: cmake-build
+      if: matrix.elements == 'elements-on'
       run: |
-        cmake --version
+        cat /etc/os-release
+        sudo apt install lcov
+    - name: cmake_configure-enable-elements
+      if: matrix.elements == 'elements-on'
+      run: |
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_DEBUG=on -DENABLE_COVERAGE=on -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
-        cmake --build build --config Debug --parallel 2
+        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=on -DTARGET_RPATH=./build/Debug --build build
+    - name: cmake_configure-disable-elements
+      if: matrix.elements == 'elements-off'
+      run: |
+        cmake -S . -B build -G "Unix Makefiles"
+        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
+    - name: cmake-build
+      run: cmake --build build --config Debug --parallel 2
     - name: test
       run: |
         cd build
-        ctest -C Debug
+        ctest -C Debug --output-on-failure
         cd ..
+    - name: lint_check
+      run: ./tools/lint_quiet.sh
     - name: collect coverage
+      if: matrix.elements == 'elements-on'
       run: |
         cd build
         make lcov_cfdcore
         zip -r lcov_cfdcore_output.zip lcov_cfdcore_output
         cd ..
     - name: upload coverage
+      if: matrix.elements == 'elements-on'
       uses: actions/upload-artifact@v1
       with:
         name: output-lcov-cfdcore

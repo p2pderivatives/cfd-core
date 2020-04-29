@@ -5,6 +5,8 @@
  * @brief \~japanese cfdcore管理クラスの実装ファイルです。
  *   \~english implementation for cfdcore manager class
  */
+#include <vector>
+
 #include "wally_core.h"  // NOLINT
 
 #include "cfdcore_manager.h"  // NOLINT
@@ -13,6 +15,7 @@
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_logger_interface.h"
+#include "cfdcore/cfdcore_util.h"
 
 namespace cfd {
 namespace core {
@@ -58,6 +61,14 @@ void CfdCoreManager::Initialize(CfdCoreHandle* handle_address) {
       // Since libwally does not produce errors other than its arguments,
       // will only call the function.
       wally_init(0);
+
+      std::vector<uint8_t> data =
+          RandomNumberUtil::GetRandomBytes(WALLY_SECP_RANDOMIZE_LEN);
+      int wally_ret = wally_secp_randomize(data.data(), data.size());
+      if (wally_ret != WALLY_OK) {
+        throw CfdException(
+            kCfdIllegalStateError, "Failed to secp_randomize error.");
+      }
 #if 0
       int wally_ret = wally_init(0);
       if (wally_ret != WALLY_OK) {

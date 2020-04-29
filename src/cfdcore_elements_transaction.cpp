@@ -924,9 +924,9 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
       }
       if ((txin_item->pegin_witness != NULL) &&
           (txin_item->pegin_witness->num_items != 0)) {
-        struct wally_tx_witness_item *witness_stack;
         for (size_t w_index = 0; w_index < txin_item->pegin_witness->num_items;
              ++w_index) {
+          struct wally_tx_witness_item *witness_stack;
           witness_stack = &txin_item->pegin_witness->items[w_index];
           const std::vector<uint8_t> witness_buf(
               witness_stack->witness,
@@ -1333,11 +1333,10 @@ void ConfidentialTransaction::RemovePeginWitnessStackAll(
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   if (tx_pointer->num_inputs > tx_in_index) {
-    int ret = WALLY_OK;
-    struct wally_tx_witness_stack *stack_pointer = NULL;
     if (tx_pointer->inputs[tx_in_index].pegin_witness != NULL) {
+      struct wally_tx_witness_stack *stack_pointer;
       stack_pointer = tx_pointer->inputs[tx_in_index].pegin_witness;
-      ret = wally_tx_witness_stack_free(stack_pointer);
+      int ret = wally_tx_witness_stack_free(stack_pointer);
       tx_pointer->inputs[tx_in_index].pegin_witness = NULL;
       if (ret != WALLY_OK) {
         warn(CFD_LOG_SOURCE, "wally_tx_witness_stack_free NG[{}].", ret);
@@ -2513,7 +2512,7 @@ ByteData256 ConfidentialTransaction::GetElementsSignatureHash(
   std::vector<uint8_t> buffer(SHA256_LEN);
   const std::vector<uint8_t> &bytes = script_data.GetBytes();
   struct wally_tx *tx_pointer = NULL;
-  int ret = WALLY_OK;
+  int ret;
 
   // Change AbstractTransaction to wally_tx
   const std::vector<uint8_t> &tx_bytedata =

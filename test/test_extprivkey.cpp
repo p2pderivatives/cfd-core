@@ -13,6 +13,7 @@ using cfd::core::ByteData256;
 using cfd::core::ExtPubkey;
 using cfd::core::ExtPrivkey;
 using cfd::core::NetType;
+using cfd::core::Privkey;
 
 static const uint32_t extprivkey_kVersionMainnetPrivkey = ExtPrivkey::kVersionMainnetPrivkey;
 static const uint32_t extprivkey_kVersionTestnetPrivkey = ExtPrivkey::kVersionTestnetPrivkey;
@@ -73,6 +74,7 @@ TEST(ExtPrivkey, Base58ConstructorTest) {
   EXPECT_STREQ(ext_base58.c_str(), extkey.ToString().c_str());
   EXPECT_TRUE(extkey.IsValid());
   EXPECT_EQ(2769397549, extkey.GetFingerprint());
+  EXPECT_STREQ("2da711a5", extkey.GetFingerprintData().GetHex().c_str());
   EXPECT_EQ(extprivkey_kVersionMainnetPrivkey, extkey.GetVersion());
   EXPECT_STREQ("0488ade4", extkey.GetVersionData().GetHex().c_str());
   EXPECT_EQ(4, extkey.GetDepth());
@@ -86,6 +88,7 @@ TEST(ExtPrivkey, Base58ConstructorTest) {
   EXPECT_STREQ(ext_base58.c_str(), extkey.ToString().c_str());
   EXPECT_TRUE(extkey.IsValid());
   EXPECT_EQ(0, extkey.GetFingerprint());
+  EXPECT_STREQ("00000000", extkey.GetFingerprintData().GetHex().c_str());
   EXPECT_EQ(extprivkey_kVersionTestnetPrivkey, extkey.GetVersion());
   EXPECT_STREQ("04358394", extkey.GetVersionData().GetHex().c_str());
   EXPECT_EQ(0, extkey.GetDepth());
@@ -95,6 +98,53 @@ TEST(ExtPrivkey, Base58ConstructorTest) {
 
   std::string pubkey_xpub = "tpubD6NzVbkrYhZ4XyJymmEgYC3uVhyj4YtPFX6yRTbW6RvfRC7Ag3sVhKSz7MNzFWW5MJ7aVBKXCAX7En296EYdpo43M4a4LaeaHuhhgHToSJF";
   EXPECT_THROW((extkey = ExtPrivkey(pubkey_xpub)), CfdException);
+}
+
+TEST(ExtPrivkey, FromParentKeyTest) {
+  // base: xprv9zt1onyw8BdEf7SQ6wUVH3bQQdGD9iy9QzXveQQRhX7i5iUN7jZgLbqFEe491LfjozztYa6bJAGZ65GmDCNcbjMdjZcgmdisPJwVjcfcDhV
+  // path: 4
+  std::string ext_base58 = "xprvA3hskUkqh1sEsTnVmA1WTv74keit2RHGeCvG77peTHgtHjYu5xFAe3tmVosXLyn3DyS2S7duUkPjYihSULBwWgR51pX1ShuyDW3oJZD36YX";
+  ExtPrivkey extkey = ExtPrivkey(NetType::kMainnet,
+      Privkey("73a2361673d25f998d1e9d94aabdeba8ac1ddd4628bc4f55341397d263bd560c"),
+      ByteData256("28009126a24557d32ff2c5da21850dd06529f34faed53b4a3552b5ed4bda35d5"),
+      uint8_t{4},
+      uint32_t{8});
+
+  EXPECT_STREQ("0488ade405ae05dbb7000000088fa9c804362c158cb0a6a4e9573390b9fcb0c1625f1f33fae5fa3b949082293c0047131fdbfe2d1f53cd5c404199e243197cea058da8edcc47f0055b019afc102a", extkey.GetData().GetHex().c_str());
+  EXPECT_STREQ(ext_base58.c_str(), extkey.ToString().c_str());
+  EXPECT_TRUE(extkey.IsValid());
+  EXPECT_EQ(3084584366, extkey.GetFingerprint());
+  EXPECT_STREQ("ae05dbb7", extkey.GetFingerprintData().GetHex().c_str());
+  EXPECT_EQ(extprivkey_kVersionMainnetPrivkey, extkey.GetVersion());
+  EXPECT_STREQ("0488ade4", extkey.GetVersionData().GetHex().c_str());
+  EXPECT_EQ(5, extkey.GetDepth());
+  EXPECT_EQ(8, extkey.GetChildNum());
+  EXPECT_STREQ("8fa9c804362c158cb0a6a4e9573390b9fcb0c1625f1f33fae5fa3b949082293c", extkey.GetChainCode().GetHex().c_str());
+  EXPECT_STREQ("47131fdbfe2d1f53cd5c404199e243197cea058da8edcc47f0055b019afc102a", extkey.GetPrivkey().GetHex().c_str());
+}
+
+TEST(ExtPrivkey, FromKeyDataTest) {
+  // base: xprv9zt1onyw8BdEf7SQ6wUVH3bQQdGD9iy9QzXveQQRhX7i5iUN7jZgLbqFEe491LfjozztYa6bJAGZ65GmDCNcbjMdjZcgmdisPJwVjcfcDhV
+  // path: 4
+  std::string ext_base58 = "xprvA3hskUkqh1sEsTnVmA1WTv74keit2RHGeCvG77peTHgtHjYu5xFAe3tmVosXLyn3DyS2S7duUkPjYihSULBwWgR51pX1ShuyDW3oJZD36YX";
+  ExtPrivkey extkey = ExtPrivkey(NetType::kMainnet,
+      Privkey("73a2361673d25f998d1e9d94aabdeba8ac1ddd4628bc4f55341397d263bd560c"),
+      Privkey("47131fdbfe2d1f53cd5c404199e243197cea058da8edcc47f0055b019afc102a"),
+      ByteData256("8fa9c804362c158cb0a6a4e9573390b9fcb0c1625f1f33fae5fa3b949082293c"),
+      uint8_t{5},
+      uint32_t{8});
+
+  EXPECT_STREQ("0488ade405ae05dbb7000000088fa9c804362c158cb0a6a4e9573390b9fcb0c1625f1f33fae5fa3b949082293c0047131fdbfe2d1f53cd5c404199e243197cea058da8edcc47f0055b019afc102a", extkey.GetData().GetHex().c_str());
+  EXPECT_STREQ(ext_base58.c_str(), extkey.ToString().c_str());
+  EXPECT_TRUE(extkey.IsValid());
+  EXPECT_EQ(3084584366, extkey.GetFingerprint());
+  EXPECT_STREQ("ae05dbb7", extkey.GetFingerprintData().GetHex().c_str());
+  EXPECT_EQ(extprivkey_kVersionMainnetPrivkey, extkey.GetVersion());
+  EXPECT_STREQ("0488ade4", extkey.GetVersionData().GetHex().c_str());
+  EXPECT_EQ(5, extkey.GetDepth());
+  EXPECT_EQ(8, extkey.GetChildNum());
+  EXPECT_STREQ("8fa9c804362c158cb0a6a4e9573390b9fcb0c1625f1f33fae5fa3b949082293c", extkey.GetChainCode().GetHex().c_str());
+  EXPECT_STREQ("47131fdbfe2d1f53cd5c404199e243197cea058da8edcc47f0055b019afc102a", extkey.GetPrivkey().GetHex().c_str());
 }
 
 TEST(ExtPrivkey, DerivePrivkeyTest) {

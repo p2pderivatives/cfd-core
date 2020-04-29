@@ -10,6 +10,7 @@ using cfd::core::CfdException;
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
 using cfd::core::ExtPubkey;
+using cfd::core::Privkey;
 using cfd::core::Pubkey;
 using cfd::core::NetType;
 
@@ -66,6 +67,29 @@ TEST(ExtPubkey, Base58ConstructorTest) {
 
   std::string privkey_xpriv = "tprv8ZgxMBicQKsPeWHBt7a68nPnvgTnuDhUgDWC8wZCgA8GahrQ3f3uWpq7wE7Uc1dLBnCe1hhCZ886K6ND37memRDWqsA9HgSKDXtwh2Qxo6J";
   EXPECT_THROW((extkey = ExtPubkey(privkey_xpriv)), CfdException);
+}
+
+TEST(ExtPubkey, FromKeyDataTest) {
+  // tpubDDNapBCUaChXpE91grWNGp8xWg84GcS1iRSR7iynAFTv6JAGnKTEUB3vkHtsV4NbkZf6SfjYM6PvW3kZ77KLUZ2GTYNBN4PJRWCKN1ERjJe
+  // 44
+  std::string ext_base58 = "tpubDF7yNiHQHdfns9Mc3XM7PYcS2dqrPqcit3FLkebvHxS4atZxifANou2KTvpQQQP82ANDCkPc5MPQZ28pjYGgmDXGy1iyzaiX6MTBv8i4cua";
+  ExtPubkey extkey = ExtPubkey(NetType::kTestnet,
+      Pubkey("02ca30dbb25a2cf96344a04ae2144fb28a17f006c34cfb973b9f21623db27c5cd3"),
+      Pubkey("03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3"),
+      ByteData256("839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e"),
+      uint8_t{4}, uint32_t{44});
+
+  EXPECT_STREQ("043587cf04a53a8ff30000002c839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3", extkey.GetData().GetHex().c_str());
+  EXPECT_STREQ("043587cf", extkey.GetVersionData().GetHex().c_str());
+  EXPECT_EQ(extpubkey_kVersionTestnetPubkey, extkey.GetVersion());
+  EXPECT_EQ(4086250149, extkey.GetFingerprint());
+  EXPECT_STREQ("a53a8ff3", extkey.GetFingerprintData().GetHex().c_str());
+  EXPECT_TRUE(extkey.IsValid());
+  EXPECT_STREQ(ext_base58.c_str(), extkey.ToString().c_str());
+  EXPECT_EQ(4, extkey.GetDepth());
+  EXPECT_EQ(44, extkey.GetChildNum());
+  EXPECT_STREQ("839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e", extkey.GetChainCode().GetHex().c_str());
+  EXPECT_STREQ("03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3", extkey.GetPubkey().GetHex().c_str());
 }
 
 TEST(ExtPubkey, DerivePubkeyTest) {
@@ -125,12 +149,7 @@ TEST(ExtPubkey, DerivePubkeyTest) {
   EXPECT_STREQ(child2.GetPubTweakSum().GetHex().c_str(), child.GetPubTweakSum().GetHex().c_str());
 #endif  // CFD_DISABLE_ELEMENTS
 
-  try {
-    child2 = extkey.DerivePubkey("m/0/44");
-  } catch (const CfdException& except) {
-    EXPECT_STREQ(except.what(), "");
-  }
-  EXPECT_NO_THROW((child2 = extkey.DerivePubkey("m/0/44")));
+  EXPECT_NO_THROW((child2 = extkey.DerivePubkey("m/0x000000000/0x2c")));  // 0/44
   EXPECT_STREQ(child2.GetData().GetHex().c_str(), child.GetData().GetHex().c_str());
   EXPECT_STREQ(child2.GetVersionData().GetHex().c_str(), child.GetVersionData().GetHex().c_str());
   EXPECT_EQ(child2.GetVersion(), child.GetVersion());
@@ -159,6 +178,7 @@ TEST(ExtPubkey, CreateExtPubkeyFromPubkey) {
       Pubkey("02ca30dbb25a2cf96344a04ae2144fb28a17f006c34cfb973b9f21623db27c5cd3"),
       ByteData256("87ced156b5641d416892046bbd1257c492c030967868aa8dc7a7067490fa08d5"),
       3, 44)));
+  EXPECT_STREQ("043587cf04a53a8ff30000002c839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3", extkey.GetData().GetHex().c_str());
   EXPECT_STREQ("tpubDF7yNiHQHdfns9Mc3XM7PYcS2dqrPqcit3FLkebvHxS4atZxifANou2KTvpQQQP82ANDCkPc5MPQZ28pjYGgmDXGy1iyzaiX6MTBv8i4cua", extkey.ToString().c_str());
   EXPECT_STREQ("043587cf", extkey.GetVersionData().GetHex().c_str());
   EXPECT_EQ(extpubkey_kVersionTestnetPubkey, extkey.GetVersion());
@@ -167,8 +187,4 @@ TEST(ExtPubkey, CreateExtPubkeyFromPubkey) {
   EXPECT_STREQ("03f1e767c0555ce0105b2a76d0f8b19b6d33a147f82f75a05c4c09580c39694fd3", extkey.GetPubkey().GetHex().c_str());
   EXPECT_STREQ("839fb0d66f1887db167cdc530ab98e871d8b017ebcb198568874b6c98516364e", extkey.GetChainCode().GetHex().c_str());
   EXPECT_STREQ("a53a8ff3", extkey.GetFingerprintData().GetHex().c_str());
-#ifndef CFD_DISABLE_ELEMENTS
-  // TODO(k-matsuzawa): check test.
-  // EXPECT_STREQ("68a454a64c91bd4086e5008e843dbe1c583d193afd9bdbbcdd8afcb1bdd3cafe", extkey.GetPubTweakSum().GetHex().c_str());
-#endif  // CFD_DISABLE_ELEMENTS
 }

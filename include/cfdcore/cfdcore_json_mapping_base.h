@@ -172,7 +172,10 @@ inline void ConvertFromUniValue(
   using cfd::core::CfdException;
   using cfd::core::logger::warn;
   if (json_value.isStr() || json_value.isNum()) {
-    const auto& str = json_value.getValStr();
+    std::string str = json_value.getValStr();
+    if (str == "0n") {
+      str = "0";
+    }
     bool is_digits_only = std::all_of(str.begin(), str.end(), ::isdigit);
     if (!is_digits_only || str.empty()) {
       warn(CFD_LOG_SOURCE, "Invalid json_value. : json_value={}", str);
@@ -213,12 +216,16 @@ inline void ConvertFromUniValue(
   UniValue json_value_copy = json_value;
   if (json_value_copy.isStr()) {
     auto str = json_value.get_str();
-    auto begin_pos = str.begin();
-    if (*begin_pos == '-') ++begin_pos;
-    bool is_digits_only = std::all_of(begin_pos, str.end(), ::isdigit);
-    // check max of int64 : execute call get_int64()
-    if (is_digits_only) {
-      json_value_copy = UniValue(UniValue::VNUM, json_value.get_str());
+    if (str == "0n") {
+      json_value_copy = UniValue(UniValue::VNUM, "0");
+    } else {
+      auto begin_pos = str.begin();
+      if (*begin_pos == '-') ++begin_pos;
+      bool is_digits_only = std::all_of(begin_pos, str.end(), ::isdigit);
+      // check max of int64 : execute call get_int64()
+      if (is_digits_only) {
+        json_value_copy = UniValue(UniValue::VNUM, json_value.get_str());
+      }
     }
   }
 

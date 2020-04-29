@@ -236,6 +236,39 @@ bool SignatureUtil::VerifyEcSignature(
   return ret == WALLY_OK;
 }
 
+ByteData256 SignatureUtil::CalculateSchnorrSignatureWithNonce(
+    const Privkey &oracle_key, const Privkey &k_value,
+    const ByteData256 &message) {
+  ByteData signature = CalculateSchnorrSignature(oracle_key, k_value, message);
+  std::vector<uint8_t> sig = signature.GetBytes();
+  std::vector<uint8_t> result;
+  result.assign(sig.data() + 32, sig.data() + 64);
+  return ByteData256(result);
+}
+
+ByteData SignatureUtil::CalculateSchnorrSignature(
+    const Privkey &oracle_key, const Privkey &k_value,
+    const ByteData256 &message) {
+  return WallyUtil::CalculateSchnorrsig(oracle_key, k_value, message);
+}
+
+bool SignatureUtil::VerifySchnorrSignatureWithNonce(
+    const Pubkey &pubkey, const Pubkey &nonce, const ByteData256 &signature,
+    const ByteData256 &message) {
+  std::vector<uint8_t> nonce_signature(64);
+  std::vector<uint8_t> nonce_bytes = nonce.GetData().GetBytes();
+  std::vector<uint8_t> signature_bytes = signature.GetBytes();
+  memcpy(nonce_signature.data(), nonce_bytes.data() + 1, 32);
+  memcpy(nonce_signature.data() + 32, signature_bytes.data(), 32);
+  return VerifySchnorrSignature(pubkey, ByteData(nonce_signature), message);
+}
+
+bool SignatureUtil::VerifySchnorrSignature(
+    const Pubkey &pubkey, const ByteData &signature,
+    const ByteData256 &message) {
+  return WallyUtil::VerifySchnorrsig(pubkey, signature, message);
+}
+
 // -----------------------------------------------------------------------------
 // OutPoint
 // -----------------------------------------------------------------------------
@@ -493,11 +526,10 @@ void AbstractTransaction::RemoveScriptWitnessStackAll(uint32_t tx_in_index) {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
   if (tx_pointer->num_inputs > tx_in_index) {
-    int ret = WALLY_OK;
     struct wally_tx_witness_stack *stack_pointer = NULL;
     if (tx_pointer->inputs[tx_in_index].witness != NULL) {
       stack_pointer = tx_pointer->inputs[tx_in_index].witness;
-      ret = wally_tx_witness_stack_free(stack_pointer);
+      int ret = wally_tx_witness_stack_free(stack_pointer);
       tx_pointer->inputs[tx_in_index].witness = NULL;
       if (ret != WALLY_OK) {
         warn(CFD_LOG_SOURCE, "wally_tx_witness_stack_free NG[{}].", ret);

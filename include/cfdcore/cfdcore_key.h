@@ -156,6 +156,18 @@ class CFD_CORE_EXPORT Pubkey {
       const ByteData256& signature_hash, const ByteData& signature) const;
 
   /**
+   * @brief function for schnorr public key.
+   * @param[in] oracle_pubkey   the public key of the oracle.
+   * @param[in] oracle_r_point  the R point for the event.
+   * @param[in] message         the message for the outcome.
+   * @return data of public key.
+   * @throw CfdException if invalid data.
+   */
+  static Pubkey GetSchnorrPubkey(
+      const Pubkey& oracle_pubkey, const Pubkey& oracle_r_point,
+      const ByteData256& message);
+
+  /**
    * @brief 公開鍵として正しい形式であるかを検証する.
    * @param[in] byte_data 公開鍵のByteData
    * @retval true   正常フォーマット
@@ -263,6 +275,12 @@ class CFD_CORE_EXPORT Privkey {
    * @return new instance of private key with tweak added.
    */
   Privkey CreateNegate() const;
+
+  /**
+   * @brief get schnorr public nonce.
+   * @return data of public nonce.
+   */
+  Pubkey GetSchnorrPublicNonce() const;
 
   /**
    * @brief PrivateKeyの設定状態が不正であるかを返却する.

@@ -64,3 +64,35 @@ TEST(SignatureUtil, VerifyEcSignature) {
   EXPECT_FALSE(
       SignatureUtil::VerifyEcSignature(sighash, pubkey, bad_signature2));
 }
+
+TEST(SignatureUtil, SchnorrSignVerify) {
+  // Arrange
+  ByteData256 data(
+      "0000000000000000000000000000000000000000000000000000000000000000");
+  Privkey privkey(
+      "0000000000000000000000000000000000000000000000000000000000000001");
+  Pubkey pubkey(
+      "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798");
+  Privkey nonce(
+      "0000000000000000000000000000000000000000000000000000000000000002");
+  Privkey bipSchnorrNonce(
+      "58e8f2a1f78f0a591feb75aebecaaa81076e4290894b1c445cc32953604db089");
+
+  // Act
+  auto sig1 = SignatureUtil::CalculateSchnorrSignatureWithNonce(
+      privkey, nonce, data);
+  auto sig2 = SignatureUtil::CalculateSchnorrSignatureWithNonce(
+      privkey, nonce, data);
+  auto sig3 = SignatureUtil::CalculateSchnorrSignatureWithNonce(
+      privkey, bipSchnorrNonce, data);
+
+  bool is_valid = SignatureUtil::VerifySchnorrSignatureWithNonce(
+      pubkey, bipSchnorrNonce.GeneratePubkey(), sig3, data);
+
+  // Assert
+  EXPECT_EQ(sig1.GetHex(), sig2.GetHex());
+  EXPECT_NE(sig1.GetHex(), sig3.GetHex());
+  EXPECT_EQ("7031a98831859dc34dffeedda86831842ccd0079e1f92af177f7f22cc1dced05",
+            sig3.GetHex());
+  EXPECT_TRUE(is_valid);
+}

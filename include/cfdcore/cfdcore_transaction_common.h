@@ -717,6 +717,51 @@ class CFD_CORE_EXPORT SignatureUtil {
       const ByteData256& signature_hash, const Pubkey& pubkey,
       const ByteData& signature);
 
+  /**
+   * @brief Create a schnorr signature using the a given private key and nonce.
+   * @param[in] oracle_key      the private key to sign with.
+   * @param[in] k_value         the nonce to use in the signature generation.
+   * @param[in] message         the message to sign.
+   * @return signature (33 - 64)
+   */
+  static ByteData256 CalculateSchnorrSignatureWithNonce(
+      const Privkey& oracle_key, const Privkey& k_value,
+      const ByteData256& message);
+
+  /**
+   * @brief Create a schnorr signature using the a given private key and nonce.
+   * @param[in] oracle_key      the private key to sign with.
+   * @param[in] k_value         the nonce to use in the signature generation.
+   * @param[in] message         the message to sign.
+   * @return signature
+   */
+  static ByteData CalculateSchnorrSignature(
+      const Privkey& oracle_key, const Privkey& k_value,
+      const ByteData256& message);
+
+  /**
+   * @brief Verify if a signature with respect to a public key and a message.
+   * @param[in] pubkey          The public key to verify the signature against.
+   * @param[in] nonce           The nonce.
+   * @param[in] signature       The signature to verify.
+   * @param[in] message         The message to sign.
+   * @return true if the signature is valid, false if not.
+   */
+  static bool VerifySchnorrSignatureWithNonce(
+      const Pubkey& pubkey, const Pubkey& nonce, const ByteData256& signature,
+      const ByteData256& message);
+
+  /**
+   * @brief Verify if a signature with respect to a public key and a message.
+   * @param[in] pubkey          The public key to verify the signature against.
+   * @param[in] signature       The signature to verify.
+   * @param[in] message         The message to sign.
+   * @return true if the signature is valid, false if not.
+   */
+  static bool VerifySchnorrSignature(
+      const Pubkey& pubkey, const ByteData& signature,
+      const ByteData256& message);
+
  private:
   SignatureUtil();
   // constructor抑止

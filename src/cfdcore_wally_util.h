@@ -147,6 +147,50 @@ class WallyUtil {
       const std::vector<ByteData>& offline_keys, uint32_t whitelist_index);
 
   /**
+   * @brief Create a schnorr signature using the a given private key and nonce.
+   * @param[in] oracle_privkey  The private key to sign with.
+   * @param[in] k_value         The nonce to use in the signature generation.
+   * @param[in] message         The message to sign.
+   * @return data of schnorr signature.
+   * @throw CfdException if invalid data.
+   */
+  static ByteData CalculateSchnorrsig(
+      const Privkey& oracle_privkey, const Privkey& k_value,
+      const ByteData256& message);
+
+  /**
+   * @brief Verify a schnorr signature.
+   * @param[in] pubkey      The public key to verify the signature against.
+   * @param[in] signature   The signature to verify.
+   * @param[in] message     The message that the signature was made for.
+   * @retval true   verify success
+   * @retval false  verify fail
+   */
+  static bool VerifySchnorrsig(
+      const Pubkey& pubkey, const ByteData& signature,
+      const ByteData256& message);
+
+  /**
+   * @brief function for schnorr public key.
+   * @param[in] oracle_pubkey   the public key of the oracle.
+   * @param[in] oracle_r_point  the R point for the event.
+   * @param[in] message         the message for the outcome.
+   * @return data of public key.
+   * @throw CfdException if invalid data.
+   */
+  static Pubkey GetSchnorrPubkey(
+      const Pubkey& oracle_pubkey, const Pubkey& oracle_r_point,
+      const ByteData256& message);
+
+  /**
+   * @brief function for schnorr public nonce.
+   * @param[in] privkey   The K value.
+   * @return data of public nonce.
+   * @throw CfdException if invalid data.
+   */
+  static Pubkey GetSchnorrPublicNonce(const Privkey& privkey);
+
+  /**
    * @brief Mnemonic で利用できる Wordlist を取得する.
    * @param[in] language    language to use.
    * @return wordlist to use mnemonic which supported by bip39.

@@ -4,11 +4,16 @@
 
 #include "cfdcore/cfdcore_key.h"
 #include "cfdcore/cfdcore_exception.h"
+#include "cfdcore/cfdcore_transaction_common.h"
+#include "cfdcore/cfdcore_util.h"
 
 using cfd::core::CfdException;
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
+using cfd::core::Privkey;
 using cfd::core::Pubkey;
+using cfd::core::SignatureUtil;
+using cfd::core::HashUtil;
 
 typedef struct {
   std::string hex;
@@ -211,4 +216,48 @@ TEST(Pubkey, VerifyEcSignature) {
   EXPECT_FALSE(pubkey.VerifyEcSignature(sighash, bad_signature1));
 
   EXPECT_FALSE(pubkey.VerifyEcSignature(sighash, bad_signature2));
+}
+
+TEST(Pubkey, Combine) {
+  // Arrange
+  Privkey oracle_privkey(
+      "0000000000000000000000000000000000000000000000000000000000000001");
+  Pubkey oracle_pubkey = oracle_privkey.GeneratePubkey();
+  Privkey oracle_k_value(
+      "0000000000000000000000000000000000000000000000000000000000000002");
+  std::string message = "WIN";
+  Privkey local_fund_privkey(
+      "0000000000000000000000000000000000000000000000000000000000000003");
+  Pubkey local_fund_pubkey = local_fund_privkey.GeneratePubkey();
+  Privkey local_sweep_privkey(
+      "0000000000000000000000000000000000000000000000000000000000000004");
+  Pubkey local_sweep_pubkey = local_sweep_privkey.GeneratePubkey();
+  std::vector<Pubkey> oracle_r_points = {};
+
+  // Act
+  auto signature = SignatureUtil::CalculateSchnorrSignatureWithNonce(
+      oracle_privkey, oracle_k_value, HashUtil::Sha256(message));
+
+  // auto committed_key =
+  //     DlcUtil::GetCommittedKey(oracle_pubkey, oracle_r_points, {});
+  auto pubkey = Pubkey::GetSchnorrPubkey(oracle_pubkey,
+      oracle_k_value.GeneratePubkey(), HashUtil::Sha256(message));
+  // auto committed_key = Pubkey::CombinePubkey({pubkey});
+  auto committed_key = pubkey;
+
+  Pubkey combine_pubkey =
+      Pubkey::CombinePubkey(local_fund_pubkey, committed_key);
+  auto hashPub = Privkey(HashUtil::Sha256(local_sweep_pubkey.GetData()))
+      .GeneratePubkey();
+  auto combined_pubkey = Pubkey::CombinePubkey(combine_pubkey, hashPub);
+
+  Privkey tweaked_key = local_fund_privkey.CreateTweakAdd(signature);
+  auto hash = HashUtil::Sha256(local_sweep_pubkey);
+  auto tweak_priv = tweaked_key.CreateTweakAdd(hash);
+
+  // Assert
+  EXPECT_EQ(tweak_priv.GeneratePubkey().GetHex(), combined_pubkey.GetHex());
+  EXPECT_TRUE(SignatureUtil::VerifySchnorrSignatureWithNonce(
+      oracle_pubkey, oracle_k_value.GeneratePubkey(), signature,
+      HashUtil::Sha256(message)));
 }
