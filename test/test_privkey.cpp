@@ -5,12 +5,7 @@
 #include "cfdcore/cfdcore_key.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore/cfdcore_exception.h"
-
-// https://qiita.com/yohm/items/477bac065f4b772127c7
-
-// The main function are using gtest's main().
-
-// TEST(test_suite_name, test_name)
+#include "cfdcore/cfdcore_transaction_common.h"
 
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
@@ -19,6 +14,8 @@ using cfd::core::RandomNumberUtil;
 using cfd::core::Privkey;
 using cfd::core::Pubkey;
 using cfd::core::NetType;
+using cfd::core::HashUtil;
+using cfd::core::SignatureUtil;
 
 TEST(Privkey, Privkey) {
   Privkey privkey;
@@ -264,4 +261,67 @@ TEST(Privkey, CalculateEcSignature) {
       (err_sig = emptyPrivkey.CalculateEcSignature(sighash, true)),
       CfdException);
   EXPECT_STREQ(err_sig.GetHex().c_str(), "");
+}
+
+TEST(Privkey, CombineMultipleMessages) {
+  // Arrange
+  Privkey oracle_privkey(
+      "0000000000000000000000000000000000000000000000000000000000000001");
+  Pubkey oracle_pubkey = oracle_privkey.GeneratePubkey();
+  std::vector<Privkey> oracle_k_values = {
+      Privkey(
+          "0000000000000000000000000000000000000000000000000000000000000002"),
+      Privkey(
+          "0000000000000000000000000000000000000000000000000000000000000003"),
+      Privkey(
+          "0000000000000000000000000000000000000000000000000000000000000004")};
+  std::vector<Pubkey> oracle_r_points;
+  std::vector<std::string> messages = {"W", "I", "N"};
+  Privkey local_fund_privkey(
+      "0000000000000000000000000000000000000000000000000000000000000005");
+  Pubkey local_fund_pubkey = local_fund_privkey.GeneratePubkey();
+  Privkey local_sweep_privkey(
+      "0000000000000000000000000000000000000000000000000000000000000006");
+  Pubkey local_sweep_pubkey = local_sweep_privkey.GeneratePubkey();
+
+  for (auto kval : oracle_k_values) {
+    oracle_r_points.push_back(kval.GetSchnorrPublicNonce());
+  }
+
+  // Act
+  std::vector<ByteData> signatures;
+  for (size_t i = 0; i < messages.size(); ++i) {
+    auto sig = SignatureUtil::CalculateSchnorrSignatureWithNonce(
+        oracle_privkey, oracle_k_values[i], HashUtil::Sha256(messages[i]));
+    signatures.push_back(sig.GetData());
+  }
+
+  // auto combined_pubkey =
+  //     DlcUtil::GetCombinedKey(oracle_pubkey, oracle_r_points, messages,
+  //                             local_fund_pubkey, local_sweep_pubkey);
+  std::vector<Pubkey> pubkeys;
+  for (int i = 0; (size_t)i < oracle_r_points.size(); i++) {
+    auto pubkey = Pubkey::GetSchnorrPubkey(oracle_pubkey,
+        oracle_r_points[i], HashUtil::Sha256(messages[i]));
+    pubkeys.push_back(pubkey);
+  }
+  auto committed_key = Pubkey::CombinePubkey(pubkeys);
+  // auto committed_key = pubkey;
+  Pubkey combine_pubkey =
+      Pubkey::CombinePubkey(local_fund_pubkey, committed_key);
+  auto hashPub = Privkey(HashUtil::Sha256(local_sweep_pubkey.GetData()))
+      .GeneratePubkey();
+  auto combined_pubkey = Pubkey::CombinePubkey(combine_pubkey, hashPub);
+
+  // auto tweak_priv = DlcUtil::GetTweakedPrivkey(signatures, local_fund_privkey,
+  //                                              local_sweep_pubkey);
+  Privkey tweaked_key = local_fund_privkey;
+  for (auto signature : signatures) {
+    tweaked_key = tweaked_key.CreateTweakAdd(ByteData256(signature));
+  }
+  auto hash = HashUtil::Sha256(local_sweep_pubkey);
+  auto tweak_priv = tweaked_key.CreateTweakAdd(hash);
+
+  // Assert
+  EXPECT_EQ(tweak_priv.GeneratePubkey().GetHex(), combined_pubkey.GetHex());
 }

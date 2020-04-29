@@ -73,7 +73,10 @@ cfd::core::logger::CfdLogger::CfdLogger(void) {
 cfd::core::logger::CfdLogger::~CfdLogger(void) { Finalize(true); }
 
 cfd::core::CfdError cfd::core::logger::CfdLogger::Initialize(void) {
+#ifndef CFDCORE_LOG_CONSOLE
   const size_t kRotateFileSize = 1024 * 1024 * 256;
+  std::string filepath = "./cfd_debug.log";
+#endif
 
   if (is_initialized_) {
     // do nothing
@@ -83,7 +86,6 @@ cfd::core::CfdError cfd::core::logger::CfdLogger::Initialize(void) {
 
     if ((!is_extend_log_) && cfdcore_logger_is_debug) {
       // TODO(k-matsuzawa): only used for debugging
-      std::string filepath = "./cfd_debug.log";
       log_level_ = kCfdLogLevelTrace;
       is_async_ = true;
 

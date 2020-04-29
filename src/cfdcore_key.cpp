@@ -144,6 +144,12 @@ bool Pubkey::VerifyEcSignature(
   return SignatureUtil::VerifyEcSignature(signature_hash, *this, signature);
 }
 
+Pubkey Pubkey::GetSchnorrPubkey(
+    const Pubkey& oracle_pubkey, const Pubkey& oracle_r_point,
+    const ByteData256& message) {
+  return WallyUtil::GetSchnorrPubkey(oracle_pubkey, oracle_r_point, message);
+}
+
 // ----------------------------------------------------------------------------
 // Private Key
 // ----------------------------------------------------------------------------
@@ -272,6 +278,10 @@ Privkey Privkey::GenerageRandomKey() {
   } while (ret != WALLY_OK);
 
   return Privkey(ByteData(privkey));
+}
+
+Pubkey Privkey::GetSchnorrPublicNonce() const {
+  return WallyUtil::GetSchnorrPublicNonce(*this);
 }
 
 Privkey Privkey::CreateTweakAdd(const ByteData256& tweak) const {

@@ -263,6 +263,31 @@ class CFD_CORE_EXPORT ExtPrivkey {
       NetType network_type, const Privkey& parent_key,
       const ByteData256& parent_chain_code, uint8_t parent_depth,
       uint32_t child_num);
+  /**
+   * @brief コンストラクタ
+   * @param[in] network_type  network type
+   * @param[in] parent_key    parent privkey
+   * @param[in] privkey       privkey
+   * @param[in] chain_code    chain code
+   * @param[in] depth         depth
+   * @param[in] child_num     child num
+   */
+  explicit ExtPrivkey(
+      NetType network_type, const Privkey& parent_key, const Privkey& privkey,
+      const ByteData256& chain_code, uint8_t depth, uint32_t child_num);
+  /**
+   * @brief コンストラクタ
+   * @param[in] network_type        network type
+   * @param[in] parent_fingerprint  parent fingerprint(4byte)
+   * @param[in] privkey             privkey
+   * @param[in] chain_code          chain code
+   * @param[in] depth               depth
+   * @param[in] child_num           child num
+   */
+  explicit ExtPrivkey(
+      NetType network_type, const ByteData& parent_fingerprint,
+      const Privkey& privkey, const ByteData256& chain_code, uint8_t depth,
+      uint32_t child_num);
 
   /**
    * @brief 拡張keyのSerialize情報を取得する.
@@ -442,6 +467,31 @@ class CFD_CORE_EXPORT ExtPubkey {
   explicit ExtPubkey(
       NetType network_type, const Pubkey& parent_key,
       const ByteData256& parent_chain_code, uint8_t parent_depth,
+      uint32_t child_num);
+  /**
+   * @brief コンストラクタ
+   * @param[in] network_type  network type
+   * @param[in] parent_key    parent pubkey
+   * @param[in] pubkey        pubkey
+   * @param[in] chain_code    chain code
+   * @param[in] depth         depth
+   * @param[in] child_num     child num
+   */
+  explicit ExtPubkey(
+      NetType network_type, const Pubkey& parent_key, const Pubkey& pubkey,
+      const ByteData256& chain_code, uint8_t depth, uint32_t child_num);
+  /**
+   * @brief コンストラクタ
+   * @param[in] network_type        network type
+   * @param[in] parent_fingerprint  parent fingerprint(4byte)
+   * @param[in] pubkey              pubkey
+   * @param[in] chain_code          chain code
+   * @param[in] depth               depth
+   * @param[in] child_num           child num
+   */
+  explicit ExtPubkey(
+      NetType network_type, const ByteData& parent_fingerprint,
+      const Pubkey& pubkey, const ByteData256& chain_code, uint8_t depth,
       uint32_t child_num);
 
   /**

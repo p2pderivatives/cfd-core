@@ -173,11 +173,16 @@ static std::vector<uint32_t> ToArrayFromString(
       str = str.substr(0, str.size() - 1);
       hardened = true;
     }
-    if (str == "m") continue;  // master key
+    if ((str == "m") || (str == "M")) continue;  // master key
 
     // strtol関数による変換
     char* p_str_end = nullptr;
-    uint32_t value = std::strtoul(str.c_str(), &p_str_end, 10);
+    uint32_t value;
+    if ((str.size() > 2) && (str[0] == '0') && (str[1] == 'x')) {
+      value = std::strtoul(str.c_str(), &p_str_end, 16);
+    } else {
+      value = std::strtoul(str.c_str(), &p_str_end, 10);
+    }
     if (str.empty() || ((p_str_end != nullptr) && (*p_str_end != '\0'))) {
       warn(CFD_LOG_SOURCE, "{} bip32 string path fail.", caller_name);
       throw CfdException(
@@ -419,10 +424,10 @@ ExtPrivkey::ExtPrivkey(
     const ByteData256& parent_chain_code, uint8_t parent_depth,
     uint32_t child_num) {
   if (!parent_key.IsValid()) {
-    warn(CFD_LOG_SOURCE, "invalid pubkey.");
+    warn(CFD_LOG_SOURCE, "invalid privkey.");
     throw CfdException(
         CfdError::kCfdIllegalArgumentError,
-        "Failed to pubkey. ExtPubkey invalid pubkey.");
+        "Failed to privkey. ExtPrivkey invalid privkey.");
   }
 
   // create simple parent data
@@ -457,8 +462,7 @@ ExtPrivkey::ExtPrivkey(
 
   std::vector<uint8_t> data(BIP32_SERIALIZED_LEN);
   ret = bip32_key_serialize(
-      &extkey, BIP32_FLAG_KEY_PRIVATE | BIP32_FLAG_KEY_TWEAK_SUM, data.data(),
-      data.size());
+      &extkey, BIP32_FLAG_KEY_PRIVATE, data.data(), data.size());
   if (ret != WALLY_OK) {
     warn(CFD_LOG_SOURCE, "bip32_key_serialize error. ret={}", ret);
     throw CfdException(
@@ -470,13 +474,73 @@ ExtPrivkey::ExtPrivkey(
   AnalyzeBip32KeyData(
       &extkey, nullptr, nullptr, &version_, &depth_, &child_num_, &chaincode_,
       &privkey_, nullptr, &fingerprint_);
+}
 
-#ifndef CFD_DISABLE_ELEMENTS
-  // collect pub_key_tweak_sum from ext_key
-  std::vector<uint8_t> tweak_sum(sizeof(extkey.pub_key_tweak_sum));
-  memcpy(tweak_sum.data(), extkey.pub_key_tweak_sum, tweak_sum.size());
-  tweak_sum_ = ByteData256(tweak_sum);
-#endif  // CFD_DISABLE_ELEMENTS
+ExtPrivkey::ExtPrivkey(
+    NetType network_type, const Privkey& parent_key, const Privkey& privkey,
+    const ByteData256& chain_code, uint8_t depth, uint32_t child_num)
+    : ExtPrivkey(
+          network_type,
+          HashUtil::Hash160(parent_key.GeneratePubkey()).GetData(), privkey,
+          chain_code, depth, child_num) {
+  if (!parent_key.IsValid()) {
+    warn(CFD_LOG_SOURCE, "invalid privkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to privkey. ExtPrivkey invalid privkey.");
+  }
+}
+
+ExtPrivkey::ExtPrivkey(
+    NetType network_type, const ByteData& parent_fingerprint,
+    const Privkey& privkey, const ByteData256& chain_code, uint8_t depth,
+    uint32_t child_num) {
+  if (!privkey.IsValid()) {
+    warn(CFD_LOG_SOURCE, "invalid privkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to privkey. ExtPrivkey invalid privkey.");
+  }
+
+  // create simple parent data
+  struct ext_key extkey = {};
+  memset(&extkey, 0, sizeof(extkey));
+  extkey.version = kVersionTestnetPrivkey;
+  if ((network_type == NetType::kMainnet) ||
+      (network_type == NetType::kLiquidV1)) {
+    extkey.version = kVersionMainnetPrivkey;
+  }
+  extkey.depth = depth;
+  extkey.child_num = child_num;
+  Pubkey pubkey = privkey.GeneratePubkey(true);
+  std::vector<uint8_t> privkey_bytes = privkey.GetData().GetBytes();
+  std::vector<uint8_t> pubkey_bytes = pubkey.GetData().GetBytes();
+  std::vector<uint8_t> pubkey_hash = HashUtil::Hash160(pubkey).GetBytes();
+  std::vector<uint8_t> fingerprint_bytes = parent_fingerprint.GetBytes();
+  std::vector<uint8_t> chain_bytes = chain_code.GetData().GetBytes();
+  extkey.priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
+  memcpy(&extkey.priv_key[1], privkey_bytes.data(), privkey_bytes.size());
+  memcpy(extkey.pub_key, pubkey_bytes.data(), pubkey_bytes.size());
+  // parent160: use top 4-byte only
+  fingerprint_bytes.resize(4);
+  memcpy(extkey.parent160, fingerprint_bytes.data(), fingerprint_bytes.size());
+  memcpy(extkey.hash160, pubkey_hash.data(), pubkey_hash.size());
+  memcpy(extkey.chain_code, chain_bytes.data(), chain_bytes.size());
+
+  std::vector<uint8_t> data(BIP32_SERIALIZED_LEN);
+  int ret = bip32_key_serialize(
+      &extkey, BIP32_FLAG_KEY_PRIVATE, data.data(), data.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "bip32_key_serialize error. ret={}", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "ExtPrivkey serialize error.");
+  }
+  serialize_data_ = ByteData(data);
+  tweak_sum_ = ByteData256();
+
+  AnalyzeBip32KeyData(
+      &extkey, nullptr, nullptr, &version_, &depth_, &child_num_, &chaincode_,
+      &privkey_, nullptr, &fingerprint_);
 }
 
 ByteData ExtPrivkey::GetData() const { return serialize_data_; }
@@ -694,8 +758,7 @@ ExtPubkey::ExtPubkey(
   struct ext_key extkey = {};
   memset(&extkey, 0, sizeof(extkey));
   int ret = bip32_key_from_parent(
-      &parent, child_num, BIP32_FLAG_KEY_PUBLIC | BIP32_FLAG_KEY_TWEAK_SUM,
-      &extkey);
+      &parent, child_num, BIP32_FLAG_KEY_PUBLIC, &extkey);
   if (ret != WALLY_OK) {
     warn(CFD_LOG_SOURCE, "bip32_key_from_parent error. ret={}", ret);
     throw CfdException(
@@ -704,6 +767,73 @@ ExtPubkey::ExtPubkey(
 
   std::vector<uint8_t> data(BIP32_SERIALIZED_LEN);
   ret = bip32_key_serialize(
+      &extkey, BIP32_FLAG_KEY_PUBLIC, data.data(), data.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "bip32_key_serialize error. ret={}", ret);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "ExtPrivkey serialize error.");
+  }
+  serialize_data_ = ByteData(data);
+  tweak_sum_ = ByteData256();
+
+  AnalyzeBip32KeyData(
+      &extkey, nullptr, nullptr, &version_, &depth_, &child_num_, &chaincode_,
+      nullptr, &pubkey_, &fingerprint_);
+}
+
+ExtPubkey::ExtPubkey(
+    NetType network_type, const Pubkey& parent_key, const Pubkey& pubkey,
+    const ByteData256& chain_code, uint8_t depth, uint32_t child_num)
+    : ExtPubkey(
+          network_type, HashUtil::Hash160(parent_key).GetData(), pubkey,
+          chain_code, depth, child_num) {
+  if (!parent_key.IsValid()) {
+    warn(CFD_LOG_SOURCE, "invalid pubkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to pubkey. ExtPubkey invalid pubkey.");
+  }
+}
+
+ExtPubkey::ExtPubkey(
+    NetType network_type, const ByteData& parent_fingerprint,
+    const Pubkey& pubkey, const ByteData256& chain_code, uint8_t depth,
+    uint32_t child_num) {
+  if (!pubkey.IsValid()) {
+    warn(CFD_LOG_SOURCE, "invalid pubkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to pubkey. ExtPubkey invalid pubkey.");
+  }
+  Pubkey key = pubkey;
+  if (!key.IsCompress()) {
+    key = key.Compress();
+  }
+
+  // create simple parent data
+  struct ext_key extkey = {};
+  memset(&extkey, 0, sizeof(extkey));
+  extkey.version = kVersionTestnetPubkey;
+  if ((network_type == NetType::kMainnet) ||
+      (network_type == NetType::kLiquidV1)) {
+    extkey.version = kVersionMainnetPubkey;
+  }
+  extkey.depth = depth;
+  extkey.child_num = child_num;
+  extkey.priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
+  std::vector<uint8_t> pubkey_bytes = key.GetData().GetBytes();
+  std::vector<uint8_t> pubkey_hash = HashUtil::Hash160(key).GetBytes();
+  std::vector<uint8_t> fingerprint_bytes = parent_fingerprint.GetBytes();
+  std::vector<uint8_t> chain_bytes = chain_code.GetData().GetBytes();
+  memcpy(extkey.pub_key, pubkey_bytes.data(), pubkey_bytes.size());
+  // parent160: use top 4-byte only
+  fingerprint_bytes.resize(4);
+  memcpy(extkey.parent160, fingerprint_bytes.data(), fingerprint_bytes.size());
+  memcpy(extkey.hash160, pubkey_hash.data(), pubkey_hash.size());
+  memcpy(extkey.chain_code, chain_bytes.data(), chain_bytes.size());
+
+  std::vector<uint8_t> data(BIP32_SERIALIZED_LEN);
+  int ret = bip32_key_serialize(
       &extkey, BIP32_FLAG_KEY_PUBLIC, data.data(), data.size());
   if (ret != WALLY_OK) {
     warn(CFD_LOG_SOURCE, "bip32_key_serialize error. ret={}", ret);

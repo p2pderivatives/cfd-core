@@ -186,6 +186,39 @@ ByteData WallyUtil::SignWhitelist(
       whitelist_index);
 }
 
+ByteData WallyUtil::CalculateSchnorrsig(
+    const Privkey& oracle_privkey, const Privkey& k_value,
+    const ByteData256& message) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return secp256k1.CalculateSchnorrsigSecp256k1(
+      oracle_privkey.GetData(), k_value.GetData(), message, 1, nullptr);
+}
+
+bool WallyUtil::VerifySchnorrsig(
+    const Pubkey& pubkey, const ByteData& signature,
+    const ByteData256& message) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return secp256k1.VerifySchnorrsigSecp256k1(
+      pubkey.GetData(), signature, message);
+}
+
+Pubkey WallyUtil::GetSchnorrPubkey(
+    const Pubkey& oracle_pubkey, const Pubkey& oracle_r_point,
+    const ByteData256& message) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return Pubkey(secp256k1.GetSchnorrPubkeySecp256k1(
+      oracle_pubkey.GetData(), oracle_r_point.GetData(), message));
+}
+
+Pubkey WallyUtil::GetSchnorrPublicNonce(const Privkey& privkey) {
+  struct secp256k1_context_struct* context = wally_get_secp_context();
+  Secp256k1 secp256k1(context);
+  return Pubkey(secp256k1.GetSchnorrPublicNonceSecp256k1(privkey.GetData()));
+}
+
 std::vector<std::string> WallyUtil::GetMnemonicWordlist(
     const std::string& language) {
   words* wally_wordlist = Bip39GetWordlist(language);

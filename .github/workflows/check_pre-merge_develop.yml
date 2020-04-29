@@ -56,13 +56,11 @@ jobs:
     - name: cmake_configure-enable
       run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on --build build
     - name: cmake_build
-      run: cmake --build build --config Release
+      run: cmake --build build --config Release --parallel 2
     - name: ctest
       run: |
         cd build
         ctest -C Release --output-on-failure
-    - name: lint_check
-      run: ./tools/lint_quiet.sh
 
   cmake-ubuntu-test:
     name: cmake build
@@ -78,8 +76,9 @@ jobs:
       id: cache
       with:
         path: cache/cmake
-        key: ${{ runner.os }}-cmake-3.15.5-x64
-        restore-keys: ${{ runner.os }}-cmake-3.15.5-x64
+        key: ${{ runner.os }}-cmake-3.15.5-x64-0
+        restore-keys: |
+          ${{ runner.os }}-cmake-3.15.5-x64-
     - name: cmake-download-ubuntu
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -113,6 +112,8 @@ jobs:
         cd build
         ctest -C Release --output-on-failure
         cd ..
+    - name: lint_check
+      run: ./tools/lint_quiet.sh
     - name: ubuntu-after
       run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 

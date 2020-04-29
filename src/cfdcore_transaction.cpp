@@ -387,9 +387,9 @@ void Transaction::SetFromHex(const std::string &hex_string) {
           unlocking_script);
       if ((txin_item->witness != NULL) &&
           (txin_item->witness->num_items != 0)) {
-        struct wally_tx_witness_item *witness_stack;
         for (size_t w_index = 0; w_index < txin_item->witness->num_items;
              ++w_index) {
+          struct wally_tx_witness_item *witness_stack;
           witness_stack = &txin_item->witness->items[w_index];
           const std::vector<uint8_t> witness_buf(
               witness_stack->witness,
