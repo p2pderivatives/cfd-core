@@ -594,10 +594,24 @@ TEST(ConfidentialTransaction, TxOutTest) {
   EXPECT_STREQ(txout_ref.GetRangeProof().GetHex().c_str(),
                range_proof.GetHex().c_str());
 
+  // AddTxOut (address duplex)
+  EXPECT_NO_THROW((index = tx.AddTxOut(amt, asset, exp_locking_script)));
+  EXPECT_EQ(index, 2);
+  EXPECT_EQ(tx.GetTxOutCount(), 3);
+  EXPECT_NO_THROW(get_index = tx.GetTxOutIndex(exp_locking_script));
+  EXPECT_EQ(0, get_index);
+  std::vector<uint32_t> index_list;
+  EXPECT_NO_THROW(index_list = tx.GetTxOutIndexList(exp_locking_script));
+  EXPECT_EQ(2, index_list.size());
+  if (index_list.size() == 2) {
+    EXPECT_EQ(0, index_list[0]);
+    EXPECT_EQ(2, index_list[1]);
+  }
+
   // RemoveTxOut
   EXPECT_THROW((tx.RemoveTxOut(3)), CfdException);
   EXPECT_NO_THROW((tx.RemoveTxOut(0)));
-  EXPECT_EQ(tx.GetTxOutCount(), 1);
+  EXPECT_EQ(tx.GetTxOutCount(), 2);
 }
 
 TEST(ConfidentialTransaction, AddTxOutFeeTest) {

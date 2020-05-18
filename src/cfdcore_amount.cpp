@@ -28,6 +28,14 @@ Amount::Amount(int64_t amount) : amount_(amount), ignore_check_(false) {
   CheckValidAmount(amount_);
 }
 
+Amount::Amount(int amount) : Amount(int64_t{amount}) {
+  // do nothing
+}
+
+Amount::Amount(uint32_t amount) : Amount(static_cast<int64_t>(amount)) {
+  // do nothing
+}
+
 Amount::Amount(double amount)
     : Amount(static_cast<int64_t>(amount * kCoinBase)) {}
 

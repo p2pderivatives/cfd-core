@@ -111,21 +111,25 @@ class CFD_CORE_EXPORT TxIn : public AbstractTxIn {
    * @param[in] redeem_script     redeem script
    * @param[out] witness_area_size     witness area size
    * @param[out] no_witness_area_size  no witness area size
+   * @param[in] scriptsig_template     scriptsig template
    * @return TxIn size.
    */
   static uint32_t EstimateTxInSize(
       AddressType addr_type, Script redeem_script = Script(),
       uint32_t* witness_area_size = nullptr,
-      uint32_t* no_witness_area_size = nullptr);
+      uint32_t* no_witness_area_size = nullptr,
+      const Script* scriptsig_template = nullptr);
 
   /**
    * @brief estimate txin's virtual size direct.
-   * @param[in] addr_type       address type
-   * @param[in] redeem_script   redeem script
+   * @param[in] addr_type           address type
+   * @param[in] redeem_script       redeem script
+   * @param[in] scriptsig_template  scriptsig template
    * @return TxIn virtual size.
    */
   static uint32_t EstimateTxInVsize(
-      AddressType addr_type, Script redeem_script = Script());
+      AddressType addr_type, Script redeem_script = Script(),
+      const Script* scriptsig_template = nullptr);
 
   /**
    * @brief コンストラクタ.
@@ -368,6 +372,13 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    * @return 条件に合致するTxOutのindex番号
    */
   virtual uint32_t GetTxOutIndex(const Script& locking_script) const;
+  /**
+   * @brief TxOutのindexを一括取得する.
+   * @param[in] locking_script  locking script
+   * @return 条件に合致するTxOutのindex番号の一覧
+   */
+  virtual std::vector<uint32_t> GetTxOutIndexList(
+      const Script& locking_script) const;
   /**
    * @brief 保持しているTxOutの数を取得する.
    * @return TxOut数

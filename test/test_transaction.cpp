@@ -367,7 +367,21 @@ TEST(Transaction, AddTxOut_RemoveTxOut) {
   EXPECT_NO_THROW(tx.AddTxOut(Amount::CreateBySatoshiAmount(100000), script));
   EXPECT_EQ(tx.GetTxOutCount(), 1);
   EXPECT_NO_THROW(tx.GetTxOut(0));
+  EXPECT_EQ(0, tx.GetTxOutIndex(script));
 
+  EXPECT_NO_THROW(tx.AddTxOut(Amount::CreateBySatoshiAmount(100000), script));
+  EXPECT_EQ(tx.GetTxOutCount(), 2);
+  EXPECT_NO_THROW(tx.GetTxOut(1));
+  EXPECT_EQ(0, tx.GetTxOutIndex(script));
+  std::vector<uint32_t> index_list;
+  EXPECT_NO_THROW((index_list = tx.GetTxOutIndexList(script)));
+  EXPECT_EQ(2, index_list.size());
+  if (index_list.size() == 2) {
+    EXPECT_EQ(0, index_list[0]);
+    EXPECT_EQ(1, index_list[1]);
+  }
+
+  EXPECT_NO_THROW(tx.RemoveTxOut(0));
   EXPECT_NO_THROW(tx.RemoveTxOut(0));
   EXPECT_EQ(tx.GetTxOutCount(), 0);
   EXPECT_THROW(tx.GetTxOut(0), CfdException);

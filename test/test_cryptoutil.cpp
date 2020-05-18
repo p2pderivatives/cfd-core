@@ -10,6 +10,7 @@
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
 using cfd::core::ByteData256;
+using cfd::core::CfdException;
 using cfd::core::CryptoUtil;
 using cfd::core::SigHashType;
 using cfd::core::SigHashAlgorithm;
@@ -454,6 +455,21 @@ TEST(CryptoUtil, ConvertSignatureToDerEmpty) {
     return;
   }
   ASSERT_TRUE(false);
+}
+
+TEST(CryptoUtil, ConvertSignatureToDerAlreadyEncoded) {
+  ByteData bytedata(
+      "30440220773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca4702201907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b2422601");
+  SigHashType sig_type(SigHashAlgorithm::kSigHashAll);
+  ByteData byte_data = CryptoUtil::ConvertSignatureToDer(bytedata, sig_type);
+  EXPECT_STREQ(
+      byte_data.GetHex().c_str(),
+      "30440220773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca4702201907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b2422601");
+
+  ByteData bytedata2(
+      "30440220773420c0ded41a55b1f1205cfb632f08f3f911a53e7338a0dac73ec6cbe3ca4702201907434d046185abedc5afddc2761a642bccc70af6d22b46394f1d04a8b2422602");
+  SigHashType sig_type2(SigHashAlgorithm::kSigHashAll);
+  EXPECT_THROW(CryptoUtil::ConvertSignatureToDer(bytedata2, sig_type2), CfdException);
 }
 
 TEST(CryptoUtil, ConvertSignatureToDerStr) {

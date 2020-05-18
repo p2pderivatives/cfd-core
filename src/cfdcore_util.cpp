@@ -425,6 +425,10 @@ ByteData256 CryptoUtil::HmacSha256(
   return ByteData256(output);
 }
 
+ByteData256 CryptoUtil::HmacSha256(const ByteData &key, const ByteData &data) {
+  return HmacSha256(key.GetBytes(), data);
+}
+
 ByteData CryptoUtil::HmacSha512(
     const std::vector<uint8_t> &key, const ByteData &data) {
   std::vector<uint8_t> output(HMAC_SHA512_LEN);
@@ -456,9 +460,22 @@ ByteData CryptoUtil::NormalizeSignature(const ByteData &signature) {
 ByteData CryptoUtil::ConvertSignatureToDer(
     const ByteData &signature, const SigHashType &sighash_type) {
   std::vector<uint8_t> sig = signature.GetBytes();
-  // SigHashType分を追加して領域確保
+  // Secure the size considering SigHashType(1byte).
   std::vector<uint8_t> output(EC_SIGNATURE_DER_MAX_LEN + 1);
   size_t written = 0;
+
+  if ((output.size() - 2) <= sig.size()) {
+    try {
+      SigHashType temp_sighash;
+      ConvertSignatureFromDer(signature, &temp_sighash);
+      uint8_t flag = sighash_type.GetSigHashFlag();
+      if (flag == temp_sighash.GetSigHashFlag()) {
+        return signature;
+      }
+    } catch (const CfdException &except) {
+      // do nothing
+    }
+  }
 
   // Convert a compact signature to DER encoding.
   int ret = wally_ec_sig_to_der(
@@ -469,7 +486,7 @@ ByteData CryptoUtil::ConvertSignatureToDer(
   }
 
   if (written <= EC_SIGNATURE_DER_MAX_LEN) {
-    // SigHashTypeを付与
+    // add SigHashType
     info(
         CFD_LOG_SOURCE, "size[{}]. append[{}]", written,
         sighash_type.GetSigHashFlag());

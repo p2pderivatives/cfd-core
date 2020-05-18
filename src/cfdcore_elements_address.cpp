@@ -66,6 +66,13 @@ std::vector<AddressFormatData> GetElementsAddressFormatList() {
 // -----------------------------------------------------------------------------
 // ElementsConfidentialAddress
 // -----------------------------------------------------------------------------
+Privkey ElementsConfidentialAddress::GetBlindingKey(
+    const Privkey& master_blinding_key, const Script& locking_script) {
+  ByteData256 data = CryptoUtil::HmacSha256(
+      master_blinding_key.GetData(), locking_script.GetData());
+  return Privkey(data);
+}
+
 ElementsConfidentialAddress::ElementsConfidentialAddress()
     : unblinded_address_(), confidential_key_(), address_() {
   // do nothing

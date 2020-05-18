@@ -365,6 +365,13 @@ class CFD_CORE_EXPORT CryptoUtil {
   static ByteData256 HmacSha256(
       const std::vector<uint8_t> &key, const ByteData &data);
   /**
+   * @brief calculate HMAC-SHA256.
+   * @param[in] key key-byte-array
+   * @param[in] data input-data
+   * @return ByteData256
+   */
+  static ByteData256 HmacSha256(const ByteData &key, const ByteData &data);
+  /**
    * @brief ByteDataのHMAC-SHA512を計算する.
    * @param[in] key keyとなるByte配列データ
    * @param[in] data ByteDataインスタンス

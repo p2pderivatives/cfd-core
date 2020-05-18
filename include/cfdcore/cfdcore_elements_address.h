@@ -51,6 +51,15 @@ CFD_CORE_API std::vector<AddressFormatData> GetElementsAddressFormatList();
 class CFD_CORE_EXPORT ElementsConfidentialAddress {
  public:
   /**
+   * @brief get default blinding key.
+   * @param[in] master_blinding_key master blindingKey
+   * @param[in] locking_script      locking script by address.
+   * @return blinding key
+   */
+  static Privkey GetBlindingKey(
+      const Privkey& master_blinding_key, const Script& locking_script);
+
+  /**
    * @brief デフォルトコンストラクタ
    */
   ElementsConfidentialAddress();
