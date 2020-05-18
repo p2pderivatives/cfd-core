@@ -70,7 +70,7 @@ TxIn::TxIn(
 
 uint32_t TxIn::EstimateTxInSize(
     AddressType addr_type, Script redeem_script, uint32_t *witness_area_size,
-    uint32_t *no_witness_area_size) {
+    uint32_t *no_witness_area_size, const Script *scriptsig_template) {
   bool is_pubkey = false;
   bool is_witness = true;
   bool use_unlocking_script = true;
@@ -111,17 +111,26 @@ uint32_t TxIn::EstimateTxInSize(
 
   if (is_pubkey) {
     script_size = Pubkey::kCompressedPubkeySize + EC_SIGNATURE_DER_MAX_LEN + 3;
+  } else if (
+      (scriptsig_template != nullptr) && (!scriptsig_template->IsEmpty())) {
+    script_size = static_cast<uint32_t>(
+        scriptsig_template->GetData().GetSerializeSize());
   } else {
-    script_size = EC_SIGNATURE_DER_MAX_LEN + 2;  // allNum + sig(serialize)
+    // Forehead is a big size
+    script_size = (EC_SIGNATURE_DER_MAX_LEN - 2) * 2;
     if (!redeem_script.IsEmpty()) {
-      script_size +=
-          static_cast<uint32_t>(redeem_script.GetData().GetSerializeSize());
+      size_t redeem_script_size = redeem_script.GetData().GetSerializeSize();
+      script_size += static_cast<uint32_t>(redeem_script_size);
       try {
         // OP_0 <sig1> <sig2> ... <unlocking script>
         uint32_t reqnum = 0;
         ScriptUtil::ExtractPubkeysFromMultisigScript(redeem_script, &reqnum);
-        script_size += (EC_SIGNATURE_DER_MAX_LEN + 1) * reqnum;
-        script_size += 2;  // 先頭のOP_0部
+        if (reqnum != 0) {
+          // set multisig size
+          script_size = static_cast<uint32_t>(redeem_script_size);
+          script_size += (EC_SIGNATURE_DER_MAX_LEN + 2) * reqnum;
+          script_size += 2;  // for top OP_0 size
+        }
       } catch (const CfdException &except) {
         if (except.GetErrorCode() != CfdError::kCfdIllegalArgumentError) {
           // error occurs other than multisig confirmation
@@ -156,11 +165,14 @@ uint32_t TxIn::EstimateTxInSize(
   return static_cast<uint32_t>(size);
 }
 
-uint32_t TxIn::EstimateTxInVsize(AddressType addr_type, Script redeem_script) {
+uint32_t TxIn::EstimateTxInVsize(
+    AddressType addr_type, Script redeem_script,
+    const Script *scriptsig_template) {
   uint32_t witness_size = 0;
   uint32_t no_witness_size = 0;
   TxIn::EstimateTxInSize(
-      addr_type, redeem_script, &witness_size, &no_witness_size);
+      addr_type, redeem_script, &witness_size, &no_witness_size,
+      scriptsig_template);
   return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
@@ -503,6 +515,24 @@ uint32_t Transaction::GetTxOutIndex(const Script &locking_script) const {
   }
   warn(CFD_LOG_SOURCE, "locking script is not found.");
   throw CfdException(kCfdIllegalArgumentError, "locking script is not found.");
+}
+
+std::vector<uint32_t> Transaction::GetTxOutIndexList(
+    const Script &locking_script) const {
+  std::vector<uint32_t> result;
+  std::string search_str = locking_script.GetHex();
+  uint32_t index = 0;
+  for (; index < static_cast<uint32_t>(vout_.size()); ++index) {
+    if (search_str == vout_[index].GetLockingScript().GetHex()) {
+      result.push_back(index);
+    }
+  }
+  if (result.empty()) {
+    warn(CFD_LOG_SOURCE, "locking script is not found.");
+    throw CfdException(
+        kCfdIllegalArgumentError, "locking script is not found.");
+  }
+  return result;
 }
 
 uint32_t Transaction::GetTxInCount() const {

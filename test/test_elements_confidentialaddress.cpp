@@ -15,6 +15,7 @@ using cfd::core::ConfidentialKey;
 using cfd::core::ElementsNetType;
 using cfd::core::ElementsAddressType;
 using cfd::core::Pubkey;
+using cfd::core::Privkey;
 using cfd::core::ByteData160;
 using cfd::core::ByteData256;
 using cfd::core::ByteData;
@@ -530,4 +531,32 @@ TEST(ElementsConfidentialAddress, P2wshAddressToConfidential) {
   EXPECT_EQ(ElementsNetType::kElementsRegtest, confidential_address.GetNetType());
   EXPECT_EQ(ElementsAddressType::kP2wshAddress, confidential_address.GetAddressType());
 }
+
+TEST(ElementsConfidentialAddress, GetBlindingKey) {
+  const Privkey master_blinding_key(
+      "881a1ab07e99ab0626b4d93b3dddfd16cbc04342ee71aab4da7093e7b853fd80");
+  Address unblind_addr("ert1q0zln07l8vgm5qf4jhzz00668lfs7xssdlxlysh",
+      GetElementsAddressFormatList());
+
+  Privkey blinding_key;
+  EXPECT_NO_THROW(
+      (blinding_key =
+          ElementsConfidentialAddress::GetBlindingKey(
+                  master_blinding_key,
+                  unblind_addr.GetLockingScript())));
+  EXPECT_STREQ("95af1be4f929e182442c9f3aa55a3cacde69d1182677f3afd618cdfb4a588742",
+               blinding_key.GetHex().c_str());
+  Pubkey confidential_key = blinding_key.GeneratePubkey();
+  EXPECT_STREQ(
+      "0273f33808de34256679f932410fca27721ce3b287083c903d6c10dfabb600336e",
+      confidential_key.GetHex().c_str());
+  ElementsConfidentialAddress confidential_address;
+  EXPECT_NO_THROW(
+      (confidential_address =
+          ElementsConfidentialAddress(unblind_addr, confidential_key)));
+  EXPECT_STREQ(
+      "el1qqfelxwqgmc6z2enelyeyzr72yaepecajsuyreypadsgdl2akqqeku79lxla7wc3hgqnt9wyy7l4507npudpq6typz2y9he7wu",
+      confidential_address.GetAddress().c_str());
+}
+
 #endif  // CFD_DISABLE_ELEMENTS

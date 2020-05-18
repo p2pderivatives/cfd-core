@@ -231,55 +231,96 @@ struct TestEstimateConfidentialTxInSizeVector {
   Script fedpeg_script;
   bool is_issuance;
   bool is_blind;
+  bool is_reissuance;
+  std::string script_template;
+  int exponent;
+  int minimum_bits;
 };
 
 TEST(ConfidentialTxIn, EstimateTxInSize) {
+  static const std::string multisig_script = "522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae";
+  static const std::string scriptsig_template = "00473044022047ac8e878352d3ebbde1c94ce3a10d057c24175747116f8288e5d794d12d482f0220217f36a485cae903c713331d877c1f64677e3622ad4010726870540656fe9dcb014752210205ffcdde75f262d66ada3dd877c7471f8f8ee9ee24d917c3e18d01cee458bafe2102be61f4350b4ae7544f99649a917f48ba16cf48c983ac1599774958d88ad17ec552ae";
   static const std::vector<TestEstimateConfidentialTxInSizeVector> test_vector = {
-    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false},
-    {AddressType::kP2shAddress, 138, 0, exp_script, 0, Script(), false, false},
-    {AddressType::kP2shP2wpkhAddress, 174, 111, Script(), 0, Script(), false, false},
-    {AddressType::kP2shP2wshAddress, 154, 79, Script("51"), 0, Script(), false, false},
-    {AddressType::kP2wpkhAddress, 152, 111, Script(), 0, Script(), false, false},
-    {AddressType::kP2wshAddress, 141, 100, exp_script, 0, Script(), false, false},
+    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shAddress, 204, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wpkhAddress, 174, 111, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wshAddress, 220, 145, Script("51"), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wpkhAddress, 152, 111, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 207, 166, exp_script, 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 300, 259, Script(multisig_script), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 190, 149, exp_script, 0, Script(), false, false, false, scriptsig_template, 0, 0},
     // pegin
-    {AddressType::kP2wpkhAddress, 610, 569, Script(), 226, Script("51"), false, false},
+    {AddressType::kP2wpkhAddress, 610, 569, Script(), 226, Script("51"), false, false, false, "", 0, 0},
     // issue
-    {AddressType::kP2wpkhAddress, 234, 111, Script(), 0, Script(), true, false},
-    {AddressType::kP2wpkhAddress, 6072, 5901, Script(), 0, Script(), true, true},
+    {AddressType::kP2wpkhAddress, 234, 111, Script(), 0, Script(), true, false, false, "", 0, 0},
+    {AddressType::kP2wpkhAddress, 6064, 5893, Script(), 0, Script(), true, true, false,
+        "", 0, 36},
+    {AddressType::kP2wpkhAddress, 8626, 8455, Script(), 0, Script(), true, true, false,
+        "", 0, 52},
+    // reissue
+    {AddressType::kP2wpkhAddress, 3173, 3002, Script(), 0, Script(), true, true, true,
+        "", 0, 36},
+    {AddressType::kP2wpkhAddress, 4454, 4283, Script(), 0, Script(), true, true, true,
+        "", 0, 52},
   };
 
   for (const auto& test_data : test_vector) {
     uint32_t size = 0;
     uint32_t wit_size = 0;
+    Script script_template(test_data.script_template);
+    Script* template_ptr = nullptr;
+    if (!test_data.script_template.empty()) {
+      template_ptr = &script_template;
+    }
+    uint32_t cache_size = 0;
     EXPECT_NO_THROW((size = ConfidentialTxIn::EstimateTxInSize(
         test_data.addr_type, test_data.redeem_script, test_data.pegin_btc_tx,
         test_data.fedpeg_script, test_data.is_issuance, test_data.is_blind,
-        &wit_size)));
+        &wit_size, nullptr, test_data.is_reissuance, template_ptr,
+        test_data.exponent, test_data.minimum_bits, &cache_size)));
     EXPECT_EQ(size, test_data.size);
     EXPECT_EQ(wit_size, test_data.witness_size);
+    if (test_data.minimum_bits == 36) {
+      EXPECT_EQ(cache_size, 2892);
+    } else if (test_data.minimum_bits == 52) {
+      EXPECT_EQ(cache_size, 4173);
+    }
   }
 }
 
 TEST(ConfidentialTxIn, EstimateTxInVsize) {
+  static const std::string multisig_script = "522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae";
   static const std::vector<TestEstimateConfidentialTxInSizeVector> test_vector = {
-    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false},
-    {AddressType::kP2shAddress, 138, 0, exp_script, 0, Script(), false, false},
-    {AddressType::kP2shP2wpkhAddress, 91, 0, Script(), 0, Script(), false, false},
-    {AddressType::kP2shP2wshAddress, 95, 0, Script("51"), 0, Script(), false, false},
-    {AddressType::kP2wpkhAddress, 69, 0, Script(), 0, Script(), false, false},
-    {AddressType::kP2wshAddress, 66, 0, exp_script, 0, Script(), false, false},
+    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shAddress, 204, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wpkhAddress, 91, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wshAddress, 112, 0, Script("51"), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wpkhAddress, 69, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 83, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 106, 0, Script(multisig_script), 0, Script(), false, false, false, "", 0, 0},
     // pegin
-    {AddressType::kP2wpkhAddress, 184, 0, Script(), 226, Script("51"), false, false},
+    {AddressType::kP2wpkhAddress, 184, 0, Script(), 226, Script("51"), false, false, false, "", 0, 0},
     // issue
-    {AddressType::kP2wpkhAddress, 151, 0, Script(), 0, Script(), true, false},
-    {AddressType::kP2wpkhAddress, 1647, 0, Script(), 0, Script(), true, true},
+    {AddressType::kP2wpkhAddress, 151, 0, Script(), 0, Script(), true, false, false, "", 0, 0},
+    {AddressType::kP2wpkhAddress, 1645, 0, Script(), 0, Script(), true, true, false, "", 0, 36},
+    {AddressType::kP2wpkhAddress, 2285, 0, Script(), 0, Script(), true, true, false, "", 0, 52},
+    // reissue
+    {AddressType::kP2wpkhAddress, 922, 0, Script(), 0, Script(), true, true, true, "", 0, 36},
+    {AddressType::kP2wpkhAddress, 1242, 0, Script(), 0, Script(), true, true, true, "", 0, 52},
   };
 
   for (const auto& test_data : test_vector) {
     uint32_t vsize = 0;
+    Script script_template(test_data.script_template);
+    Script* template_ptr = nullptr;
+    if (!test_data.script_template.empty()) {
+      template_ptr = &script_template;
+    }
     EXPECT_NO_THROW((vsize = ConfidentialTxIn::EstimateTxInVsize(
         test_data.addr_type, test_data.redeem_script, test_data.pegin_btc_tx,
-        test_data.fedpeg_script, test_data.is_issuance, test_data.is_blind)));
+        test_data.fedpeg_script, test_data.is_issuance, test_data.is_blind,
+        test_data.is_reissuance, template_ptr,
+        test_data.exponent, test_data.minimum_bits)));
     EXPECT_EQ(vsize, test_data.size);
   }
 }

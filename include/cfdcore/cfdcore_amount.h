@@ -71,6 +71,18 @@ class CFD_CORE_EXPORT Amount {
    */
   explicit Amount(int64_t amount);
   /**
+   * @brief Create Amount instance by amount satoshi units
+   * @param[in] amount amount in satoshi units
+   * @exception CfdException if invalid value passed
+   */
+  explicit Amount(int amount);
+  /**
+   * @brief Create Amount instance by amount satoshi units
+   * @param[in] amount amount in satoshi units
+   * @exception CfdException if invalid value passed
+   */
+  explicit Amount(uint32_t amount);
+  /**
    * @brief Create Amount instance by amount bitcoin units
    * @param[in] coin_amount amount in bitcoin units
    * @exception CfdException if invalid value passed

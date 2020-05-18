@@ -66,6 +66,121 @@ static constexpr uint8_t kTxInFeaturePegin = WALLY_TX_IS_PEGIN;
 static const ByteData256 kEmptyByteData256;
 // @formatter:on
 
+/**
+ * @brief rangeProofなどを生成する。
+ * @param[in] value             amount
+ * @param[in] pubkey            public key
+ * @param[in] privkey           private key
+ * @param[in] asset             confidential asset
+ * @param[in] abf               asset blind factor
+ * @param[in] vbf               value(amount) blind factor
+ * @param[in] script            script
+ * @param[in] minimum_range_value       rangeproof minimum value.
+ *   0 to max(int64_t)
+ * @param[in] exponent                  rangeproof exponent value.
+ *   -1 to 18. -1 is public value. 0 is most private.
+ * @param[in] minimum_bits              rangeproof blinding bits.
+ *   0 to 64. Number of bits of the value to keep private. 0 is auto.
+ * @param[out] commitment        amount commitment
+ * @param[out] range_proof       amount range proof
+ * @return asset generator
+ */
+static ByteData CalculateRangeProof(
+    const uint64_t value, const Pubkey *pubkey, const Privkey &privkey,
+    const ConfidentialAssetId &asset, const std::vector<uint8_t> &abf,
+    const std::vector<uint8_t> &vbf, const Script &script,
+    int64_t minimum_range_value, int exponent, int minimum_bits,
+    std::vector<uint8_t> *commitment, std::vector<uint8_t> *range_proof) {
+  std::vector<uint8_t> generator(ASSET_GENERATOR_LEN);
+  const std::vector<uint8_t> &asset_bytes =
+      asset.GetUnblindedData().GetBytes();
+  int ret = wally_asset_generator_from_bytes(
+      asset_bytes.data(), asset_bytes.size(), abf.data(), abf.size(),
+      generator.data(), generator.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_asset_generator_from_bytes NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "output asset generator error.");
+  }
+
+  commitment->resize(ASSET_COMMITMENT_LEN);
+  ret = wally_asset_value_commitment(
+      value, vbf.data(), vbf.size(), generator.data(), generator.size(),
+      commitment->data(), commitment->size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_asset_value_commitment NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "calc asset commitment error.");
+  }
+  // info(
+  //    CFD_LOG_SOURCE, "generator=[{}] commitment=[{}]",
+  //    ByteData(generator).GetHex(), ByteData(commitment).GetHex());
+
+  range_proof->resize(ASSET_RANGEPROOF_MAX_LEN);
+  size_t size = 0;
+  const std::vector<uint8_t> &privkey_byte = privkey.GetData().GetBytes();
+  const std::vector<uint8_t> &script_byte = script.GetData().GetBytes();
+  const std::vector<ScriptElement> &script_item = script.GetElementList();
+  int64_t min_range_value = minimum_range_value;
+  if (script_item.empty() ||
+      (script_item[0].GetOpCode() == ScriptOperator::OP_RETURN) ||
+      (script_byte.size() > Script::kMaxScriptSize)) {
+    min_range_value = 0;
+  }
+
+  if (pubkey == nullptr) {
+    ret = wally_asset_rangeproof_with_nonce(
+        value, privkey_byte.data(), privkey_byte.size(), asset_bytes.data(),
+        asset_bytes.size(), abf.data(), abf.size(), vbf.data(), vbf.size(),
+        commitment->data(), commitment->size(), script_byte.data(),
+        script_byte.size(), generator.data(), generator.size(),
+        static_cast<uint64_t>(min_range_value), exponent, minimum_bits,
+        range_proof->data(), range_proof->size(), &size);
+  } else {
+    const std::vector<uint8_t> &pubkey_byte = pubkey->GetData().GetBytes();
+    ret = wally_asset_rangeproof(
+        value, pubkey_byte.data(), pubkey_byte.size(), privkey_byte.data(),
+        privkey_byte.size(), asset_bytes.data(), asset_bytes.size(),
+        abf.data(), abf.size(), vbf.data(), vbf.size(), commitment->data(),
+        commitment->size(), script_byte.data(), script_byte.size(),
+        generator.data(), generator.size(),
+        static_cast<uint64_t>(min_range_value), exponent, minimum_bits,
+        range_proof->data(), range_proof->size(), &size);
+  }
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_asset_rangeproof NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "calc asset rangeproof error.");
+  }
+  range_proof->resize(size);
+  return ByteData(generator);
+}
+
+/**
+ * @brief calculate rangeproof size.
+ * @param[in] exponent        blinding exponent
+ * @param[in] minimum_bits    blinding minimum bits
+ * @return rangeproof size.
+ */
+static uint32_t CalculateRangeProofSize(int exponent, int minimum_bits) {
+  ByteData vbf_data(
+      "e863b2791be1be9659a940123143f210b9760a3b85862bf0833ef27c80c83816");
+  ByteData256 key_data(
+      "7df80e5705518368f2e1598e177f4929ba5ab54ab8177582dcc7504fc333c84e");
+  ConfidentialAssetId asset(
+      "3668f9bdc8f1cc9c1a0247613fffa17b18e3141898e011386b831709c518d805");
+  std::vector<uint8_t> empty_factor(kBlindFactorSize);
+  std::vector<uint8_t> vbf = vbf_data.GetBytes();
+  Privkey privkey(key_data);
+  std::vector<uint8_t> commitment;
+  std::vector<uint8_t> range_proof;
+  CalculateRangeProof(
+      uint64_t{10000000}, nullptr, privkey, asset, empty_factor, vbf, Script(),
+      1, exponent, minimum_bits, &commitment, &range_proof);
+  uint32_t rangeproof_size = ByteData(range_proof).GetSerializeSize();
+  info(
+      CFD_LOG_SOURCE, "[{},{}] rangeproof_size[{}]", exponent, minimum_bits,
+      rangeproof_size);
+  return rangeproof_size;
+}
+
 // -----------------------------------------------------------------------------
 // ConfidentialNonce
 // -----------------------------------------------------------------------------
@@ -410,6 +525,11 @@ BlindFactor::BlindFactor(const std::string &hex_string) : data_() {
   data_ = ByteData256(reverse_buffer);
 }
 
+BlindFactor::BlindFactor(const ByteData &byte_data)
+    : BlindFactor(ByteData256(byte_data)) {
+  // do nothing
+}
+
 BlindFactor::BlindFactor(const ByteData256 &byte_data) : data_(byte_data) {
   // do nothing
 }
@@ -550,21 +670,24 @@ ByteData256 ConfidentialTxIn::GetWitnessHash() const {
 uint32_t ConfidentialTxIn::EstimateTxInSize(
     AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
     Script fedpeg_script, bool is_issuance, bool is_blind,
-    uint32_t *witness_area_size, uint32_t *no_witness_area_size) {
+    uint32_t *witness_area_size, uint32_t *no_witness_area_size,
+    bool is_reissuance, const Script *scriptsig_template, int exponent,
+    int minimum_bits, uint32_t *rangeproof_size) {
   // issuance時の追加サイズ: entity(32),hash(32),amount(8+1),key(8+1)
   static constexpr const uint32_t kIssuanceAppendSize = 82;
   // blind issuance時の追加サイズ: entity,hash,amount(33),key(33)
   static constexpr const uint32_t kIssuanceBlindSize = 130;
   // issuance rangeproof size
-  static constexpr const uint32_t kTxInRangeproof = 2893 + 3;
+  // static constexpr const uint32_t kTxInRangeproof = 2893 + 3;
   // pegin size:
   // btc(9),asset(33),block(33),fedpegSize(-),txSize(3),txoutproof(152)
   static constexpr const uint32_t kPeginWitnessSize = 230;
   uint32_t witness_size = 0;
   uint32_t size = 0;
-  TxIn::EstimateTxInSize(addr_type, redeem_script, &witness_size, &size);
+  TxIn::EstimateTxInSize(
+      addr_type, redeem_script, &witness_size, &size, scriptsig_template);
 
-  if (is_issuance) {
+  if (is_issuance || is_reissuance) {
     if (is_blind) {
       size += kIssuanceBlindSize;
     } else {
@@ -572,7 +695,8 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
     }
   }
 
-  if ((pegin_btc_tx_size != 0) || is_issuance || (witness_size != 0)) {
+  if ((pegin_btc_tx_size != 0) || is_issuance || is_reissuance ||
+      (witness_size != 0)) {
     if (witness_size == 0) {
       witness_size += 1;  // witness size
     }
@@ -586,10 +710,22 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
     }
     witness_size += 1;  // pegin witness num
 
-    if (is_issuance && is_blind) {
-      witness_size += kTxInRangeproof * 2;
-    } else {
+    if ((!is_issuance && !is_reissuance) || !is_blind) {
       witness_size += 2;  // issuance rangeproof size
+    } else {
+      uint32_t work_proof_size = 0;
+      if ((rangeproof_size != nullptr) && (*rangeproof_size != 0)) {
+        work_proof_size = *rangeproof_size;
+      } else {
+        work_proof_size = 4 + CalculateRangeProofSize(exponent, minimum_bits);
+        if (rangeproof_size != nullptr) *rangeproof_size = work_proof_size;
+      }
+      if (is_reissuance) {
+        work_proof_size += 1;
+      } else {
+        work_proof_size *= 2;
+      }
+      witness_size += work_proof_size;
     }
   }
 
@@ -604,12 +740,15 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
 
 uint32_t ConfidentialTxIn::EstimateTxInVsize(
     AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
-    Script fedpeg_script, bool is_issuance, bool is_blind) {
+    Script fedpeg_script, bool is_issuance, bool is_blind, bool is_reissuance,
+    const Script *scriptsig_template, int exponent, int minimum_bits,
+    uint32_t *rangeproof_size) {
   uint32_t witness_size = 0;
   uint32_t no_witness_size = 0;
   ConfidentialTxIn::EstimateTxInSize(
       addr_type, redeem_script, pegin_btc_tx_size, fedpeg_script, is_issuance,
-      is_blind, &witness_size, &no_witness_size);
+      is_blind, &witness_size, &no_witness_size, is_reissuance,
+      scriptsig_template, exponent, minimum_bits, rangeproof_size);
   return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
@@ -775,9 +914,11 @@ ConfidentialTxOutReference::ConfidentialTxOutReference(
 
 uint32_t ConfidentialTxOutReference::GetSerializeSize(
     bool is_blinded, uint32_t *witness_area_size,
-    uint32_t *no_witness_area_size) const {
-  static constexpr const uint32_t kTxOutSurjection = 131 + 1;
-  static constexpr const uint32_t kTxOutRangeproof = 2893 + 3;
+    uint32_t *no_witness_area_size, int exponent, int minimum_bits,
+    uint32_t *rangeproof_size) const {
+  static constexpr const uint32_t kTxOutSurjection = 162 + 1;
+  // SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(256, 3) = 162
+  // static constexpr const uint32_t kTxOutRangeproof = 2893 + 3;
   uint32_t result = 0;
   uint32_t witness_size = 0;
   bool is_blind = is_blinded || (!nonce_.IsEmpty());
@@ -789,7 +930,15 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
     result +=
         static_cast<uint32_t>(locking_script_.GetData().GetSerializeSize());
     witness_size += kTxOutSurjection;  // surjection proof
-    witness_size += kTxOutRangeproof;  // range proof
+    // witness_size += kTxOutRangeproof;  // range proof
+    uint32_t work_proof_size = 0;
+    if ((rangeproof_size != nullptr) && (*rangeproof_size != 0)) {
+      work_proof_size = *rangeproof_size;
+    } else {
+      work_proof_size = 4 + CalculateRangeProofSize(exponent, minimum_bits);
+      if (rangeproof_size != nullptr) *rangeproof_size = work_proof_size;
+    }
+    witness_size += work_proof_size;
   } else {
     result += kConfidentialDataSize;   // asset
     result += kConfidentialValueSize;  // value
@@ -814,10 +963,14 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
   return result;
 }
 
-uint32_t ConfidentialTxOutReference::GetSerializeVsize(bool is_blinded) const {
+uint32_t ConfidentialTxOutReference::GetSerializeVsize(
+    bool is_blinded, int exponent, int minimum_bits,
+    uint32_t *rangeproof_size) const {
   uint32_t witness_size = 0;
   uint32_t no_witness_size = 0;
-  GetSerializeSize(is_blinded, &witness_size, &no_witness_size);
+  GetSerializeSize(
+      is_blinded, &witness_size, &no_witness_size, exponent, minimum_bits,
+      rangeproof_size);
   return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
@@ -1018,6 +1171,24 @@ uint32_t ConfidentialTransaction::GetTxOutIndex(
   }
   warn(CFD_LOG_SOURCE, "locking script is not found.");
   throw CfdException(kCfdIllegalArgumentError, "locking script is not found.");
+}
+
+std::vector<uint32_t> ConfidentialTransaction::GetTxOutIndexList(
+    const Script &locking_script) const {
+  std::vector<uint32_t> result;
+  std::string search_str = locking_script.GetHex();
+  uint32_t index = 0;
+  for (; index < static_cast<uint32_t>(vout_.size()); ++index) {
+    if (search_str == vout_[index].GetLockingScript().GetHex()) {
+      result.push_back(index);
+    }
+  }
+  if (result.empty()) {
+    warn(CFD_LOG_SOURCE, "locking script is not found.");
+    throw CfdException(
+        kCfdIllegalArgumentError, "locking script is not found.");
+  }
+  return result;
 }
 
 uint32_t ConfidentialTransaction::GetTxInCount() const {
@@ -2216,66 +2387,9 @@ ByteData ConfidentialTransaction::GetRangeProof(
     const std::vector<uint8_t> &vbf, const Script &script,
     int64_t minimum_range_value, int exponent, int minimum_bits,
     std::vector<uint8_t> *commitment, std::vector<uint8_t> *range_proof) {
-  std::vector<uint8_t> generator(ASSET_GENERATOR_LEN);
-  const std::vector<uint8_t> &asset_bytes =
-      asset.GetUnblindedData().GetBytes();
-  int ret = wally_asset_generator_from_bytes(
-      asset_bytes.data(), asset_bytes.size(), abf.data(), abf.size(),
-      generator.data(), generator.size());
-  if (ret != WALLY_OK) {
-    warn(CFD_LOG_SOURCE, "wally_asset_generator_from_bytes NG[{}].", ret);
-    throw CfdException(kCfdIllegalStateError, "output asset generator error.");
-  }
-
-  commitment->resize(ASSET_COMMITMENT_LEN);
-  ret = wally_asset_value_commitment(
-      value, vbf.data(), vbf.size(), generator.data(), generator.size(),
-      commitment->data(), commitment->size());
-  if (ret != WALLY_OK) {
-    warn(CFD_LOG_SOURCE, "wally_asset_value_commitment NG[{}].", ret);
-    throw CfdException(kCfdIllegalStateError, "calc asset commitment error.");
-  }
-  // info(
-  //    CFD_LOG_SOURCE, "generator=[{}] commitment=[{}]",
-  //    ByteData(generator).GetHex(), ByteData(commitment).GetHex());
-
-  range_proof->resize(ASSET_RANGEPROOF_MAX_LEN);
-  size_t size = 0;
-  const std::vector<uint8_t> &privkey_byte = privkey.GetData().GetBytes();
-  const std::vector<uint8_t> &script_byte = script.GetData().GetBytes();
-  const std::vector<ScriptElement> &script_item = script.GetElementList();
-  int64_t min_range_value = minimum_range_value;
-  if (script_item.empty() ||
-      (script_item[0].GetOpCode() == ScriptOperator::OP_RETURN) ||
-      (script_byte.size() > Script::kMaxScriptSize)) {
-    min_range_value = 0;
-  }
-
-  if (pubkey == nullptr) {
-    ret = wally_asset_rangeproof_with_nonce(
-        value, privkey_byte.data(), privkey_byte.size(), asset_bytes.data(),
-        asset_bytes.size(), abf.data(), abf.size(), vbf.data(), vbf.size(),
-        commitment->data(), commitment->size(), script_byte.data(),
-        script_byte.size(), generator.data(), generator.size(),
-        static_cast<uint64_t>(min_range_value), exponent, minimum_bits,
-        range_proof->data(), range_proof->size(), &size);
-  } else {
-    const std::vector<uint8_t> &pubkey_byte = pubkey->GetData().GetBytes();
-    ret = wally_asset_rangeproof(
-        value, pubkey_byte.data(), pubkey_byte.size(), privkey_byte.data(),
-        privkey_byte.size(), asset_bytes.data(), asset_bytes.size(),
-        abf.data(), abf.size(), vbf.data(), vbf.size(), commitment->data(),
-        commitment->size(), script_byte.data(), script_byte.size(),
-        generator.data(), generator.size(),
-        static_cast<uint64_t>(min_range_value), exponent, minimum_bits,
-        range_proof->data(), range_proof->size(), &size);
-  }
-  if (ret != WALLY_OK) {
-    warn(CFD_LOG_SOURCE, "wally_asset_rangeproof NG[{}].", ret);
-    throw CfdException(kCfdIllegalStateError, "calc asset rangeproof error.");
-  }
-  range_proof->resize(size);
-  return ByteData(generator);
+  return CalculateRangeProof(
+      value, pubkey, privkey, asset, abf, vbf, script, minimum_range_value,
+      exponent, minimum_bits, commitment, range_proof);
 }
 
 std::vector<UnblindParameter> ConfidentialTransaction::UnblindTxIn(

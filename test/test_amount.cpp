@@ -43,6 +43,14 @@ TEST(Amount, CreateInstanceTest) {
   EXPECT_DOUBLE_EQ((static_cast<double>(expect_satoshi_val) / kCoinBase),
                    amt.GetCoinValue());
   EXPECT_EQ(expect_satoshi_val, amt.GetSatoshiValue());
+
+  const int expect_satoshi_ival = 240000000;
+  amt = Amount(expect_satoshi_ival);
+  EXPECT_EQ(expect_satoshi_val, amt.GetSatoshiValue());
+
+  const uint32_t expect_satoshi_uval = 240000000;
+  amt = Amount(expect_satoshi_uval);
+  EXPECT_EQ(expect_satoshi_val, amt.GetSatoshiValue());
 }
 
 TEST(Amount, LimitTest) {
