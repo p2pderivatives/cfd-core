@@ -9,7 +9,9 @@
 #include "cfdcore/cfdcore_coin.h"
 
 using cfd::core::CfdException;
+using cfd::core::BlindFactor;
 using cfd::core::ByteData;
+using cfd::core::ConfidentialAssetId;
 using cfd::core::ConfidentialValue;
 using cfd::core::Amount;
 
@@ -153,6 +155,19 @@ TEST(ConfidentialValue, ConvertFromConfidentialValue) {
   EXPECT_THROW(
       ConfidentialValue::ConvertFromConfidentialValue(ByteData("001122")),
       CfdException);
+}
+
+TEST(ConfidentialValue, GetCommitment) {
+  ConfidentialAssetId asset_commitment(
+      "0a533b742a568c0b5285bf5bdfe9623a78082d19fac9be1678f7c3adbb48b34d29");
+  BlindFactor vbf(
+      "fe3357df1f35df75412d9ad86ebd99e622e26019722f316027787a685e2cd71a");
+  Amount amount(int64_t{13000000000000});
+  ConfidentialValue commitment = ConfidentialValue::GetCommitment(
+      amount, asset_commitment, vbf);
+  EXPECT_STREQ(
+      commitment.GetHex().c_str(),
+      "08672d4e2e60f2e8d742552a8bc4ca6335ed214982c7728b4483284169aaae7f49");
 }
 
 #endif  // CFD_DISABLE_ELEMENTS

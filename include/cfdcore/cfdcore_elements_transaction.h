@@ -20,6 +20,8 @@
 namespace cfd {
 namespace core {
 
+class BlindFactor;
+
 //! blind initial parameter (minimum bits)
 constexpr const int kDefaultBlindMinimumBits = 52;
 
@@ -82,6 +84,12 @@ class CFD_CORE_EXPORT ConfidentialNonce {
  private:
   ByteData data_;    //!< byte data
   uint8_t version_;  //!< version byte
+
+  /**
+   * @brief check version info.
+   * @param[in] version     version info.
+   */
+  static void CheckVersion(uint8_t version);
 };
 
 /**
@@ -140,9 +148,25 @@ class CFD_CORE_EXPORT ConfidentialAssetId {
    */
   bool IsEmpty() const;
 
+  /**
+   * @brief Get commitment.
+   * @param[in] unblind_asset       unblind asset id.
+   * @param[in] asset_blind_factor  asset blind factor.
+   * @return asset commitment.
+   */
+  static ConfidentialAssetId GetCommitment(
+      const ConfidentialAssetId& unblind_asset,
+      const BlindFactor& asset_blind_factor);
+
  private:
   ByteData data_;    //!< byte data
   uint8_t version_;  //!< version byte
+
+  /**
+   * @brief check version info.
+   * @param[in] version     version info.
+   */
+  static void CheckVersion(uint8_t version);
 };
 
 /**
@@ -221,9 +245,26 @@ class CFD_CORE_EXPORT ConfidentialValue {
    */
   static Amount ConvertFromConfidentialValue(const ByteData& value);
 
+  /**
+   * @brief Get commitment.
+   * @param[in] amount               amount.
+   * @param[in] asset_commitment     asset commitment.
+   * @param[in] amount_blind_factor  amount blind factor.
+   * @return amount commitment.
+   */
+  static ConfidentialValue GetCommitment(
+      const Amount& amount, const ConfidentialAssetId& asset_commitment,
+      const BlindFactor& amount_blind_factor);
+
  private:
   ByteData data_;    //!< byte data
   uint8_t version_;  //!< version byte
+
+  /**
+   * @brief check version info.
+   * @param[in] version     version info.
+   */
+  static void CheckVersion(uint8_t version);
 };
 
 /**

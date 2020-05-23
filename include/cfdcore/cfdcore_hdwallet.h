@@ -402,6 +402,11 @@ class CFD_CORE_EXPORT ExtPrivkey {
    * @return tweak sum
    */
   ByteData256 GetPubTweakSum() const;
+  /**
+   * @brief get network type.
+   * @return network type.
+   */
+  NetType GetNetworkType() const;
 
  private:
   ByteData serialize_data_;   //!< serialize data
@@ -586,6 +591,11 @@ class CFD_CORE_EXPORT ExtPubkey {
    * @return fingerprint data (4byte)
    */
   ByteData GetFingerprintData() const;
+  /**
+   * @brief get network type.
+   * @return network type.
+   */
+  NetType GetNetworkType() const;
 
  private:
   ByteData serialize_data_;   //!< serialize data
