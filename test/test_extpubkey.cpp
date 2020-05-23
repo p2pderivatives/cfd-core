@@ -64,6 +64,7 @@ TEST(ExtPubkey, Base58ConstructorTest) {
   EXPECT_EQ(0, extkey.GetChildNum());
   EXPECT_STREQ("bdc76da475a6fbdc4f3758939ab2096d4ab53b7d66c0eed66fc0f4be242835fc", extkey.GetChainCode().GetHex().c_str());
   EXPECT_STREQ("030061b08c4c80dc04aaa0b44018d2c4bcdb0d9c0992fb4fddf9d2fb096a5164c0", extkey.GetPubkey().GetHex().c_str());
+  EXPECT_EQ(NetType::kTestnet, extkey.GetNetworkType());
 
   std::string privkey_xpriv = "tprv8ZgxMBicQKsPeWHBt7a68nPnvgTnuDhUgDWC8wZCgA8GahrQ3f3uWpq7wE7Uc1dLBnCe1hhCZ886K6ND37memRDWqsA9HgSKDXtwh2Qxo6J";
   EXPECT_THROW((extkey = ExtPubkey(privkey_xpriv)), CfdException);

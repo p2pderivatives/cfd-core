@@ -81,6 +81,7 @@ TEST(ExtPrivkey, Base58ConstructorTest) {
   EXPECT_EQ(0, extkey.GetChildNum());
   EXPECT_STREQ("28009126a24557d32ff2c5da21850dd06529f34faed53b4a3552b5ed4bda35d5", extkey.GetChainCode().GetHex().c_str());
   EXPECT_STREQ("73a2361673d25f998d1e9d94aabdeba8ac1ddd4628bc4f55341397d263bd560c", extkey.GetPrivkey().GetHex().c_str());
+  EXPECT_EQ(NetType::kMainnet, extkey.GetNetworkType());
 
   ext_base58 = "tprv8ZgxMBicQKsPeWHBt7a68nPnvgTnuDhUgDWC8wZCgA8GahrQ3f3uWpq7wE7Uc1dLBnCe1hhCZ886K6ND37memRDWqsA9HgSKDXtwh2Qxo6J";
   extkey = ExtPrivkey(ext_base58);

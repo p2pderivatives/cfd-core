@@ -174,7 +174,8 @@ static uint32_t CalculateRangeProofSize(int exponent, int minimum_bits) {
   CalculateRangeProof(
       uint64_t{10000000}, nullptr, privkey, asset, empty_factor, vbf, Script(),
       1, exponent, minimum_bits, &commitment, &range_proof);
-  uint32_t rangeproof_size = ByteData(range_proof).GetSerializeSize();
+  uint32_t rangeproof_size =
+      static_cast<uint32_t>(ByteData(range_proof).GetSerializeSize());
   info(
       CFD_LOG_SOURCE, "[{},{}] rangeproof_size[{}]", exponent, minimum_bits,
       rangeproof_size);
@@ -216,6 +217,7 @@ ConfidentialNonce::ConfidentialNonce(const std::string &hex_string)
       throw CfdException(
           CfdError::kCfdIllegalArgumentError, "Nonce size Invalid.");
   }
+  CheckVersion(version_);
 }
 
 ConfidentialNonce::ConfidentialNonce(const ByteData &byte_data)
@@ -250,11 +252,20 @@ ConfidentialNonce::ConfidentialNonce(const ByteData &byte_data)
       throw CfdException(
           CfdError::kCfdIllegalArgumentError, "Nonce size Invalid.");
   }
+  CheckVersion(version_);
 }
 
 ConfidentialNonce::ConfidentialNonce(const Pubkey &pubkey)
     : ConfidentialNonce(pubkey.GetData()) {
   // do nothing
+}
+
+void ConfidentialNonce::CheckVersion(uint8_t version) {
+  if ((version != 0) && (version != 1) && (version != 2) && (version != 3)) {
+    warn(CFD_LOG_SOURCE, "Nonce version Invalid. version={}.", version);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Nonce version Invalid.");
+  }
 }
 
 ByteData ConfidentialNonce::GetData() const { return data_; }
@@ -309,6 +320,7 @@ ConfidentialAssetId::ConfidentialAssetId(const std::string &hex_string)
       throw CfdException(
           CfdError::kCfdIllegalArgumentError, "AssetId size Invalid.");
   }
+  CheckVersion(version_);
 }
 
 ConfidentialAssetId::ConfidentialAssetId(const ByteData &byte_data)
@@ -341,6 +353,16 @@ ConfidentialAssetId::ConfidentialAssetId(const ByteData &byte_data)
           byte_data.GetDataSize());
       throw CfdException(
           CfdError::kCfdIllegalArgumentError, "AssetId size Invalid.");
+  }
+  CheckVersion(version_);
+}
+
+void ConfidentialAssetId::CheckVersion(uint8_t version) {
+  if ((version != 0) && (version != 1) && (version != 0x0a) &&
+      (version != 0x0b)) {
+    warn(CFD_LOG_SOURCE, "Asset version Invalid. version={}.", version);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Asset version Invalid.");
   }
 }
 
@@ -376,6 +398,26 @@ ByteData ConfidentialAssetId::GetUnblindedData() const {
 }
 
 bool ConfidentialAssetId::IsEmpty() const { return (version_ == 0); }
+
+ConfidentialAssetId ConfidentialAssetId::GetCommitment(
+    const ConfidentialAssetId &unblind_asset,
+    const BlindFactor &asset_blind_factor) {
+  if (unblind_asset.HasBlinding()) {
+    warn(CFD_LOG_SOURCE, "asset is commitment.");
+    throw CfdException(kCfdIllegalStateError, "asset is commitment.");
+  }
+  std::vector<uint8_t> generator(ASSET_COMMITMENT_LEN);
+  std::vector<uint8_t> asset_id = unblind_asset.GetUnblindedData().GetBytes();
+  std::vector<uint8_t> abf = asset_blind_factor.GetData().GetBytes();
+  int ret = wally_asset_generator_from_bytes(
+      asset_id.data(), asset_id.size(), abf.data(), abf.size(),
+      generator.data(), generator.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_asset_generator_from_bytes NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "calc asset commitment error.");
+  }
+  return ConfidentialAssetId(ByteData(generator));
+}
 
 // -----------------------------------------------------------------------------
 // ConfidentialValue
@@ -414,6 +456,7 @@ ConfidentialValue::ConfidentialValue(const std::string &hex_string)
       throw CfdException(
           CfdError::kCfdIllegalArgumentError, "Value size Invalid.");
   }
+  CheckVersion(version_);
 }
 
 ConfidentialValue::ConfidentialValue(const ByteData &byte_data)
@@ -449,11 +492,21 @@ ConfidentialValue::ConfidentialValue(const ByteData &byte_data)
       throw CfdException(
           CfdError::kCfdIllegalArgumentError, "Value size Invalid.");
   }
+  CheckVersion(version_);
 }
 
 ConfidentialValue::ConfidentialValue(const Amount &amount)
     : ConfidentialValue(ConvertToConfidentialValue(amount)) {
   // do nothing
+}
+
+void ConfidentialValue::CheckVersion(uint8_t version) {
+  if ((version != 0) && (version != 1) && (version != 0x08) &&
+      (version != 0x09)) {
+    warn(CFD_LOG_SOURCE, "Value version Invalid. version={}.", version);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Value version Invalid.");
+  }
 }
 
 ByteData ConfidentialValue::GetData() const { return data_; }
@@ -503,6 +556,27 @@ Amount ConfidentialValue::ConvertFromConfidentialValue(  // force LF
         kCfdIllegalStateError, "convert from confidential value error.");
   }
   return Amount::CreateBySatoshiAmount(static_cast<int64_t>(satoshi));
+}
+
+ConfidentialValue ConfidentialValue::GetCommitment(
+    const Amount &amount, const ConfidentialAssetId &asset_commitment,
+    const BlindFactor &amount_blind_factor) {
+  if (!asset_commitment.HasBlinding()) {
+    warn(CFD_LOG_SOURCE, "asset is not commitment.");
+    throw CfdException(kCfdIllegalStateError, "asset is not commitment.");
+  }
+  std::vector<uint8_t> commitment(ASSET_COMMITMENT_LEN);
+  std::vector<uint8_t> generator = asset_commitment.GetData().GetBytes();
+  std::vector<uint8_t> vbf = amount_blind_factor.GetData().GetBytes();
+  uint64_t value = static_cast<uint64_t>(amount.GetSatoshiValue());
+  int ret = wally_asset_value_commitment(
+      value, vbf.data(), vbf.size(), generator.data(), generator.size(),
+      commitment.data(), commitment.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_asset_value_commitment NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "calc amount commitment error.");
+  }
+  return ConfidentialValue(ByteData(commitment));
 }
 
 // -----------------------------------------------------------------------------
