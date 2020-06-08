@@ -128,6 +128,30 @@ TEST(Descriptor, Parse_combo) {
   }
 }
 
+TEST(Descriptor, Parse_combo_uncompress) {
+  std::string descriptor = "combo(04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77)";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  std::vector<Script> combo_list;
+
+  EXPECT_NO_THROW(desc = Descriptor::Parse(descriptor));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(combo_list = desc.GetLockingScriptAll());
+  EXPECT_TRUE(desc.IsComboScript());
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "OP_DUP OP_HASH160 06399b0a8229214e0614afa119531b46e1d1f29b OP_EQUALVERIFY OP_CHECKSIG");
+  EXPECT_EQ(combo_list.size(), 2);
+  if (combo_list.size() == 2) {
+    EXPECT_STREQ(combo_list[0].ToString().c_str(),
+        "OP_DUP OP_HASH160 06399b0a8229214e0614afa119531b46e1d1f29b OP_EQUALVERIFY OP_CHECKSIG");
+    EXPECT_STREQ(combo_list[1].ToString().c_str(),
+        "04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77 OP_CHECKSIG");
+  }
+}
+
 TEST(Descriptor, Parse_sh_wsh) {
   std::string descriptor = "sh(wsh(pkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)))";
   Descriptor desc;
@@ -442,6 +466,124 @@ TEST(Descriptor, Parse_wsh_extkey_derive) {
   }
 }
 
+TEST(Descriptor, Parse_Privkey_Testnet_Compress) {
+  //   pubkey: '03563a11061eb1422738e6bd6d932ce75f3be6915a9db28242437cff274781e973',
+  //   privkey: 'cTffYQiudjHLwLdyiq4Vhj87c8vmsfeU49qj24K2coyXoGQ1eo5L'
+  std::string pubkey_hex = "03563a11061eb1422738e6bd6d932ce75f3be6915a9db28242437cff274781e973";
+  std::string descriptor1 = "pkh(cTffYQiudjHLwLdyiq4Vhj87c8vmsfeU49qj24K2coyXoGQ1eo5L)";
+  std::string descriptor2 = "wpkh(cTffYQiudjHLwLdyiq4Vhj87c8vmsfeU49qj24K2coyXoGQ1eo5L)";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  DescriptorScriptReference script_ref;
+  Pubkey pubkey;
+
+  try {
+    desc = Descriptor::Parse(descriptor1);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
+
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(script_ref = desc.GetReference());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetPubkey());
+  EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "OP_DUP OP_HASH160 87fccc805971853683673046575a707df4e94500 OP_EQUALVERIFY OP_CHECKSIG");
+  EXPECT_STREQ(pubkey.GetHex().c_str(),
+      pubkey_hex.c_str());
+  EXPECT_TRUE(pubkey.IsCompress());
+
+  try {
+    desc = Descriptor::Parse(descriptor2);
+    EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+    EXPECT_NO_THROW(script_ref = desc.GetReference());
+    EXPECT_NO_THROW(desc_str = desc.ToString(false));
+    EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetPubkey());
+    EXPECT_STREQ(desc_str.c_str(), descriptor2.c_str());
+    EXPECT_STREQ(locking_script.ToString().c_str(),
+        "0 87fccc805971853683673046575a707df4e94500");
+    EXPECT_STREQ(pubkey.GetHex().c_str(),
+        pubkey_hex.c_str());
+    EXPECT_TRUE(pubkey.IsCompress());
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("", except.what());
+  }
+}
+
+TEST(Descriptor, Parse_Privkey_Mainnet_Uncompress) {
+  //   pubkey: '04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77',
+  //   privkey: '5JB4Tt43VA4qbBVRtf88CVKTkJ82pC6mhm9aHywDG27htnFHgqC'
+  std::string pubkey_hex = "04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77";
+  std::string descriptor1 = "pkh(5JB4Tt43VA4qbBVRtf88CVKTkJ82pC6mhm9aHywDG27htnFHgqC)";
+  std::string descriptor2 = "wpkh(5JB4Tt43VA4qbBVRtf88CVKTkJ82pC6mhm9aHywDG27htnFHgqC)";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  DescriptorScriptReference script_ref;
+  Pubkey pubkey;
+
+  try {
+    desc = Descriptor::Parse(descriptor1);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
+
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(script_ref = desc.GetReference());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetPubkey());
+  EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "OP_DUP OP_HASH160 06399b0a8229214e0614afa119531b46e1d1f29b OP_EQUALVERIFY OP_CHECKSIG");
+  EXPECT_STREQ(pubkey.GetHex().c_str(),
+      pubkey_hex.c_str());
+  EXPECT_FALSE(pubkey.IsCompress());
+
+  try {
+    desc = Descriptor::Parse(descriptor2);
+    EXPECT_TRUE(false);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("Failed to unsing uncompressed pubkey.", except.what());
+  }
+}
+
+TEST(Descriptor, Parse_Pubkey_Uncompress) {
+  std::string pubkey_hex = "04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77";
+  std::string descriptor1 = "pkh(04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77)";
+  std::string descriptor2 = "wpkh(04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77)";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  DescriptorScriptReference script_ref;
+  Pubkey pubkey;
+
+  try {
+    desc = Descriptor::Parse(descriptor1);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
+
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(script_ref = desc.GetReference());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetPubkey());
+  EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "OP_DUP OP_HASH160 06399b0a8229214e0614afa119531b46e1d1f29b OP_EQUALVERIFY OP_CHECKSIG");
+  EXPECT_STREQ(pubkey.GetHex().c_str(),
+      pubkey_hex.c_str());
+  EXPECT_FALSE(pubkey.IsCompress());
+
+  try {
+    desc = Descriptor::Parse(descriptor2);
+    EXPECT_TRUE(false);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("Failed to unsing uncompressed pubkey.", except.what());
+  }
+}
+
 TEST(Descriptor, GetNode_sh_wsh) {
   std::string descriptor = "sh(wsh(pkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)))";
   Descriptor desc;
@@ -581,7 +723,7 @@ TEST(DescriptorKeyInfo, Constructor_Pubkey) {
   EXPECT_STREQ(key_info.GetPubkey().GetHex().c_str(),  pubkey.GetHex().c_str());
 }
 
-TEST(DescriptorKeyInfo, Constructor_Privkey) {
+TEST(DescriptorKeyInfo, Constructor_Privkey_Testnet_Compress) {
   Privkey privkey("0b64eb8f5ddfffed8ffd09339cbb9de1b9ceee2a76760173fe4b130a91e56383");
   std::string privkey_wif_str = "cPoefvB147bYpWCf9JqRBVMXENt4isSBAn91RYeiBh1jUp3ThhKN";
   Privkey privkey_wif = Privkey::FromWif(privkey_wif_str, NetType::kRegtest, true);

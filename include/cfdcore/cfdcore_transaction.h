@@ -397,6 +397,12 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    */
   uint32_t AddTxOut(const Amount& value, const Script& locking_script);
   /**
+   * @brief set TxOut's value.
+   * @param[in] index   target txout index
+   * @param[in] value   amount
+   */
+  void SetTxOutValue(uint32_t index, const Amount& value);
+  /**
    * @brief TxOut情報を削除する.
    * @param[in] index     取得するindex位置
    */

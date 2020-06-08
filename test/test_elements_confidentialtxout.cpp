@@ -210,7 +210,8 @@ TEST(ConfidentialTxOut, Setter) {
   txout.SetValue(Amount::CreateBySatoshiAmount(100000000));
 
   EXPECT_STREQ(txout.GetAsset().GetHex().c_str(), "");
-  EXPECT_STREQ(txout.GetConfidentialValue().GetHex().c_str(), "");
+  EXPECT_STREQ(txout.GetConfidentialValue().GetHex().c_str(),
+      "010000000005f5e100");
   EXPECT_STREQ(txout.GetLockingScript().GetHex().c_str(), "");
   EXPECT_STREQ(txout.GetNonce().GetHex().c_str(), "");
   EXPECT_STREQ(txout.GetRangeProof().GetHex().c_str(), "");

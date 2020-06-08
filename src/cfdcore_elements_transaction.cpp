@@ -940,12 +940,21 @@ void ConfidentialTxOut::SetCommitment(
     const ByteData &range_proof) {
   asset_ = asset;
   confidential_value_ = confidential_value;
-  nonce_ = nonce;
+  SetNonce(nonce);
   surjection_proof_ = surjection_proof;
   range_proof_ = range_proof;
 }
 
-void ConfidentialTxOut::SetValue(const Amount &value) { value_ = value; }
+void ConfidentialTxOut::SetNonce(const ConfidentialNonce &nonce) {
+  nonce_ = nonce;
+}
+
+void ConfidentialTxOut::SetValue(const Amount &value) {
+  value_ = value;
+  if (!confidential_value_.HasBlinding()) {
+    confidential_value_ = ConfidentialValue(value);
+  }
+}
 
 ByteData256 ConfidentialTxOut::GetWitnessHash() const {
   ByteData256 result;
@@ -2016,6 +2025,40 @@ uint32_t ConfidentialTransaction::AddTxOutFee(
   ConfidentialTxOut out(asset, confidential_value);
   vout_.push_back(out);
   return static_cast<uint32_t>(vout_.size() - 1);
+}
+
+void ConfidentialTransaction::SetTxOutValue(
+    uint32_t index, const Amount &value) {
+  CheckTxOutIndex(index, __LINE__, __FUNCTION__);
+
+  struct wally_tx *tx_pointer =
+      static_cast<struct wally_tx *>(wally_tx_pointer_);
+  if (tx_pointer != nullptr) {
+    struct wally_tx_output *output = tx_pointer->outputs + index;
+    if (vout_[index].GetConfidentialValue().HasBlinding() ||
+        (output->value_len == kConfidentialDataSize)) {
+      warn(CFD_LOG_SOURCE, "value is already blinded.");
+      throw CfdException(kCfdIllegalStateError, "value is already blinded.");
+    }
+
+    ConfidentialValue ct_value(value);
+    const std::vector<uint8_t> &value_data = ct_value.GetData().GetBytes();
+    if (output->value_len == value_data.size()) {
+      memcpy(output->value, value_data.data(), output->value_len);
+    } else {
+      if (output->value != nullptr) free(output->value);
+      output->value = (unsigned char *)malloc(value_data.size());
+      if (output->value == nullptr) {
+        warn(CFD_LOG_SOURCE, "malloc fail.");
+        throw CfdException(kCfdMemoryFullError, "malloc fail.");
+      }
+      output->value_len = value_data.size();
+      memcpy(output->value, value_data.data(), output->value_len);
+    }
+
+    vout_[index].SetValue(value);
+    // CallbackStateChange(kStateChangeAddTxOut);
+  }
 }
 
 void ConfidentialTransaction::SetTxOutCommitment(

@@ -608,6 +608,13 @@ TEST(ConfidentialTransaction, TxOutTest) {
     EXPECT_EQ(2, index_list[1]);
   }
 
+  // SetTxOutValue (address duplex)
+  Amount amt2 = Amount::CreateBySatoshiAmount(7654321);
+  EXPECT_NO_THROW(tx.SetTxOutValue(2, amt2));
+  EXPECT_NO_THROW((txout_ref = tx.GetTxOut(2)));
+  EXPECT_STREQ(txout_ref.GetConfidentialValue().GetHex().c_str(),
+               "01000000000074cbb1");
+
   // RemoveTxOut
   EXPECT_THROW((tx.RemoveTxOut(3)), CfdException);
   EXPECT_NO_THROW((tx.RemoveTxOut(0)));

@@ -706,6 +706,20 @@ uint32_t Transaction::AddTxOut(
   return static_cast<uint32_t>(vout_.size() - 1);
 }
 
+void Transaction::SetTxOutValue(uint32_t index, const Amount &value) {
+  CheckTxOutIndex(index, __LINE__, __FUNCTION__);
+
+  struct wally_tx *tx_pointer =
+      static_cast<struct wally_tx *>(wally_tx_pointer_);
+  if (tx_pointer != nullptr) {
+    struct wally_tx_output *output = tx_pointer->outputs + index;
+    output->satoshi = static_cast<uint64_t>(value.GetSatoshiValue());
+
+    vout_[index].SetValue(value);
+    // CallbackStateChange(kStateChangeAddTxOut);
+  }
+}
+
 void Transaction::RemoveTxOut(uint32_t index) {
   AbstractTransaction::RemoveTxOut(index);
 

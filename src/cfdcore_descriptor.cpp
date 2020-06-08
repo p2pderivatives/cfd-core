@@ -942,10 +942,16 @@ void DescriptorNode::AnalyzeKey() {
         pubkey = Pubkey(bytes);
       } else {
         // privkey
-        privkey = Privkey(bytes);
-        pubkey = privkey.GeneratePubkey();
+        if (bytes.GetDataSize() == 64) {
+          privkey = Privkey(bytes);
+          pubkey = privkey.GeneratePubkey();
+        } else {
+          is_wif = true;
+        }
       }
-      key_info_ = pubkey.GetHex();
+      if (!is_wif) {
+        key_info_ = pubkey.GetHex();
+      }
     } catch (const CfdException& except) {
       std::string errmsg(except.what());
       if (errmsg.find("hex to byte convert error.") != std::string::npos) {
@@ -956,21 +962,23 @@ void DescriptorNode::AnalyzeKey() {
     }
     if (is_wif) {
       // privkey WIF check
-      try {
-        privkey = Privkey::FromWif(key_info_, NetType::kMainnet);
-      } catch (const CfdException& except) {
-        std::string errmsg(except.what());
-        if (errmsg.find("Error WIF to Private key.") == std::string::npos) {
-          throw except;
-        }
-      }
-      if (!privkey.IsValid()) {
-        try {
-          privkey = Privkey::FromWif(key_info_, NetType::kTestnet);
-        } catch (const CfdException& except) {
-          std::string errmsg(except.what());
-          if (errmsg.find("Error WIF to Private key.") == std::string::npos) {
-            throw except;
+      bool is_compressed = true;
+      bool is_compressed_list[] = {true, false};
+      NetType nettype_list[] = {NetType::kMainnet, NetType::kTestnet};
+      size_t compressed_list_max = sizeof(is_compressed_list) / sizeof(bool);
+      size_t nettype_list_max = sizeof(nettype_list) / sizeof(NetType);
+      for (size_t i = 0; i < compressed_list_max; ++i) {
+        for (size_t j = 0; j < nettype_list_max; ++j) {
+          try {
+            privkey = Privkey::FromWif(
+                key_info_, nettype_list[j], is_compressed_list[i]);
+            is_compressed = is_compressed_list[i];
+          } catch (const CfdException& except) {
+            std::string errmsg(except.what());
+            if (errmsg.find("Error WIF to Private key.") ==
+                std::string::npos) {
+              throw except;
+            }
           }
         }
       }
@@ -979,11 +987,20 @@ void DescriptorNode::AnalyzeKey() {
         throw CfdException(
             CfdError::kCfdIllegalArgumentError, "privkey invalid.");
       }
-      pubkey = privkey.GeneratePubkey();
+      pubkey = privkey.GeneratePubkey(is_compressed);
       key_info_ = pubkey.GetHex();
     }
+    is_uncompressed_key_ = !pubkey.IsCompress();
   }
   info(CFD_LOG_SOURCE, "key_info = {}", key_info_);
+}
+
+bool DescriptorNode::IsExistUncompressedKey() {
+  if (is_uncompressed_key_) return true;
+  for (auto& child : child_node_) {
+    if (child.IsExistUncompressedKey()) return true;
+  }
+  return false;
 }
 
 void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
@@ -1144,6 +1161,18 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
           "Failed to check key-hash type. child is key only.");
     }
     child_node_[0].AnalyzeAll(name_);
+
+    if ((name_ == "wpkh") || (name_ == "wsh")) {
+      if (IsExistUncompressedKey()) {
+        warn(
+            CFD_LOG_SOURCE,
+            "Failed to unsing uncompressed pubkey."
+            " witness cannot uncompressed pubkey.");
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            "Failed to unsing uncompressed pubkey.");
+      }
+    }
   }
   script_type_ = p_data->type;
 }
