@@ -36,4 +36,12 @@ TEST(AbstractTxOut, ConstractorGetterSetter) {
     EXPECT_EQ(Amount::CreateBySatoshiAmount(0), actual.GetValue());
     EXPECT_STREQ("", actual.GetLockingScript().GetScript().GetHex().c_str());
   }
+
+  {
+    AbstractTxOut actual = AbstractTxOut();
+    Amount amt = Amount::CreateBySatoshiAmount(int64_t{10});
+    actual.SetValue(amt);
+    EXPECT_EQ(amt, actual.GetValue());
+    EXPECT_STREQ("", actual.GetLockingScript().GetScript().GetHex().c_str());
+  }
 }

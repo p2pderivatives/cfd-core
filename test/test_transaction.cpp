@@ -381,6 +381,14 @@ TEST(Transaction, AddTxOut_RemoveTxOut) {
     EXPECT_EQ(1, index_list[1]);
   }
 
+  // SetTxOutValue (address duplex)
+  Amount amt2 = Amount::CreateBySatoshiAmount(7654321);
+  TxOutReference txout_ref;
+  EXPECT_NO_THROW(tx.SetTxOutValue(1, amt2));
+  EXPECT_NO_THROW((txout_ref = tx.GetTxOut(1)));
+  EXPECT_EQ(txout_ref.GetValue().GetSatoshiValue(),
+            amt2.GetSatoshiValue());
+
   EXPECT_NO_THROW(tx.RemoveTxOut(0));
   EXPECT_NO_THROW(tx.RemoveTxOut(0));
   EXPECT_EQ(tx.GetTxOutCount(), 0);

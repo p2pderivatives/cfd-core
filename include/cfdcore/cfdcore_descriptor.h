@@ -561,6 +561,7 @@ class CFD_CORE_EXPORT DescriptorNode {
   std::string name_;                              //!< node name
   std::string value_;                             //!< node value
   std::string key_info_;                          //!< key information
+  bool is_uncompressed_key_ = false;              //!< exist uncompressed key
   std::string base_extkey_;                       //!< extkey base
   std::string tweak_sum_;                         //!< extpubkey tweak sum
   uint32_t number_ = 0;                           //!< number value
@@ -588,6 +589,12 @@ class CFD_CORE_EXPORT DescriptorNode {
    * @brief analyze key node.
    */
   void AnalyzeKey();
+  /**
+   * @brief check uncompressed key.
+   * @retval true exist
+   * @retval false not exist
+   */
+  bool IsExistUncompressedKey();
 };
 
 /**

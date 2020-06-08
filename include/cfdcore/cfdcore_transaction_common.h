@@ -382,6 +382,11 @@ class CFD_CORE_EXPORT AbstractTxOut {
    * @return locking script
    */
   const Script GetLockingScript() const;
+  /**
+   * @brief get value amount.
+   * @param[in] value    amount.
+   */
+  virtual void SetValue(const Amount& value);
 
  protected:
   Amount value_;           ///< 金額

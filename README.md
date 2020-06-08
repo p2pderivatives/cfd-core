@@ -163,3 +163,34 @@ set CFD_CMAKE_GIT_SSH=1
 ```
 export CFD_CMAKE_GIT_SSH=1
 ```
+
+### Ignore git update for CMake External Project:
+
+Depending on your git environment, you may get the following error when checking out external:
+```
+  Performing update step for 'libwally-core-download'
+  Current branch cmake_build is up to date.
+  No stash entries found.
+  No stash entries found.
+  No stash entries found.
+  CMake Error at /workspace/cfd-core/build/external/libwally-core/download/libwally-core-download-prefix/tmp/libwally-core-download-gitupdate.cmake:133 (message):
+
+
+    Failed to unstash changes in:
+    '/workspace/cfd-core/external/libwally-core/'.
+
+    You will have to resolve the conflicts manually
+```
+
+This phenomenon is due to the `git update` related command.
+Please set an environment variable that skips update processing.
+
+- Windows: (On the command line. Or set from the system setting screen.)
+```
+set CFD_CMAKE_GIT_SKIP_UPDATE=1
+```
+
+- MacOS & Linux(Ubuntu):
+```
+export CFD_CMAKE_GIT_SKIP_UPDATE=1
+```

@@ -180,6 +180,8 @@ const Script AbstractTxOut::GetLockingScript() const {
   return locking_script_;
 }
 
+void AbstractTxOut::SetValue(const Amount &value) { value_ = value; }
+
 // -----------------------------------------------------------------------------
 // AbstractTxOutReference
 // -----------------------------------------------------------------------------
