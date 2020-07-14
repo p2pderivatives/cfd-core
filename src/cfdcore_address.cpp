@@ -5,12 +5,13 @@
  * @brief \~japanese Addressを表現するクラス
  *   \~english Class to show address.
  */
+#include "cfdcore/cfdcore_address.h"
+
 #include <algorithm>
 #include <map>
 #include <string>
 #include <vector>
 
-#include "cfdcore/cfdcore_address.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_util.h"

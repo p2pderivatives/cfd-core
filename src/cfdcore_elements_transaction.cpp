@@ -7,6 +7,8 @@
  */
 #ifndef CFD_DISABLE_ELEMENTS
 
+#include "cfdcore/cfdcore_elements_transaction.h"
+
 #include <algorithm>
 #include <limits>
 #include <string>
@@ -15,7 +17,6 @@
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_descriptor.h"
 #include "cfdcore/cfdcore_elements_address.h"
-#include "cfdcore/cfdcore_elements_transaction.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_hdwallet.h"
 #include "cfdcore/cfdcore_key.h"
@@ -160,6 +161,7 @@ static ByteData CalculateRangeProof(
  * @return rangeproof size.
  */
 static uint32_t CalculateRangeProofSize(int exponent, int minimum_bits) {
+  // dummy value
   ByteData vbf_data(
       "e863b2791be1be9659a940123143f210b9760a3b85862bf0833ef27c80c83816");
   ByteData256 key_data(
@@ -998,9 +1000,14 @@ ConfidentialTxOutReference::ConfidentialTxOutReference(
 uint32_t ConfidentialTxOutReference::GetSerializeSize(
     bool is_blinded, uint32_t *witness_area_size,
     uint32_t *no_witness_area_size, int exponent, int minimum_bits,
-    uint32_t *rangeproof_size) const {
-  static constexpr const uint32_t kTxOutSurjection = 162 + 1;
+    uint32_t *rangeproof_size, uint32_t input_asset_count) const {
+  static constexpr const uint32_t kTxOutMaxSurjection = 162 + 1;
   // SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(256, 3) = 162
+  // ((n + 7)/8 + 34 + 32m) (m: 1 to 3)
+  // n=1:  (1 + 34 + 32) = 67
+  // n=2:  (1 + 98) = 99
+  // n>=3: ((n + 7)/8 + 130)
+
   // static constexpr const uint32_t kTxOutRangeproof = 2893 + 3;
   uint32_t result = 0;
   uint32_t witness_size = 0;
@@ -1012,7 +1019,19 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
     result += kConfidentialDataSize;  // nonce
     result +=
         static_cast<uint32_t>(locking_script_.GetData().GetSerializeSize());
-    witness_size += kTxOutSurjection;  // surjection proof
+
+    if (input_asset_count == 0) {
+      witness_size += kTxOutMaxSurjection;  // maximum surjection proof
+    } else {
+      size_t size = 0;
+      int ret = wally_asset_surjectionproof_size(input_asset_count, &size);
+      if (ret != WALLY_OK) {
+        warn(CFD_LOG_SOURCE, "wally_asset_surjectionproof_size NG[{}]", ret);
+        throw CfdException(
+            kCfdIllegalStateError, "calc asset surjectionproof size error.");
+      }
+      witness_size += static_cast<uint32_t>(size) + 1;
+    }
     // witness_size += kTxOutRangeproof;  // range proof
     uint32_t work_proof_size = 0;
     if ((rangeproof_size != nullptr) && (*rangeproof_size != 0)) {
@@ -1047,13 +1066,13 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
 }
 
 uint32_t ConfidentialTxOutReference::GetSerializeVsize(
-    bool is_blinded, int exponent, int minimum_bits,
-    uint32_t *rangeproof_size) const {
+    bool is_blinded, int exponent, int minimum_bits, uint32_t *rangeproof_size,
+    uint32_t input_asset_count) const {
   uint32_t witness_size = 0;
   uint32_t no_witness_size = 0;
   GetSerializeSize(
       is_blinded, &witness_size, &no_witness_size, exponent, minimum_bits,
-      rangeproof_size);
+      rangeproof_size, input_asset_count);
   return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 

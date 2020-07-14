@@ -12,6 +12,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+
 #include <functional>
 #include <limits>
 #include <list>
@@ -21,10 +22,9 @@
 #include <type_traits>
 #include <vector>
 
-#include "univalue.h"  // NOLINT
-
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
+#include "univalue.h"  // NOLINT
 
 namespace cfd {
 namespace core {

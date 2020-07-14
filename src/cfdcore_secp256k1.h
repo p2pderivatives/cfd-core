@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <vector>
+
 #include "cfdcore/cfdcore_bytedata.h"
 
 namespace cfd {

@@ -6,12 +6,13 @@
  *   \~english definition for Pubkey/Privkey class
  */
 
+#include "cfdcore/cfdcore_key.h"
+
 #include <string>
 #include <vector>
 
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_exception.h"
-#include "cfdcore/cfdcore_key.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_transaction_common.h"
 #include "cfdcore/cfdcore_util.h"
@@ -233,8 +234,48 @@ Privkey Privkey::FromWif(
     throw CfdException(
         CfdError::kCfdIllegalArgumentError, "Invalid Privkey data");
   }
-  return Privkey(ByteData(privkey));
+  Privkey key = Privkey(ByteData(privkey));
+  key.SetPubkeyCompressed(is_compressed);
+  return key;
 }
+
+bool Privkey::HasWif(
+    const std::string& wif, NetType* net_type, bool* is_compressed) {
+  static constexpr size_t kWifMinimumSize = EC_PRIVATE_KEY_LEN + 1;
+
+  size_t is_uncompressed = 0;
+  int ret = wally_wif_is_uncompressed(wif.c_str(), &is_uncompressed);
+  if (ret != WALLY_OK) {
+    // contains check wif.
+    return false;
+  }
+
+  bool has_wif = false;
+  ByteData data = CryptoUtil::DecodeBase58Check(wif);
+  if (data.GetDataSize() >= kWifMinimumSize) {
+    std::vector<uint8_t> key_data = data.GetBytes();
+    uint32_t prefix = key_data[0];
+
+    if (net_type != nullptr) {
+      if (prefix == kPrefixMainnet) {
+        *net_type = NetType::kMainnet;
+      } else if (prefix == kPrefixTestnet) {
+        *net_type = NetType::kTestnet;
+      } else {
+        warn(CFD_LOG_SOURCE, "Invalid Privkey format. prefix={}", prefix);
+        *net_type = NetType::kTestnet;
+      }
+    }
+
+    if (is_compressed != nullptr) {
+      *is_compressed = (is_uncompressed == 0) ? true : false;
+    }
+    has_wif = true;
+  }
+  return has_wif;
+}
+
+Pubkey Privkey::GetPubkey() const { return GeneratePubkey(is_compressed_); }
 
 Pubkey Privkey::GeneratePubkey(bool is_compressed) const {
   std::vector<uint8_t> pubkey(Pubkey::kCompressedPubkeySize);
@@ -320,6 +361,10 @@ ByteData Privkey::CalculateEcSignature(
     const ByteData256& signature_hash, bool has_grind_r) const {
   return SignatureUtil::CalculateEcSignature(
       signature_hash, *this, has_grind_r);
+}
+
+void Privkey::SetPubkeyCompressed(bool is_compressed) {
+  is_compressed_ = is_compressed;
 }
 
 }  // namespace core

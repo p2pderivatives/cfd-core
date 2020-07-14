@@ -10,11 +10,10 @@
 #include <memory>
 #include <string>
 
-#include "spdlog/spdlog.h"
-
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger_interface.h"
+#include "spdlog/spdlog.h"
 
 namespace cfd {
 namespace core {

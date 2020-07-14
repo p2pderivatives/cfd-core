@@ -2,9 +2,10 @@
 /**
  * @file cfdcore_descriptor.cpp
  *
- * @brief \~japanese Output Descriptor関連クラス実装
- *   \~english implemations of related to Output Descriptor
+ * @brief implemations of related to Output Descriptor
  */
+#include "cfdcore/cfdcore_descriptor.h"
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -15,7 +16,6 @@
 #include <vector>
 
 #include "cfdcore/cfdcore_address.h"
-#include "cfdcore/cfdcore_descriptor.h"
 #include "cfdcore/cfdcore_elements_address.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_hdwallet.h"
@@ -23,6 +23,7 @@
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_util.h"
+#include "cfdcore_wally_util.h"  // NOLINT
 
 namespace cfd {
 namespace core {
@@ -31,18 +32,18 @@ using logger::info;
 using logger::warn;
 
 /**
- * @brief DescriptorNodeのScript系種別管理テーブル用構造体.
+ * @brief Struct for DescriptorNode Script type management table.
  */
 struct DescriptorNodeScriptData {
-  std::string name;           //!< 名称
-  DescriptorScriptType type;  //!< 種別
-  bool top_only;              //!< TOPのみに存在
-  bool has_child;             //!< 子ノード可否
-  bool multisig;              //!< multisig系
+  std::string name;           //!< Name
+  DescriptorScriptType type;  //!< Script type
+  bool top_only;              //!< exist top only
+  bool has_child;             //!< can exist child
+  bool multisig;              //!< use multisig
 };
 
 /**
- * @brief DescriptorNodeのScript系種別管理テーブル.
+ * @brief Struct for DescriptorNode Script type management table.
  */
 static const DescriptorNodeScriptData kDescriptorNodeScriptTable[] = {
     {"sh", DescriptorScriptType::kDescriptorScriptSh, true, true, false},
@@ -219,6 +220,17 @@ DescriptorKeyInfo::DescriptorKeyInfo(
   }
 }
 
+DescriptorKeyInfo::DescriptorKeyInfo(const DescriptorKeyInfo& object) {
+  key_type_ = object.key_type_;
+  pubkey_ = object.pubkey_;
+  privkey_ = object.privkey_;
+  extprivkey_ = object.extprivkey_;
+  extpubkey_ = object.extpubkey_;
+  parent_info_ = object.parent_info_;
+  path_ = object.path_;
+  key_string_ = object.key_string_;
+}
+
 DescriptorKeyInfo& DescriptorKeyInfo::operator=(
     const DescriptorKeyInfo& object) {
   key_type_ = object.key_type_;
@@ -288,6 +300,15 @@ DescriptorKeyReference::DescriptorKeyReference(
       pubkey_(ext_pubkey.GetPubkey()),
       extpubkey_(ext_pubkey),
       argument_((arg) ? *arg : "") {}
+
+DescriptorKeyReference::DescriptorKeyReference(
+    const DescriptorKeyReference& object) {
+  key_type_ = object.key_type_;
+  pubkey_ = object.pubkey_;
+  extprivkey_ = object.extprivkey_;
+  extpubkey_ = object.extpubkey_;
+  argument_ = object.argument_;
+}
 
 DescriptorKeyReference& DescriptorKeyReference::operator=(
     const DescriptorKeyReference& object) {
@@ -361,7 +382,8 @@ DescriptorScriptReference::DescriptorScriptReference(
       locking_script_(locking_script),
       is_script_(false),
       addr_prefixes_(address_prefixes) {
-  if (script_type != DescriptorScriptType::kDescriptorScriptRaw) {
+  if ((script_type != DescriptorScriptType::kDescriptorScriptRaw) &&
+      (script_type != DescriptorScriptType::kDescriptorScriptMiniscript)) {
     warn(
         CFD_LOG_SOURCE, "If it is not a raw type, key or script is required.");
     throw CfdException(
@@ -405,6 +427,19 @@ DescriptorScriptReference::DescriptorScriptReference(
       address_script_(address_script),
       addr_prefixes_(address_prefixes) {
   // do nothing
+}
+
+DescriptorScriptReference::DescriptorScriptReference(
+    const DescriptorScriptReference& object) {
+  locking_script_ = object.locking_script_;
+  script_type_ = object.script_type_;
+  address_script_ = object.address_script_;
+  is_script_ = object.is_script_;
+  redeem_script_ = object.redeem_script_;
+  child_script_ = object.child_script_;
+  keys_ = object.keys_;
+  req_num_ = object.req_num_;
+  addr_prefixes_ = object.addr_prefixes_;
 }
 
 DescriptorScriptReference& DescriptorScriptReference::operator=(
@@ -626,10 +661,31 @@ DescriptorNode::DescriptorNode(
   addr_prefixes_ = network_parameters;
 }
 
+DescriptorNode::DescriptorNode(const DescriptorNode& object) {
+  name_ = object.name_;
+  value_ = object.value_;
+  key_info_ = object.key_info_;
+  is_uncompressed_key_ = object.is_uncompressed_key_;
+  base_extkey_ = object.base_extkey_;
+  tweak_sum_ = object.tweak_sum_;
+  number_ = object.number_;
+  child_node_ = object.child_node_;
+  checksum_ = object.checksum_;
+  depth_ = object.depth_;
+  need_arg_num_ = object.need_arg_num_;
+  node_type_ = object.node_type_;
+  script_type_ = object.script_type_;
+  key_type_ = object.key_type_;
+  addr_prefixes_ = object.addr_prefixes_;
+}
+
 DescriptorNode& DescriptorNode::operator=(const DescriptorNode& object) {
   name_ = object.name_;
   value_ = object.value_;
   key_info_ = object.key_info_;
+  is_uncompressed_key_ = object.is_uncompressed_key_;
+  base_extkey_ = object.base_extkey_;
+  tweak_sum_ = object.tweak_sum_;
   number_ = object.number_;
   child_node_ = object.child_node_;
   checksum_ = object.checksum_;
@@ -702,9 +758,10 @@ void DescriptorNode::AnalyzeChild(
         child_node_.push_back(node);
         offset = idx + 1;
       } else {
-        warn(CFD_LOG_SOURCE, "Illegal command.");
-        throw CfdException(
-            CfdError::kCfdIllegalArgumentError, "Illegal command.");
+        // ignore for miniscript
+        // warn(CFD_LOG_SOURCE, "Illegal command.");
+        // throw CfdException(
+        //     CfdError::kCfdIllegalArgumentError, "Illegal command.");
       }
     } else if (str == ' ') {
       ++offset;
@@ -963,24 +1020,10 @@ void DescriptorNode::AnalyzeKey() {
     if (is_wif) {
       // privkey WIF check
       bool is_compressed = true;
-      bool is_compressed_list[] = {true, false};
-      NetType nettype_list[] = {NetType::kMainnet, NetType::kTestnet};
-      size_t compressed_list_max = sizeof(is_compressed_list) / sizeof(bool);
-      size_t nettype_list_max = sizeof(nettype_list) / sizeof(NetType);
-      for (size_t i = 0; i < compressed_list_max; ++i) {
-        for (size_t j = 0; j < nettype_list_max; ++j) {
-          try {
-            privkey = Privkey::FromWif(
-                key_info_, nettype_list[j], is_compressed_list[i]);
-            is_compressed = is_compressed_list[i];
-          } catch (const CfdException& except) {
-            std::string errmsg(except.what());
-            if (errmsg.find("Error WIF to Private key.") ==
-                std::string::npos) {
-              throw except;
-            }
-          }
-        }
+      NetType nettype = NetType::kMainnet;
+      bool has_wif = Privkey::HasWif(key_info_, &nettype, &is_compressed);
+      if (has_wif) {
+        privkey = Privkey::FromWif(key_info_, nettype, is_compressed);
       }
       if (!privkey.IsValid()) {
         warn(CFD_LOG_SOURCE, "Failed to privkey.");
@@ -995,10 +1038,10 @@ void DescriptorNode::AnalyzeKey() {
   info(CFD_LOG_SOURCE, "key_info = {}", key_info_);
 }
 
-bool DescriptorNode::IsExistUncompressedKey() {
+bool DescriptorNode::ExistUncompressedKey() {
   if (is_uncompressed_key_) return true;
   for (auto& child : child_node_) {
-    if (child.IsExistUncompressedKey()) return true;
+    if (child.ExistUncompressedKey()) return true;
   }
   return false;
 }
@@ -1025,6 +1068,26 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
     }
   }
   if (p_data == nullptr) {
+    if ((parent_name == "wsh") || (parent_name == "sh")) {
+      size_t max_size = 10000;
+      if (parent_name == "sh") max_size = 520;
+      std::string miniscript = name_ + "(" + value_ + ")";
+      std::vector<unsigned char> script(max_size);
+      size_t written = 0;
+      int ret = wally_parse_miniscript(
+          miniscript.c_str(), nullptr, nullptr, 0, 0, 0, script.data(),
+          script.size(), &written);
+      if (ret == WALLY_OK) {
+        script_type_ = DescriptorScriptType::kDescriptorScriptMiniscript;
+        value_ = miniscript;
+        name_ = "miniscript";
+        number_ = static_cast<uint32_t>(written);
+        need_arg_num_ = (miniscript.find("*") != std::string::npos) ? 1 : 0;
+        child_node_.clear();
+        return;
+      }
+    }
+
     warn(
         CFD_LOG_SOURCE,
         "Failed to analyze descriptor. script's name not found.");
@@ -1163,7 +1226,7 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
     child_node_[0].AnalyzeAll(name_);
 
     if ((name_ == "wpkh") || (name_ == "wsh")) {
-      if (IsExistUncompressedKey()) {
+      if (ExistUncompressedKey()) {
         warn(
             CFD_LOG_SOURCE,
             "Failed to unsing uncompressed pubkey."
@@ -1199,7 +1262,55 @@ std::vector<DescriptorScriptReference> DescriptorNode::GetReferences(
     ScriptElement elem(static_cast<int64_t>(number_));
     build.AppendElement(elem);
   } else if (node_type_ == DescriptorNodeType::kDescriptorTypeScript) {
-    if (script_type_ == DescriptorScriptType::kDescriptorScriptRaw) {
+    if (script_type_ == DescriptorScriptType::kDescriptorScriptMiniscript) {
+      uint32_t child_num = 0;
+      if (need_arg_num_ == 0) {
+        // do nothing
+      } else if ((array_argument == nullptr) || array_argument->empty()) {
+        warn(CFD_LOG_SOURCE, "Failed to generate miniscript from hdkey.");
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            "Failed to generate miniscript from hdkey.");
+      } else if (
+          (array_argument != nullptr) && (!array_argument->empty()) &&
+          (array_argument->at(0) == std::string(kArgumentBaseExtkey))) {
+        // do nothing
+      } else if (array_argument != nullptr) {
+        std::string arg_value = array_argument->back();
+        array_argument->pop_back();
+        if (arg_value.rfind("/") != std::string::npos) {
+          warn(
+              CFD_LOG_SOURCE,
+              "Failed to invalid argument. miniscript is single child.");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to invalid argument. miniscript is single child.");
+        }
+        std::size_t end_pos = 0;
+        child_num = static_cast<uint32_t>(std::stoul(arg_value, &end_pos, 10));
+        if ((end_pos != 0) && (end_pos < arg_value.size())) {
+          warn(CFD_LOG_SOURCE, "Failed to invalid argument. number only.");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to invalid argument. number only.");
+        }
+      }
+      std::vector<uint8_t> script(number_);
+      size_t written = 0;
+      int ret = wally_parse_miniscript(
+          value_.c_str(), nullptr, nullptr, 0, child_num, 0, script.data(),
+          script.size(), &written);
+      if ((ret == WALLY_OK) && (written <= script.size())) {
+        locking_script = Script(script);
+        result.emplace_back(locking_script, script_type_, addr_prefixes_);
+      } else {
+        warn(
+            CFD_LOG_SOURCE, "Failed to parse miniscript.({}, size:{})", ret,
+            written);
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError, "Failed to parse miniscript.");
+      }
+    } else if (script_type_ == DescriptorScriptType::kDescriptorScriptRaw) {
       locking_script = Script(value_);
       result.emplace_back(locking_script, script_type_, addr_prefixes_);
     } else if (script_type_ == DescriptorScriptType::kDescriptorScriptAddr) {
@@ -1387,7 +1498,7 @@ std::string DescriptorNode::ToString(bool append_checksum) const {
   std::string result;
   info(CFD_LOG_SOURCE, "name={}, value={}", name_, value_);
 
-  if (name_.empty()) {
+  if (name_.empty() || (name_ == "miniscript")) {
     result = value_;
   } else if (child_node_.empty()) {
     result = name_ + "(" + value_ + ")";
@@ -1415,6 +1526,15 @@ std::string DescriptorNode::ToString(bool append_checksum) const {
 // Descriptor
 // -----------------------------------------------------------------------------
 Descriptor::Descriptor() {}
+
+Descriptor::Descriptor(const Descriptor& object) {
+  root_node_ = object.root_node_;
+}
+
+Descriptor& Descriptor::operator=(const Descriptor& object) {
+  root_node_ = object.root_node_;
+  return *this;
+}
 
 Descriptor Descriptor::Parse(
     const std::string& output_descriptor,
@@ -1555,7 +1675,7 @@ uint32_t Descriptor::GetNeedArgumentNum() const {
 
 Script Descriptor::GetLockingScript() const {
   if (GetNeedArgumentNum() != 0) {
-    warn(CFD_LOG_SOURCE, "Failed to empty argument.");
+    warn(CFD_LOG_SOURCE, "Failed to empty argument. {}", GetNeedArgumentNum());
     throw CfdException(
         CfdError::kCfdIllegalArgumentError,
         "Failed to empty argument. need argument descriptor.");

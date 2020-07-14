@@ -858,35 +858,39 @@ class CFD_CORE_EXPORT ConfidentialTxOutReference
    * @param[in] is_blinded             blinding or not.
    * @param[out] witness_area_size     witness area size.
    * @param[out] no_witness_area_size  no witness area size.
-   * @param[in] exponent                  rangeproof exponent value.
+   * @param[in] exponent               rangeproof exponent value.
    *   -1 to 18. -1 is public value. 0 is most private.
-   * @param[in] minimum_bits              rangeproof blinding bits.
+   * @param[in] minimum_bits           rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
-   * @param[in,out] rangeproof_size       rangeproof size.
+   * @param[in,out] rangeproof_size    rangeproof size.
    *   0 is calclate from exponent and minimum bits. not 0 is using value.
+   * @param[in] input_asset_count      tx input asset count. (contain issuance)
    * @return serialized size
    */
   uint32_t GetSerializeSize(
       bool is_blinded = true, uint32_t* witness_area_size = nullptr,
       uint32_t* no_witness_area_size = nullptr, int exponent = 0,
       int minimum_bits = kDefaultBlindMinimumBits,
-      uint32_t* rangeproof_size = nullptr) const;
+      uint32_t* rangeproof_size = nullptr,
+      uint32_t input_asset_count = 0) const;
 
   /**
    * @brief Get a serialized virtual size.
    * @param[in] is_blinded             blinding or not.
-   * @param[in] exponent                  rangeproof exponent value.
+   * @param[in] exponent               rangeproof exponent value.
    *   -1 to 18. -1 is public value. 0 is most private.
-   * @param[in] minimum_bits              rangeproof blinding bits.
+   * @param[in] minimum_bits           rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
-   * @param[in,out] rangeproof_size       rangeproof size.
+   * @param[in,out] rangeproof_size    rangeproof size.
    *   0 is calclate from exponent and minimum bits. not 0 is using value.
+   * @param[in] input_asset_count      tx input asset count. (contain issuance)
    * @return serialized virtual size.
    */
   uint32_t GetSerializeVsize(
       bool is_blinded = true, int exponent = 0,
       int minimum_bits = kDefaultBlindMinimumBits,
-      uint32_t* rangeproof_size = nullptr) const;
+      uint32_t* rangeproof_size = nullptr,
+      uint32_t input_asset_count = 0) const;
 
  private:
   ConfidentialAssetId asset_;             //!< confidential asset

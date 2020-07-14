@@ -5,12 +5,13 @@
  * @brief \~japanese Amountを表現するクラス
  *   \~english Class to show amount.
  */
+#include "cfdcore/cfdcore_amount.h"
+
 #include <algorithm>
 #include <cmath>
 #include <string>
 #include <vector>
 
-#include "cfdcore/cfdcore_amount.h"
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"

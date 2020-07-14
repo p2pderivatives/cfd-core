@@ -161,6 +161,17 @@ TEST(CryptoUtil, EncryptAes256Cbc2) {
       "2ef199bb7d160f94fc17fa5f01b220c630d6b19a5973f4b313868c921fc10d22");
 }
 
+TEST(CryptoUtil, EncryptAes256CbcByteData) {
+  ByteData key(
+      "616975656F616975656F616975656F616975656F616975656F616975656F6169");
+  ByteData iv("33343536373839303132333435363738");
+  ByteData data("74657374207465737420746573742074657374");
+  ByteData byte_data = CryptoUtil::EncryptAes256Cbc(key, iv, data);
+  EXPECT_STREQ(
+      byte_data.GetHex().c_str(),
+      "2ef199bb7d160f94fc17fa5f01b220c630d6b19a5973f4b313868c921fc10d22");
+}
+
 TEST(CryptoUtil, EncryptAes256CbcKeyEmpty) {
   try {
     std::vector<uint8_t> key;
@@ -255,6 +266,17 @@ TEST(CryptoUtil, DecryptAes256CbcToString2) {
                                                             iv.GetBytes(),
                                                             data);
   EXPECT_STREQ(result.c_str(), "test test test test");
+}
+
+TEST(CryptoUtil, DecryptAes256Cbc) {
+  ByteData key(
+      "616975656F616975656F616975656F616975656F616975656F616975656F6169");
+  ByteData iv("33343536373839303132333435363738");
+  ByteData data(
+      "2ef199bb7d160f94fc17fa5f01b220c630d6b19a5973f4b313868c921fc10d22");
+
+  ByteData result = CryptoUtil::DecryptAes256Cbc(key, iv, data);
+  EXPECT_STREQ(result.GetHex().c_str(), "74657374207465737420746573742074657374");
 }
 
 TEST(CryptoUtil, DecryptAes256CbcToStringKeyEmpty) {
@@ -550,6 +572,33 @@ TEST(CryptoUtil, DecodeBase64DataEmpty) {
 // Base58 decode tool
 // https://bc-2.jp/tools/txeditor2.html
 // EncodeBase58----------------------------------------------------------------
+TEST(CryptoUtil, EncodeBase58) {
+  ByteData data(
+      "0488b21e051431616f00000000e6ba4088246b104837c62bd01fd8ba1cf2931ad1a5376c2360a1f112f2cfc63c02acf89ab4e3daa79bceef2ebecee2af92712e6bf5e4b0d10c74bbecc27ac13da8");
+  std::string result = CryptoUtil::EncodeBase58(data);
+  EXPECT_STREQ(
+      result.c_str(),
+      "9XpNiCWvYUYz78YLbbNYoBMUef5GNJooCQ9i2nf9AH95Njpp4AbuEcmL5iVAwxa6LdR6FyRPeGFEmkFDr3KPGww6peFFtqtabW75Ush4TR");
+}
+
+TEST(CryptoUtil, EncodeBase58Check) {
+  ByteData data(
+      "0488b21e051431616f00000000e6ba4088246b104837c62bd01fd8ba1cf2931ad1a5376c2360a1f112f2cfc63c02acf89ab4e3daa79bceef2ebecee2af92712e6bf5e4b0d10c74bbecc27ac13da8");
+  std::string result = CryptoUtil::EncodeBase58Check(data);
+  EXPECT_STREQ(
+      result.c_str(),
+      "xpub6FZeZ5vwcYiT6r7ZYKJhyUqBxMBvzSmb6SpPQCsSenGPrVjKk5SGW4JJpc7cKERN8w9KnJZcMgJA4B2cHnpGq5TahYrDvZSBY2EMLKPRMTT");
+}
+
+TEST(CryptoUtil, DecodeBase58) {
+  std::string data(
+      "9XpNiCWvYUYz78YLbbNYoBMUef5GNJooCQ9i2nf9AH95Njpp4AbuEcmL5iVAwxa6LdR6FyRPeGFEmkFDr3KPGww6peFFtqtabW75Ush4TR");
+  ByteData byte_data = CryptoUtil::DecodeBase58(data);
+  EXPECT_STREQ(
+      byte_data.GetHex().c_str(),
+      "0488b21e051431616f00000000e6ba4088246b104837c62bd01fd8ba1cf2931ad1a5376c2360a1f112f2cfc63c02acf89ab4e3daa79bceef2ebecee2af92712e6bf5e4b0d10c74bbecc27ac13da8");
+}
+
 TEST(CryptoUtil, DecodeBase58Check) {
   std::string data(
       "xpub6FZeZ5vwcYiT6r7ZYKJhyUqBxMBvzSmb6SpPQCsSenGPrVjKk5SGW4JJpc7cKERN8w9KnJZcMgJA4B2cHnpGq5TahYrDvZSBY2EMLKPRMTT");
@@ -570,36 +619,34 @@ TEST(CryptoUtil, DecodeBase58CheckDataEmpty) {
   ASSERT_TRUE(false);
 }
 
-// FIXME(fujita-cg): 以下のテストについて、Elements相当のtest_vectorではテストが通っていないため、代理テストを実施している。
-//                   ComputeFastMerkleRoot()の処理を見直して代理テストから本来のテストコードへ修正を実施すべき
-// TEST(CryptoUtil, ComputeFastMerkleRootTest) {
-//   // test_vectors from 
-//   // https://github.com/ElementsProject/elements/blob/66c015529e7846f8491bcafd986326bcafc1bfcb/src/test/merkle_tests.cpp#L256
-//   std::vector<ByteData256> test_leaves = {
-//     ByteData256("b66b041650db0f297b53f8d93c0e8706925bf3323f8c59c14a6fac37bfdcd06f"),
-//     ByteData256("99cb2fa68b2294ae133550a9f765fc755d71baa7b24389fed67d1ef3e5cb0255"),
-//     ByteData256("257e1b2fa49dd15724c67bac4df7911d44f6689860aa9f65a881ae0a2f40a303"),
-//     ByteData256("b67b0b9f093fa83d5e44b707ab962502b7ac58630e556951136196e65483bb80"),
-//   };
-//   std::vector<ByteData256> test_roots = {
-//     ByteData256("0000000000000000000000000000000000000000000000000000000000000000"),
-//     ByteData256("b66b041650db0f297b53f8d93c0e8706925bf3323f8c59c14a6fac37bfdcd06f"),
-//     ByteData256("f752938da0cb71c051aabdd5a86658e8d0b7ac00e1c2074202d8d2a79d8a6cf6"),
-//     ByteData256("245d364a28e9ad20d522c4a25ffc6a7369ab182f884e1c7dcd01aa3d32896bd3"),
-//     ByteData256("317d6498574b6ca75ee0368ec3faec75e096e245bdd5f36e8726fa693f775dfc"),
-//   };
-//   std::vector<ByteData256> leaves;
-  
-//   for(size_t i = 0; i < test_leaves.size(); ++i) {
-//     ByteData256 root = CryptoUtil::ComputeFastMerkleRoot(leaves);
-//     EXPECT_STREQ(root.GetHex().c_str(), test_roots[i].GetHex().c_str()) << "index: " << i;
-//     leaves.push_back(test_leaves[i]);
-//   }
-//   ByteData256 root = CryptoUtil::ComputeFastMerkleRoot(leaves);
-//   EXPECT_EQ(root.GetBytes(), test_roots.back().GetBytes());
-// }
+TEST(CryptoUtil, ComputeFastMerkleRootTest0) {
+  // test_vectors from 
+  // https://github.com/ElementsProject/elements/blob/66c015529e7846f8491bcafd986326bcafc1bfcb/src/test/merkle_tests.cpp#L256
+  std::vector<ByteData256> test_leaves = {
+    ByteData256("6fd0dcbf37ac6f4ac1598c3f32f35b9206870e3cd9f8537b290fdb5016046bb6"),
+    ByteData256("5502cbe5f31e7dd6fe8943b2a7ba715d75fc65f7a9503513ae94228ba62fcb99"),
+    ByteData256("03a3402f0aae81a8659faa609868f6441d91f74dac7bc62457d19da42f1b7e25"),
+    ByteData256("80bb8354e69661135169550e6358acb7022596ab07b7445e3da83f099f0b7bb6"),
+  };
+  std::vector<ByteData256> test_roots = {
+    ByteData256("0000000000000000000000000000000000000000000000000000000000000000"),
+    ByteData256("6fd0dcbf37ac6f4ac1598c3f32f35b9206870e3cd9f8537b290fdb5016046bb6"),
+    ByteData256("f66c8a9da7d2d8024207c2e100acb7d0e85866a8d5bdaa51c071cba08d9352f7"),
+    ByteData256("d36b89323daa01cd7d1c4e882f18ab69736afc5fa2c422d520ade9284a365d24"),
+    ByteData256("fc5d773f69fa26876ef3d5bd45e296e075ecfac38e36e05ea76c4b5798647d31"),
+  };
+  std::vector<ByteData256> leaves;
 
-TEST(CryptoUtil, ComputeFastMerkleRootTest) {
+  for(size_t i = 0; i < test_leaves.size(); ++i) {
+    ByteData256 root = CryptoUtil::ComputeFastMerkleRoot(leaves);
+    EXPECT_STREQ(root.GetHex().c_str(), test_roots[i].GetHex().c_str()) << "index: " << i;
+    leaves.push_back(test_leaves[i]);
+  }
+  ByteData256 root = CryptoUtil::ComputeFastMerkleRoot(leaves);
+  EXPECT_EQ(root.GetBytes(), test_roots.back().GetBytes());
+}
+
+TEST(CryptoUtil, ComputeFastMerkleRootTest1) {
   std::vector<ByteData256> test_leaves = {
     ByteData256("0ff84a4fe52fd957900ef812a2c6dbd76f95371bf356aa055134e58ebf752c59"),
     ByteData256("56aa859e86b5decd00dda32c9bc4de144337689d23f29ca3ed6e7b8fa311b0a5"),

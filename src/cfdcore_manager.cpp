@@ -5,17 +5,16 @@
  * @brief \~japanese cfdcore管理クラスの実装ファイルです。
  *   \~english implementation for cfdcore manager class
  */
-#include <vector>
-
-#include "wally_core.h"  // NOLINT
-
 #include "cfdcore_manager.h"  // NOLINT
+
+#include <vector>
 
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_logger_interface.h"
 #include "cfdcore/cfdcore_util.h"
+#include "wally_core.h"  // NOLINT
 
 namespace cfd {
 namespace core {

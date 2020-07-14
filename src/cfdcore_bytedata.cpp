@@ -5,11 +5,12 @@
  * @brief \~japanese ByteData関連クラス実装
  *   \~english implimentation of ByteData class
  */
+#include "cfdcore/cfdcore_bytedata.h"
+
 #include <limits>
 #include <string>
 #include <vector>
 
-#include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_util.h"

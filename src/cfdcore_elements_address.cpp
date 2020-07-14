@@ -7,12 +7,13 @@
  */
 #ifndef CFD_DISABLE_ELEMENTS
 
+#include "cfdcore/cfdcore_elements_address.h"
+
 #include <algorithm>
 #include <string>
 #include <vector>
 
 #include "cfdcore/cfdcore_bytedata.h"
-#include "cfdcore/cfdcore_elements_address.h"
 #include "cfdcore/cfdcore_key.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_script.h"
