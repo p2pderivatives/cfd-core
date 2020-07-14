@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_common.h"
 
@@ -251,6 +252,12 @@ class CFD_CORE_EXPORT Privkey {
   Pubkey GeneratePubkey(bool is_compressed = true) const;
 
   /**
+   * @brief get pubkey from privkey.
+   * @return Pubkey
+   */
+  Pubkey GetPubkey() const;
+
+  /**
    * @brief Create new private key with tweak added.
    * @details This function doesn't have no side-effect.
    *     It always returns new instance of Privkey.
@@ -315,6 +322,12 @@ class CFD_CORE_EXPORT Privkey {
       const ByteData256& signature_hash, bool has_grind_r = true) const;
 
   /**
+   * @brief set pubkey compressed flag.
+   * @param[in] is_compressed  pubkey compressed.
+   */
+  void SetPubkeyCompressed(bool is_compressed);
+
+  /**
    * @brief WIFからPrivKeyインスタンスを生成する.
    * @param[in] wif WIF文字列
    * @param[in] net_type Mainnet or Testnet
@@ -332,11 +345,27 @@ class CFD_CORE_EXPORT Privkey {
    */
   static Privkey GenerageRandomKey();
 
+  /**
+   * @brief check wif format.
+   * @param[in] wif WIF string.
+   * @param[out] net_type  network type. (Mainnet or Testnet)
+   * @param[out] is_compressed  pubkey compressed.
+   * @retval true   wallet import format.
+   * @retval false  other format.
+   */
+  static bool HasWif(
+      const std::string& wif, NetType* net_type = nullptr,
+      bool* is_compressed = nullptr);
+
  private:
   /**
    * @brief ByteData of Private key.
    */
   ByteData data_;
+  /**
+   * @brief pubkey compressed.
+   */
+  bool is_compressed_ = true;
 
   /**
    * @brief 秘密鍵として正しい形式であるかを検証する.

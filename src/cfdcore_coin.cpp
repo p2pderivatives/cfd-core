@@ -5,10 +5,11 @@
  * @brief \~japanese Coin(UTXO)関連クラス
  *   \~english Classes related to Coin(UTXO)
  */
+#include "cfdcore/cfdcore_coin.h"
+
 #include <string>
 #include <vector>
 
-#include "cfdcore/cfdcore_coin.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_util.h"

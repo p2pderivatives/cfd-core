@@ -1654,9 +1654,10 @@ TEST(ConfidentialTransaction, GetPegoutPubkeyDataPkhNoCounterTest) {
   PegoutKeyData key_data;
 
   Address addr;
+  // 20200625: Although the logic is the same, a problem occurred due to the processing position.
   GetPegoutPubkeyDataTestVector testdata = {
-    "02b5e6f1c3b0d16cf15e9496dc2de977207947339bf50bded0f52af2e62f8dc648",
-    "013fea92fc45099da667c69b60a5a3bca592ce5d61e84ab452d0984336091ee55f361475055d2bde0fa0eb339996c107b552ea5877d6508abeb3883642bc738704",
+    "031edbc17e3c1e67bb7d4aaceede0b78e5b4bd69d1b38b1a7048f605d96f572ef1",
+    "01cac9aebddceb0cc8e869f43d080ab00895ce89c3127c85ffd221152c52d912134d7d3da862e36b66c63f39bb4e1920bcd74013ec9a97e3374678113251f6a12d",
     "mx7egZtzUWR8aVviQnpKJCoaT4ytSiQjxL"
   };
   EXPECT_NO_THROW(

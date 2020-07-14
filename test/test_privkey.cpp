@@ -129,6 +129,10 @@ TEST(Privkey, FromWif_mainnet_compressed) {
 
   Privkey from_hex("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
   EXPECT_TRUE(privkey.Equals(from_hex));
+
+  EXPECT_STREQ(
+      privkey.GetPubkey().GetHex().c_str(),
+      "031777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb");
 }
 
 TEST(Privkey, FromWif_testnet_compressed) {
@@ -151,6 +155,10 @@ TEST(Privkey, FromWif_mainnet_uncompressed) {
 
   Privkey from_hex("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
   EXPECT_TRUE(privkey.Equals(from_hex));
+
+  EXPECT_STREQ(
+      privkey.GetPubkey().GetHex().c_str(),
+      "041777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb78885d348051c6fbd31ac749eb5646481f6d8d9c36f8d157712ca054046a9b8b");
 }
 
 TEST(Privkey, FromWif_wif_error) {
@@ -180,6 +188,35 @@ TEST(Privkey, GeneratePubkey_uncompressed) {
   EXPECT_STREQ(
       pubkey.GetHex().c_str(),
       "041777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb78885d348051c6fbd31ac749eb5646481f6d8d9c36f8d157712ca054046a9b8b");
+}
+
+TEST(Privkey, HasWif_compressed) {
+  std::string wif = "cQNmd1D8MqzijUuXHb2yS5oRSm2F3TSTTMvcHC3V7CiKxArpg1bg";
+  NetType net_type = NetType::kRegtest;
+  bool is_compressed = false;
+  bool has_wif = Privkey::HasWif(wif, &net_type, &is_compressed);
+  EXPECT_TRUE(has_wif);
+  EXPECT_TRUE(is_compressed);
+  EXPECT_EQ(NetType::kTestnet, net_type);
+}
+
+TEST(Privkey, HasWif_uncompressed) {
+  std::string wif = "5JBb5A38fjjeBnngkvRmCsXN6EY4w8jWvckik3hDvYQMcddGY23";
+  NetType net_type = NetType::kRegtest;
+  bool is_compressed = false;
+  bool has_wif = Privkey::HasWif(wif, &net_type, &is_compressed);
+  EXPECT_TRUE(has_wif);
+  EXPECT_FALSE(is_compressed);
+  EXPECT_EQ(NetType::kMainnet, net_type);
+}
+
+TEST(Privkey, HasWif_hex) {
+  std::string hex = "305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27";
+  NetType net_type = NetType::kRegtest;
+  bool is_compressed = false;
+  bool has_wif = Privkey::HasWif(hex, &net_type, &is_compressed);
+  EXPECT_FALSE(has_wif);
+  EXPECT_FALSE(is_compressed);
 }
 
 TEST(Privkey, IsValid_false) {

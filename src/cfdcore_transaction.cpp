@@ -5,6 +5,8 @@
  * @brief \~japanese Transaction関連クラスの実装ファイルです。
  *   \~english implementation of Transaction related class
  */
+#include "cfdcore/cfdcore_transaction.h"
+
 #include <limits>
 #include <string>
 #include <vector>
@@ -12,7 +14,6 @@
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
-#include "cfdcore/cfdcore_transaction.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
 

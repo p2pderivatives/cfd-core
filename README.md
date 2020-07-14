@@ -146,6 +146,30 @@ npm run ctest
 
 - Not Implemented yet
 
+---
+
+## Information for developers
+
+### using library
+
+- libwally-core (forked from [ElementsProject](https://github.com/ElementsProject/libwally-core))
+- univalue
+- googletest (for testing)
+
+### formatter
+
+- clang-format (using v10.0.0)
+
+### linter
+
+- cpplint
+
+### document tool
+
+- doxygen & graphviz
+
+---
+
 ## Note
 
 ### Git connection:

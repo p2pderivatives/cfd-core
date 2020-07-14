@@ -13,14 +13,15 @@
 #include <vector>
 
 #include "cfdcore/cfdcore_bytedata.h"
+#include "cfdcore/cfdcore_key.h"
 #include "cfdcore_secp256k1.h"  // NOLINT
-
 #include "wally_address.h"      // NOLINT
 #include "wally_bip32.h"        // NOLINT
 #include "wally_bip38.h"        // NOLINT
 #include "wally_bip39.h"        // NOLINT
 #include "wally_core.h"         // NOLINT
 #include "wally_crypto.h"       // NOLINT
+#include "wally_descriptor.h"   // NOLINT
 #include "wally_script.h"       // NOLINT
 #include "wally_transaction.h"  // NOLINT
 

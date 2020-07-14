@@ -6,11 +6,12 @@
  *   \~japanese secp256k1関連クラス定義
  */
 
+#include "cfdcore_secp256k1.h"  // NOLINT
+
 #include <vector>
 
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
-#include "cfdcore_secp256k1.h"          // NOLINT
 #include "secp256k1.h"                  // NOLINT
 #include "secp256k1_generator.h"        // NOLINT
 #include "secp256k1_rangeproof.h"       // NOLINT

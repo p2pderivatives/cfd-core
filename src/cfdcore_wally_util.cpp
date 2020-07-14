@@ -5,6 +5,8 @@
  * @brief libwally internal utility.
  *
  */
+#include "cfdcore_wally_util.h"  // NOLINT
+
 #include <algorithm>
 #include <exception>
 #include <string>
@@ -14,9 +16,7 @@
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
 #include "cfdcore/cfdcore_util.h"
-#include "cfdcore_secp256k1.h"   // NOLINT
-#include "cfdcore_wally_util.h"  // NOLINT
-
+#include "cfdcore_secp256k1.h"  // NOLINT
 #include "wally_address.h"      // NOLINT
 #include "wally_bip32.h"        // NOLINT
 #include "wally_bip38.h"        // NOLINT

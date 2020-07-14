@@ -6,6 +6,8 @@
  *   \~english implementation of Script related class
  */
 
+#include "cfdcore/cfdcore_script.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <map>
@@ -19,7 +21,6 @@
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_iterator.h"
 #include "cfdcore/cfdcore_logger.h"
-#include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
 
@@ -584,29 +585,31 @@ Script::Script(const ByteData& bytedata)
 
 void Script::SetStackData(const ByteData& bytedata) {
   std::vector<uint8_t> buffer = bytedata.GetBytes();
-  static const std::set<ScriptType> kUseScriptNum1{kOpCheckSequenceVerify,
-                                                   kOpCheckLockTimeVerify,
-                                                   kOp1Add,
-                                                   kOp1Sub,
-                                                   kOpNegate,
-                                                   kOpAbs,
-                                                   kOpNot,
-                                                   kOp0NotEqual,
-                                                   kOpPick,
-                                                   kOpRoll};
-  static const std::set<ScriptType> kUseScriptNum2{kOpAdd,
-                                                   kOpSub,
-                                                   kOpGreaterThan,
-                                                   kOpBoolOr,
-                                                   kOpNumEqual,
-                                                   kOpNumEqualVerify,
-                                                   kOpNumNotEqual,
-                                                   kOpLessThan,
-                                                   kOpBoolAnd,
-                                                   kOpLessThanOrEqual,
-                                                   kOpMin,
-                                                   kOpMax,
-                                                   kOpGreaterThanOrEqual};
+  static const std::set<ScriptType> kUseScriptNum1{
+      kOpCheckSequenceVerify,
+      kOpCheckLockTimeVerify,
+      kOp1Add,
+      kOp1Sub,
+      kOpNegate,
+      kOpAbs,
+      kOpNot,
+      kOp0NotEqual,
+      kOpPick,
+      kOpRoll};
+  static const std::set<ScriptType> kUseScriptNum2{
+      kOpAdd,
+      kOpSub,
+      kOpGreaterThan,
+      kOpBoolOr,
+      kOpNumEqual,
+      kOpNumEqualVerify,
+      kOpNumNotEqual,
+      kOpLessThan,
+      kOpBoolAnd,
+      kOpLessThanOrEqual,
+      kOpMin,
+      kOpMax,
+      kOpGreaterThanOrEqual};
 
   // create stack
   bool is_collect_buffer = false;

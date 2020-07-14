@@ -52,6 +52,7 @@ enum DescriptorScriptType {
   kDescriptorScriptSortedMulti,  //!< sorted multisig
   kDescriptorScriptAddr,         //!< address
   kDescriptorScriptRaw,          //!< raw script
+  kDescriptorScriptMiniscript,   //!< miniscript
 };
 
 /**
@@ -135,6 +136,11 @@ class CFD_CORE_EXPORT DescriptorKeyInfo {
       const ExtPubkey& ext_pubkey,
       const std::string parent_key_information = "",
       const std::string path = "");
+  /**
+   * @brief copy constructor.
+   * @param[in] object    DescriptorKeyReference object
+   */
+  explicit DescriptorKeyInfo(const DescriptorKeyInfo& object);
   /**
    * @brief copy constructor.
    * @param[in] object    DescriptorKeyReference object
@@ -237,6 +243,11 @@ class CFD_CORE_EXPORT DescriptorKeyReference {
    */
   explicit DescriptorKeyReference(
       const ExtPubkey& ext_pubkey, const std::string* arg = nullptr);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    DescriptorKeyReference object
+   */
+  DescriptorKeyReference(const DescriptorKeyReference& object);
   /**
    * @brief copy constructor.
    * @param[in] object    DescriptorKeyReference object
@@ -344,6 +355,11 @@ class CFD_CORE_EXPORT DescriptorScriptReference {
   explicit DescriptorScriptReference(
       const Address& address_script,
       const std::vector<AddressFormatData>& address_prefixes);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    DescriptorScriptReference object
+   */
+  DescriptorScriptReference(const DescriptorScriptReference& object);
   /**
    * @brief copy constructor.
    * @param[in] object    DescriptorScriptReference object
@@ -492,6 +508,11 @@ class CFD_CORE_EXPORT DescriptorNode {
   /**
    * @brief copy constructor.
    * @param[in] object    DescriptorNode object
+   */
+  DescriptorNode(const DescriptorNode& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    DescriptorNode object
    * @return DescriptorNode object
    */
   DescriptorNode& operator=(const DescriptorNode& object);
@@ -594,7 +615,7 @@ class CFD_CORE_EXPORT DescriptorNode {
    * @retval true exist
    * @retval false not exist
    */
-  bool IsExistUncompressedKey();
+  bool ExistUncompressedKey();
 };
 
 /**
@@ -650,6 +671,19 @@ class CFD_CORE_EXPORT Descriptor {
    * @brief constructor.
    */
   Descriptor();
+
+  /**
+   * @brief copy constructor.
+   * @param[in] object    Descriptor object
+   */
+  Descriptor(const Descriptor& object);
+
+  /**
+   * @brief copy constructor.
+   * @param[in] object    Descriptor object
+   * @return Descriptor object
+   */
+  Descriptor& operator=(const Descriptor& object);
 
   /**
    * @brief check combo script.

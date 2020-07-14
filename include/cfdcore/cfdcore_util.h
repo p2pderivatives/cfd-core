@@ -75,6 +75,11 @@ class CFD_CORE_EXPORT SigHashType {
   /**
    * @brief コピーコンストラクタ.
    * @param[in] sighash_type        SigHashType オブジェクト
+   */
+  SigHashType(const SigHashType &sighash_type);
+  /**
+   * @brief コピーコンストラクタ.
+   * @param[in] sighash_type        SigHashType オブジェクト
    * @return SigHashType オブジェクト
    */
   SigHashType &operator=(const SigHashType &sighash_type);
@@ -347,6 +352,15 @@ class CFD_CORE_EXPORT CryptoUtil {
       const std::vector<uint8_t> &key, const std::vector<uint8_t> &iv,
       const std::string &data);
   /**
+   * @brief Encrypto ByteData with AES256-CBC.
+   * @param[in] key key array with 32Byte.
+   * @param[in] iv  initial vector with 16Byte.
+   * @param[in] data target byte data.
+   * @return encrypted byte data.
+   */
+  static ByteData EncryptAes256Cbc(
+      const ByteData &key, const ByteData &iv, const ByteData &data);
+  /**
    * @brief ByteDataをAES256CBC復号化する.
    * @param[in] key keyとなる32Byteの配列データ
    * @param[in] iv  initial vectorとなる16Byteの配列データ
@@ -356,6 +370,15 @@ class CFD_CORE_EXPORT CryptoUtil {
   static std::string DecryptAes256CbcToString(
       const std::vector<uint8_t> &key, const std::vector<uint8_t> &iv,
       const ByteData &data);
+  /**
+   * @brief Decrypto ByteData with AES256-CBC.
+   * @param[in] key key array with 32Byte.
+   * @param[in] iv  initial vector with 16Byte.
+   * @param[in] data target encrypted byte data.
+   * @return decrypted byte data.
+   */
+  static ByteData DecryptAes256Cbc(
+      const ByteData &key, const ByteData &iv, const ByteData &data);
   /**
    * @brief ByteDataのHMAC-SHA256を計算する.
    * @param[in] key keyとなるByte配列データ
@@ -422,11 +445,29 @@ class CFD_CORE_EXPORT CryptoUtil {
    */
   static ByteData DecodeBase64(const std::string &str);
   /**
-   * @brief 文字列をBase58デコードする.
-   * @param[in] str Base58エンコードされた文字列
+   * @brief decode Base58.
+   * @param[in] str   Base58 encoding string
+   * @return decode's ByteData
+   */
+  static ByteData DecodeBase58(const std::string &str);
+  /**
+   * @brief 文字列をBase58デコードおよびチェックサム確認する.
+   * @param[in] str   Base58エンコードされた文字列
    * @return decodeしたByteData
    */
   static ByteData DecodeBase58Check(const std::string &str);
+  /**
+   * @brief encode Base58.
+   * @param[in] data  byte data
+   * @return Base58 encode string.
+   */
+  static std::string EncodeBase58(const ByteData &data);
+  /**
+   * @brief encode Base58 and append checksum.
+   * @param[in] data  byte data
+   * @return Base58 encode string.
+   */
+  static std::string EncodeBase58Check(const ByteData &data);
 
   /**
    * @brief merkle rootの簡易計算を行う。

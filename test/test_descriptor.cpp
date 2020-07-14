@@ -48,6 +48,12 @@ TEST(Descriptor, Parse_pk) {
   EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
   EXPECT_STREQ(locking_script.ToString().c_str(),
     "02a5613bd857b7048924264d1e70e08fb2a7e6527d32b7ab1bb993ac59964ff397 OP_CHECKSIG");
+
+  // copy constructor
+  Descriptor desc2(desc);
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+    "02a5613bd857b7048924264d1e70e08fb2a7e6527d32b7ab1bb993ac59964ff397 OP_CHECKSIG");
 }
 
 TEST(Descriptor, Parse_pkh) {
@@ -581,6 +587,153 @@ TEST(Descriptor, Parse_Pubkey_Uncompress) {
     EXPECT_TRUE(false);
   } catch (const CfdException& except) {
     EXPECT_STREQ("Failed to unsing uncompressed pubkey.", except.what());
+  }
+}
+
+TEST(Descriptor, Parse_sh_miniscript) {
+  // cfd::core::CfdCoreHandle handle = nullptr;
+  // cfd::core::Initialize(&handle);
+  std::string descriptor = "sh(or_d(sha256(38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6),and_n(un:after(499999999),older(4194305))))";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  Script gen_script;
+  std::vector<DescriptorScriptReference> script_list;
+
+  try {
+    desc = Descriptor::Parse(descriptor);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
+  std::vector<std::string> arg_list1;
+  EXPECT_NO_THROW(desc = Descriptor::Parse(descriptor));
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll(nullptr));
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+    "OP_HASH160 4abf8cfc94ae837bf59965e0c74d02a611ec1329 OP_EQUAL");
+
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_TRUE(script_list[0].HasAddress());
+    EXPECT_STREQ(script_list[0].GenerateAddress(NetType::kMainnet).GetAddress().c_str(),
+      "38WFPv9fne2UeFxVkGMhLkamMadH8j6s1c");
+    EXPECT_EQ(script_list[0].GetAddressType(), AddressType::kP2shAddress);
+    EXPECT_EQ(script_list[0].GetHashType(), HashType::kP2sh);
+    EXPECT_EQ(script_list[0].GetScriptType(), DescriptorScriptType::kDescriptorScriptSh);
+
+    EXPECT_TRUE(script_list[0].HasChild());
+    EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
+      "OP_SIZE 32 OP_EQUALVERIFY OP_SHA256 38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6 OP_EQUAL OP_IFDUP OP_NOTIF OP_IF 499999999 OP_CHECKLOCKTIMEVERIFY OP_0NOTEQUAL OP_ELSE 0 OP_ENDIF OP_NOTIF 0 OP_ELSE 4194305 OP_CHECKSEQUENCEVERIFY OP_ENDIF OP_ENDIF");
+    EXPECT_FALSE(script_list[0].GetChild().HasChild());
+    EXPECT_FALSE(script_list[0].GetChild().HasKey());
+    EXPECT_FALSE(script_list[0].GetChild().HasRedeemScript());
+    EXPECT_EQ(script_list[0].GetChild().GetScriptType(), DescriptorScriptType::kDescriptorScriptMiniscript);
+    EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
+      script_list[0].GetChild().GetLockingScript().ToString().c_str());
+  }
+}
+
+TEST(Descriptor, Parse_wsh_miniscript) {
+  std::string descriptor = "wsh(thresh(2,multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00),a:multi(1,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00),ac:pk_k(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01)))";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  Script gen_script;
+  std::vector<DescriptorScriptReference> script_list;
+
+  try {
+    desc = Descriptor::Parse(descriptor);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
+  std::vector<std::string> arg_list1;
+  EXPECT_NO_THROW(desc = Descriptor::Parse(descriptor));
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(gen_script = desc.GetLockingScript(arg_list1));
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll(nullptr));
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+    "0 6a6c42f62db9fab091ffaf930e0a847646898d225e1ad94ff43226e20180b9d1");
+  EXPECT_STREQ(gen_script.ToString().c_str(),
+    "0 6a6c42f62db9fab091ffaf930e0a847646898d225e1ad94ff43226e20180b9d1");
+
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_TRUE(script_list[0].HasAddress());
+    EXPECT_STREQ(script_list[0].GenerateAddress(NetType::kMainnet).GetAddress().c_str(),
+      "bc1qdfky9a3dh8atpy0l47fsuz5ywergnrfztcddjnl5xgnwyqvqh8gschn2ch");
+    EXPECT_EQ(script_list[0].GetAddressType(), AddressType::kP2wshAddress);
+    EXPECT_EQ(script_list[0].GetHashType(), HashType::kP2wsh);
+    EXPECT_EQ(script_list[0].GetScriptType(), DescriptorScriptType::kDescriptorScriptWsh);
+
+    EXPECT_TRUE(script_list[0].HasChild());
+    EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
+      "2 03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7 036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00 2 OP_CHECKMULTISIG OP_TOALTSTACK 1 036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00 1 OP_CHECKMULTISIG OP_FROMALTSTACK OP_ADD OP_TOALTSTACK 022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01 OP_CHECKSIG OP_FROMALTSTACK OP_ADD 2 OP_EQUAL");
+    EXPECT_FALSE(script_list[0].GetChild().HasChild());
+    EXPECT_FALSE(script_list[0].GetChild().HasKey());
+    EXPECT_FALSE(script_list[0].GetChild().HasRedeemScript());
+    EXPECT_EQ(script_list[0].GetChild().GetScriptType(), DescriptorScriptType::kDescriptorScriptMiniscript);
+    EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
+      script_list[0].GetChild().GetLockingScript().ToString().c_str());
+  }
+}
+
+TEST(Descriptor, Parse_sh_wsh_miniscript_derive) {
+  std::string descriptor = "sh(wsh(c:or_i(andor(c:pk_h(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*),pk_h(xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*),pk_h(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)),pk_k(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e))))";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  Script gen_script;
+  std::vector<DescriptorScriptReference> script_list;
+  std::vector<DescriptorScriptReference> script_list2;
+
+  try {
+    desc = Descriptor::Parse(descriptor);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
+  std::vector<std::string> arg_list1;
+  std::vector<std::string> arg_list2;
+  arg_list1.push_back("0");
+  arg_list2.push_back("44");
+  EXPECT_NO_THROW(desc = Descriptor::Parse(descriptor));
+  EXPECT_THROW(locking_script = desc.GetLockingScript(), CfdException);
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript(arg_list1[0]));
+  EXPECT_NO_THROW(gen_script = desc.GetLockingScript(arg_list2));
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll(&arg_list1));
+  EXPECT_NO_THROW(script_list2 = desc.GetReferenceAll(&arg_list2));
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+    "OP_HASH160 a5257435d9c28329c8b8ab810f8813d347eddd17 OP_EQUAL");
+  EXPECT_STREQ(gen_script.ToString().c_str(),
+    "OP_HASH160 a7a9f411001e3e3db96d7f02fc9ab1d0dc6aa691 OP_EQUAL");
+
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_STREQ(script_list[0].GenerateAddress(NetType::kMainnet).GetAddress().c_str(),
+      "3GkEHYNEauSenEsqmnhjb9HGgb5pt4oaDm");
+    EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
+      "0 ac9239e9359aaed6ef6c208ae6893ee0fabb5bb0a4775c0883902367a56eec58");
+    EXPECT_STREQ(script_list[0].GetChild().GenerateAddress(NetType::kMainnet).GetAddress().c_str(),
+      "bc1q4jfrn6f4n2hddmmvyz9wdzf7uratkkas53m4czyrjq3k0ftwa3vqvjzukn");
+    EXPECT_STREQ(script_list[0].GetChild().GetRedeemScript().ToString().c_str(),
+      "OP_IF OP_DUP OP_HASH160 7620e8418ab0d9835cbce5316bb9c8cbfbb82726 OP_EQUALVERIFY OP_CHECKSIG OP_NOTIF OP_DUP OP_HASH160 06afd46bcdfd22ef94ac122aa11f241244a37ecc OP_EQUALVERIFY OP_ELSE OP_DUP OP_HASH160 4de5a5faaee2ab254f2f042503acada802dd9714 OP_EQUALVERIFY OP_ENDIF OP_ELSE 02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e OP_ENDIF OP_CHECKSIG");
+  }
+
+  EXPECT_EQ(script_list2.size(), 1);
+  if (script_list2.size() == 1) {
+    EXPECT_STREQ(script_list2[0].GenerateAddress(NetType::kMainnet).GetAddress().c_str(),
+      "3GyYN9WnJBoMn8M5tuqVcFJq1BvbAcdPAt");
+    EXPECT_STREQ(script_list2[0].GetRedeemScript().ToString().c_str(),
+      "0 e29b7f3e543d581c99c92b59d45218b008b82c2d406bba3c7384d52e568124aa");
+    EXPECT_STREQ(script_list2[0].GetChild().GenerateAddress(NetType::kMainnet).GetAddress().c_str(),
+      "bc1qu2dh70j584vpexwf9dvag5sckqytstpdgp4m50rnsn2ju45pyj4qudazmh");
+    EXPECT_STREQ(script_list2[0].GetChild().GetRedeemScript().ToString().c_str(),
+      "OP_IF OP_DUP OP_HASH160 520e6e72bcd5b616bc744092139bd759c31d6bbe OP_EQUALVERIFY OP_CHECKSIG OP_NOTIF OP_DUP OP_HASH160 06afd46bcdfd22ef94ac122aa11f241244a37ecc OP_EQUALVERIFY OP_ELSE OP_DUP OP_HASH160 5ab62f0be26fe9d6205a155403f33e2ad2d31efe OP_EQUALVERIFY OP_ENDIF OP_ELSE 02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e OP_ENDIF OP_CHECKSIG");
   }
 }
 
