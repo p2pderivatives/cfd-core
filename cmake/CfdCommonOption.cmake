@@ -59,7 +59,7 @@ set(CMAKE_INSTALL_RPATH "${MODIFIED_RPATH};$ORIGIN/;./;./build/${RPATH_TARGET};@
 endif()
 else(TARGET_RPATH)
 if(APPLE)
-set(CMAKE_INSTALL_RPATH "./;./build/${RPATH_TARGET};./wallycore;@rpath")
+set(CMAKE_INSTALL_RPATH "./;./build/${RPATH_TARGET};@rpath")
 else()
 set(CMAKE_INSTALL_RPATH "$ORIGIN/;./;./build/${RPATH_TARGET};@rpath")
 endif()

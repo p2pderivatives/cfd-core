@@ -73,9 +73,15 @@ set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
 configure_file(pc/libunivalue.pc.in  libunivalue.pc  @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libunivalue.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+configure_file(pc/libunivalue.pc.in  univalue.pc  @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/univalue.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 configure_file(pc/libunivalue-uninstalled.pc.in  libunivalue-uninstalled.pc  @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libunivalue-uninstalled.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+configure_file(pc/libunivalue-uninstalled.pc.in  univalue-uninstalled.pc  @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/univalue-uninstalled.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 install(TARGETS       ${PROJECT_NAME}

@@ -158,10 +158,12 @@ static std::string ToBase58String(
  * @brief 文字列パスから配列を取得する。
  * @param[in] string_path       child number string path
  * @param[in] caller_name       caller class name
+ * @param[in] depth             current key depth
  * @return uint32_t array
  */
 static std::vector<uint32_t> ToArrayFromString(
-    const std::string& string_path, const std::string& caller_name) {
+    const std::string& string_path, const std::string& caller_name,
+    uint8_t depth) {
   std::vector<uint32_t> result;
   std::vector<std::string> list = StringUtil::Split(string_path, "/");
   for (size_t index = 0; index < list.size(); ++index) {
@@ -174,7 +176,17 @@ static std::vector<uint32_t> ToArrayFromString(
       str = str.substr(0, str.size() - 1);
       hardened = true;
     }
-    if ((str == "m") || (str == "M")) continue;  // master key
+    if ((str == "m") || (str == "M")) {
+      if (depth != 0) {
+        warn(
+            CFD_LOG_SOURCE, "{} bip32 path fail. this key is not master key.",
+            caller_name);
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            caller_name + " bip32 path fail. this key is not master key.");
+      }
+      continue;  // master key
+    }
     if (str.empty()) {
       warn(
           CFD_LOG_SOURCE, "{} bip32 string path fail. empty item.",
@@ -208,6 +220,7 @@ static std::vector<uint32_t> ToArrayFromString(
         CfdError::kCfdIllegalArgumentError,
         caller_name + " bip32 string path empty.");
   }
+
   return result;
 }
 
@@ -613,7 +626,8 @@ ExtPrivkey ExtPrivkey::DerivePrivkey(const std::vector<uint32_t>& path) const {
 }
 
 ExtPrivkey ExtPrivkey::DerivePrivkey(const std::string& string_path) const {
-  std::vector<uint32_t> path = ToArrayFromString(string_path, "ExtPrivkey");
+  std::vector<uint32_t> path =
+      ToArrayFromString(string_path, "ExtPrivkey", depth_);
   return DerivePrivkey(path);
 }
 
@@ -943,7 +957,8 @@ ExtPubkey ExtPubkey::DerivePubkey(const std::vector<uint32_t>& path) const {
 }
 
 ExtPubkey ExtPubkey::DerivePubkey(const std::string& string_path) const {
-  std::vector<uint32_t> path = ToArrayFromString(string_path, "ExtPrivkey");
+  std::vector<uint32_t> path =
+      ToArrayFromString(string_path, "ExtPubkey", depth_);
   return DerivePubkey(path);
 }
 

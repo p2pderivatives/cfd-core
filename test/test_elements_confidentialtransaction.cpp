@@ -744,6 +744,67 @@ TEST(ConfidentialTransaction, BlindTxOutTest) {
   EXPECT_EQ(unblindList[1].value.GetAmount().GetSatoshiValue(), 10000);
 }
 
+TEST(ConfidentialTransaction, BlindTxOutIgnorePegoutAndEnptyTest) {
+  std::string tx_hex = "020000000001a38845c1a19b389f27217b91e2120273b447db3e595bba628f0be833f301a24a0000000000fdffffff030125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a010000befe33cc397c0017a914001d6db698e75a5a8af771730c4ab258af30546b870125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a01000000003b9aca00009e6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f17a914a722b257cabc3b8e7d46f8fb293f893f368219da872103700dcb030588ed828d85f645b48971de0d31e8c0244da46710d18681627f5a4a4101044e949dcf8ac2daac82a3e4999ee28e2711661793570c4daab34cd38d76a425d6bfe102f3fea8be12109925fad32c78b65afea4de1d17a826e7375d0e2d00660125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a010000000000001c84000000000000";
+  ConfidentialTransaction tx(tx_hex);
+  double inputamount = 2100000.0;
+  std::string inputblinder =
+      "55bf185ddc2d1c747da2a82b8c9954179edec0af886daaf98d8a7b862e78bcee";
+  std::string inputasset =
+      "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225";
+  std::string inputassetblinder =
+      "95e6e0912047f088394be103f3a1761adcbd92466abfe41f0964a3aa2fc201e5";
+  std::string pubkey1_hex =
+      "0213c4451645063e1edd5fe76e5194864c2246d4c4e6c8df5a305224046e1ea2c4";
+  std::string privkey1_hex =
+      "66e4df5035a64acef16b4aa52ddc8bebd22b22c9eca150774e355abc72909d83";
+  std::string pubkey2_hex =
+      "0222722d38de0463756bdfc460de0547a89e17159150d07b6cf69029ba33adf967";
+  std::string privkey2_hex =
+      "715b3d80726388b7daff92388f82c8ddf5ee7248900552a0bcd16d7d46b439c0";
+  Pubkey pubkey1(pubkey1_hex);
+  Privkey privkey1(privkey1_hex);
+  Pubkey pubkey2(pubkey2_hex);
+  Privkey privkey2(privkey2_hex);
+
+  std::vector<BlindParameter> blind_list;
+  BlindParameter param;
+  param.asset = ConfidentialAssetId(inputasset);
+  param.abf = BlindFactor(inputassetblinder);
+  param.vbf = BlindFactor(inputblinder);
+  param.value = ConfidentialValue(Amount::CreateByCoinAmount(inputamount));
+  blind_list.push_back(param);
+  std::vector<Pubkey> pubkeys;
+  pubkeys.push_back(Pubkey());
+  pubkeys.push_back(pubkey2);  // pegout
+  pubkeys.push_back(Pubkey());
+
+  try {
+    // blind txout[1] only
+    tx.BlindTxOut(blind_list, pubkeys);
+    EXPECT_TRUE(false);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("txout blind target empty.", except.what());
+  }
+
+  // blind txout[0]
+  pubkeys[0] = pubkey1;
+  EXPECT_NO_THROW((tx.BlindTxOut(blind_list, pubkeys)));
+  // 乱数が混ざるため、サイズだけチェック
+  EXPECT_EQ(tx.GetHex().length(), 9348);
+  std::string blind_tx = tx.GetHex();
+
+  std::vector<Privkey> blinding_keys;
+  blinding_keys.push_back(privkey1);
+  blinding_keys.push_back(Privkey());
+  blinding_keys.push_back(Privkey());
+  std::vector<UnblindParameter> unblindList;
+  EXPECT_NO_THROW((unblindList = tx.UnblindTxOut(blinding_keys)));
+  EXPECT_STREQ(tx.GetHex().c_str(), tx_hex.c_str());
+  EXPECT_EQ(unblindList.size(), 1);
+  EXPECT_EQ(unblindList[0].value.GetAmount().GetSatoshiValue(), int64_t{209998999992700});
+}
+
 TEST(ConfidentialTransaction, BlindTxOutUncompressedPubkeyTest) {
   std::string tx_hex = "020000000001438cbb074e26715c25a11d12ef22f8e6080c466ff607936208473787138ba95a0000000000ffffffff0301f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f010000000000895440001976a914dff13ae1f9b4ce176adbeef85db623a6ee5a907988ac01f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f0100000000000f1b30001976a914de89a605e67cabd0391ecc8b01ba1ec9434394fe88ac01f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f010000000000002710000000000000";
   ConfidentialTransaction tx(tx_hex);
