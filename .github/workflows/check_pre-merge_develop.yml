@@ -9,7 +9,7 @@ on:
     - develop
 
 env:
-  CMAKE_VERSION: 3.15.5
+  CMAKE_VERSION: 3.17.2
 
 jobs:
   cmake-win-test:
@@ -17,27 +17,19 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        generator: [vs2019, mingw]
-        shared: [shared, static]
+        generator: ['Visual Studio 16 2019', 'MSYS Makefiles']
+        shared: [on, off]
 
     steps:
     - uses: actions/checkout@v2
     - name: cmake_version
       run: cmake --version
-    - name: cmake_generage-vs2019
-      if: matrix.generator == 'vs2019'
-      run: cmake -S . -B build -G "Visual Studio 16 2019"
-    - name: cmake_generage-mingw
-      if: matrix.generator == 'mingw'
-      run: cmake -S . -B build -G "MSYS Makefiles"
-    - name: cmake_configure-shared
-      if: matrix.shared == 'shared'
-      run: cmake -DENABLE_SHARED=on --build build
-    - name: cmake_configure-static
-      if: matrix.shared != 'shared'
-      run: cmake -DENABLE_SHARED=off --build build
+    - name: cmake_generage
+      run: cmake -S . -B build -G "${{ matrix.generator }}"
+    - name: cmake_configure
+      run: cmake -DENABLE_SHARED=${{ matrix.shared }} --build build
     - name: cmake_build
-      run: cmake --build build --config Release --parallel 2
+      run: cmake --build build --config Release --parallel 4
     - name: ctest
       run: |
         cd build
@@ -56,69 +48,50 @@ jobs:
     - name: cmake_configure-enable
       run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on --build build
     - name: cmake_build
-      run: cmake --build build --config Release --parallel 2
+      run: cmake --build build --config Release --parallel 4
     - name: ctest
       run: |
         cd build
         ctest -C Release --output-on-failure
+    - name: lint_check
+      run: ./tools/lint_quiet.sh
 
   cmake-ubuntu-test:
     name: cmake build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        elements: [elements-on, elements-off]
+        os: [ubuntu-20.04, ubuntu-18.04, ubuntu-16.04]
+        shared: [on, off]
+        elements: [on, off]
+        exclude:
+          - os: ubuntu-18.04
+            elements: off
+          - os: ubuntu-16.04
+            elements: off
 
     steps:
     - uses: actions/checkout@v2
-    - name: cmake-useCache-ubuntu
-      uses: actions/cache@v1
-      id: cache
-      with:
-        path: cache/cmake
-        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-0
-        restore-keys: |
-          ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-
-    - name: cmake-download-ubuntu
-      if: steps.cache.outputs.cache-hit != 'true'
+    - name: dump version
       run: |
-        mkdir -p cache/cmake
-        cd cache/cmake
-        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
-        cd ../..
-    - name: cmake-setting-ubuntu
-      run: |
-        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
-        cd cache/cmake
-        tar zxvf $cmake_file_name.tar.gz
-        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
-        export CURRENT_DIR=$(pwd)
-        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
-        cd ../..
-    - name: cmake_configure-enable-elements
-      if: matrix.elements == 'elements-on'
+        cmake --version
+        gcc --version
+    - name: cmake_configure
       run: |
         cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DTARGET_RPATH=./build/Release --build build
-    - name: cmake_configure-disable-elements
-      if: matrix.elements == 'elements-off'
-      run: |
-        cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DTARGET_RPATH=./build/Release --build build
+        cmake -DENABLE_SHARED=${{ matrix.shared }} -DENABLE_ELEMENTS=${{ matrix.elements }} -DTARGET_RPATH=./build/Release --build build
     - name: cmake-build
-      run: cmake --build build --config Release --parallel 2
+      run: cmake --build build --config Release --parallel 4
+    - name: lint_check
+      run: ./tools/lint_quiet.sh
     - name: test
       run: |
         cd build
         ctest -C Release --output-on-failure
         cd ..
-    - name: lint_check
-      run: ./tools/lint_quiet.sh
-    - name: ubuntu-after
-      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   doxygen-ubuntu:
-    name: doxygen-ubuntu
+    name: doxygen-check
     runs-on: ubuntu-latest
 
     steps:

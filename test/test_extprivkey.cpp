@@ -187,6 +187,8 @@ TEST(ExtPrivkey, DerivePrivkeyTest) {
   EXPECT_EQ(child2.GetVersion(), child.GetVersion());
   EXPECT_EQ(child2.GetDepth(), child.GetDepth());
   EXPECT_EQ(child2.GetChildNum(), child.GetChildNum());
+
+  EXPECT_THROW((child2 = extkey.DerivePrivkey("m/0/44")), CfdException);
 }
 
 TEST(ExtPrivkey, GetExtPubkeyTest) {

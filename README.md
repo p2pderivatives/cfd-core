@@ -13,17 +13,27 @@ core moduels for cfd libraries
 - C/C++ Compiler
   - can compile c++11
 - CMake (3.14.3 or higher)
-- Python 3.x
-- node.js (stable version)
+- When using npm scripts and cmake-js
+  - node.js (stable version)
+  - Python 3.x
+    - for building libwally-core js wrapper
 
 ### Windows
 
 download and install files.
-- Visual Studio (Verified version is 2017 or higher)
-  - use for compiler only
-- Visual Studio Build Tools (2017 or higher)
-- cmake (3.14.3 or higher)
-- Python 3.x
+- [CMake](https://cmake.org/) (3.14.3 or higher)
+- Compiler or development environment (One of the following)
+  - MSVC
+    - [Visual Studio](https://visualstudio.microsoft.com/downloads/) (Verified version is 2017 or higher)
+    - [Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads/) (2017 or higher)
+    - (Using only) [msvc redistribution package](https://support.microsoft.com/help/2977003/the-latest-supported-visual-c-downloads)
+  - Clang
+    - [LLVM](https://releases.llvm.org/download.html) (Requires MSVC or MinGW)
+  - [MinGW w64](http://mingw-w64.org/)
+  - [MSYS2](https://www.msys2.org/)
+    - Use MinGW
+  - other
+    - I have not confirmed it, but I think that it can be built if it supports c++11 and cmake.
 
 ### MacOS
 
@@ -126,15 +136,19 @@ cmake version is 3.15 or higher: `cmake --install build`
 
 ### uninstall
 ```Shell
+(uninstall by using makefile)
 cd build && sudo make uninstall
 
-(Using ninja)
+(uninstall by using ninja)
 cd build && sudo ninja uninstall
+
+(uninstall by using script)
+sudo ./tools/cleanup_install_files.sh
 ```
 
 ---
 
-## Example
+## Test and Example
 
 ### Test
 
@@ -152,9 +166,9 @@ npm run ctest
 
 ### using library
 
-- libwally-core (forked from [ElementsProject](https://github.com/ElementsProject/libwally-core))
-- univalue
-- googletest (for testing)
+- [libwally-core](https://github.com/cryptogarageinc/libwally-core/tree/cfd-develop) (forked from [ElementsProject/libwally-core](https://github.com/ElementsProject/libwally-core))
+- [univalue](https://github.com/jgarzik/univalue) (for JSON encoding and decoding)
+- [googletest](https://github.com/google/googletest) (for testing)
 
 ### formatter
 
@@ -162,11 +176,24 @@ npm run ctest
 
 ### linter
 
-- cpplint
+- cpplint (customize from [google/styleguide/cpplint](https://github.com/google/styleguide/tree/gh-pages/cpplint))
 
 ### document tool
 
 - doxygen & graphviz
+
+### support compilers
+
+- Visual Studio (2017 or higher)
+- Clang (7.x or higher)
+- GCC (contains MinGW) (5.x or higher)
+
+### code coverage
+
+- lcov
+  - Collecting coverage only on Linux.
+    - It is generated unnecessary constructors and destructors on MacOS. So it is not suitable for collecting function coverage.
+    - It may be possible to run it on windows, but I have not tried it.
 
 ---
 

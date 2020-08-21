@@ -17,22 +17,19 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        generator: [vs2019, mingw]
+        generator: ['Visual Studio 16 2019', 'MSYS Makefiles']
+        shared: [on]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v1
     - name: cmake_version
       run: cmake --version
-    - name: cmake_generage-vs2019
-      if: matrix.generator == 'vs2019'
-      run: cmake -S . -B build -G "Visual Studio 16 2019"
-    - name: cmake_generage-mingw
-      if: matrix.generator == 'mingw'
-      run: cmake -S . -B build -G "MSYS Makefiles"
-    - name: cmake_configure
-      run: cmake -DENABLE_SHARED=on -DENABLE_TESTS=on --build build
+    - name: cmake_generage
+      run: cmake -S . -B build -G "${{ matrix.generator }}"
     - name: cmake_build
-      run: cmake --build build --config Release --parallel 2
+      run: |
+        cmake -DENABLE_SHARED=${{ matrix.shared }} -DENABLE_TESTS=on --build build
+        cmake --build build --config Release --parallel 4
     - name: ctest
       run: |
         cd build
@@ -51,37 +48,56 @@ jobs:
         cmake -S . -B build -G "Unix Makefiles"
         cmake -DENABLE_SHARED=on --build build
     - name: cmake_build
-      run: cmake --build build --config Release --parallel 2
+      run: cmake --build build --config Release --parallel 4
     - name: ctest
       run: |
         cd build
         ctest -C Release --output-on-failure
 
   cmake-ubuntu-coverage:
-    name: cmake build
-    runs-on: ubuntu-latest
+    name: cmake build-ubuntu
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        elements: [elements-on, elements-off]
+        os: [ubuntu-20.04, ubuntu-18.04]
+        shared: [on]
+        elements: [on, off]
+        cmake_cache: [false]
+# Currently using cmake 3.17.0 by default
+#        exclude:
+#          - os: ubuntu-18.04
+#            cmake_cache: false
+#          - os: ubuntu-16.04
+#            cmake_cache: false
+#        include:
+#          - os: ubuntu-18.04
+#            cmake_cache: true
+#          - os: ubuntu-16.04
+#            cmake_cache: true
 
     steps:
     - uses: actions/checkout@v2
+    - name: dump version
+      run: |
+        cmake --version
+        gcc --version
     - name: cmake-useCache-ubuntu
       uses: actions/cache@v1
-      id: cache
+      if: matrix.cmake_cache == 'true'
       with:
         path: cache/cmake
         key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-0
         restore-keys: |
           ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-
     - name: cmake-download-ubuntu
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: matrix.cmake_cache == 'true' && steps.cache.outputs.cache-hit != 'true'
       run: |
         mkdir -p cache/cmake
         cd cache/cmake
         wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
         cd ../..
     - name: cmake-setting-ubuntu
+      if: matrix.cmake_cache == 'true'
       run: |
         export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
         cd cache/cmake
@@ -91,47 +107,42 @@ jobs:
         echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
         cd ../..
     - name: ubuntu-apt-install
-      if: matrix.elements == 'elements-on'
+      if: matrix.elements == 'on'
       run: |
         cat /etc/os-release
         sudo apt install lcov
-    - name: cmake_configure-enable-elements
-      if: matrix.elements == 'elements-on'
-      run: |
-        cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=on -DTARGET_RPATH=./build/Debug --build build
-    - name: cmake_configure-disable-elements
-      if: matrix.elements == 'elements-off'
-      run: |
-        cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=off -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
     - name: cmake-build
-      run: cmake --build build --config Debug --parallel 2
+      run: |
+        cmake --version
+        cmake -S . -B build -G "Unix Makefiles"
+        cmake -DENABLE_SHARED=${{ matrix.shared }} -DENABLE_ELEMENTS=${{ matrix.elements }} -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=${{ matrix.elements }} -DTARGET_RPATH=./build/Debug --build build
+        cmake --build build --config Debug --parallel 4
+    - name: lint_check
+      run: ./tools/lint_quiet.sh
     - name: test
       run: |
         cd build
         ctest -C Debug --output-on-failure
         cd ..
-    - name: lint_check
-      run: ./tools/lint_quiet.sh
     - name: collect coverage
-      if: matrix.elements == 'elements-on'
+      if: matrix.elements == 'on'
       run: |
         cd build
         make lcov_cfdcore
         zip -r lcov_cfdcore_output.zip lcov_cfdcore_output
         cd ..
     - name: upload coverage
-      if: matrix.elements == 'elements-on'
+      if: matrix.elements == 'on'
       uses: actions/upload-artifact@v1
       with:
-        name: output-lcov-cfdcore
+        name: output-lcov-cfdcore-${{ matrix.os }}
         path: ./build/lcov_cfdcore_output.zip
     - name: ubuntu-after
+      if: matrix.cmake_cache == 'true'
       run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   doxygen-ubuntu:
-    name: doxygen-ubuntu
+    name: doxygen-check
     runs-on: ubuntu-latest
 
     steps:

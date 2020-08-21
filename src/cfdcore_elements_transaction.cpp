@@ -2385,6 +2385,8 @@ void ConfidentialTransaction::BlindTransaction(
   for (size_t index = 0; index < vout_.size(); ++index) {
     if (vout_[index].GetLockingScript().IsEmpty()) {
       // fee
+    } else if (vout_[index].GetLockingScript().IsPegoutScript()) {
+      // pegout
     } else if (txout_confidential_keys[index].IsValid()) {
       const ConfidentialValue &value = vout_[index].GetConfidentialValue();
       if (value.HasBlinding() || vout_[index].GetAsset().HasBlinding()) {
@@ -2410,7 +2412,12 @@ void ConfidentialTransaction::BlindTransaction(
   info(CFD_LOG_SOURCE, "total blind_target_count=[{}]", blind_target_count);
   if (blind_txout_indexes.empty()) {
     // txout blind data nothing.
-    return;
+    // 20200815: Fixed so that an error occurs.
+    // Be sure to blind one or more outputs.
+    // If you want to unblind on blinding utxo and send,
+    // add one output of 0 amount and blind only it.
+    warn(CFD_LOG_SOURCE, "txout blind target empty. set over 1.");
+    throw CfdException(kCfdIllegalArgumentError, "txout blind target empty.");
   }
 
   std::vector<ByteData> output_abfs(blind_txout_indexes.size());

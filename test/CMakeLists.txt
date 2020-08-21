@@ -33,6 +33,8 @@ transform_makefile_srclist("Makefile.srclist" "${CMAKE_CURRENT_BINARY_DIR}/Makef
 include(${CMAKE_CURRENT_BINARY_DIR}/Makefile.srclist.cmake)
 include(../cmake/Cpp11Setting.cmake)
 
+find_package(wally  QUIET)
+
 set(LIBWALLY_LIBRARY wally)
 set(UNIVALUE_LIBRARY univalue)
 set(CFDCORE_LIBRARY cfdcore)
@@ -69,17 +71,31 @@ target_compile_definitions(${PROJECT_NAME}
 )
 endif()
 
+if((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 target_include_directories(${PROJECT_NAME}
   PRIVATE
     .
     ../src
     ../src/include
 )
-
 target_link_directories(${PROJECT_NAME}
   PRIVATE
     ./
 )
+else()
+target_include_directories(${PROJECT_NAME}
+  PRIVATE
+    .
+    ../src
+    ../src/include
+    ${wally_DIR}/../include
+)
+target_link_directories(${PROJECT_NAME}
+  PRIVATE
+    ./
+    ${wally_DIR}/../lib
+)
+endif()
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>

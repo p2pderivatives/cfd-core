@@ -52,6 +52,19 @@ else()
 set(CFDCORE_LOG_CONSOLE_OPT  CFDCORE_LOG_CONSOLE)
 endif()
 
+find_package(wally  QUIET)
+if((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
+set(LIBWALLY_LIBRARY wally)
+set(UNIVALUE_LIBRARY univalue)
+
+else()
+message(STATUS "[wally_FOUND]=${wally_FOUND}")
+message(STATUS "[wally_DIR]=${wally_DIR}")
+
+set(LIBWALLY_LIBRARY wally)
+set(UNIVALUE_LIBRARY univalue)
+endif()
+
 if(ENABLE_SHARED OR USE_CFDCORE_SHARED)
 add_library(${PROJECT_NAME} SHARED)
 else()
@@ -83,6 +96,7 @@ target_compile_definitions(${PROJECT_NAME}
     ${CFDCORE_LOG_CONSOLE_OPT}
 )
 
+if((NOT wally_FOUND) OR (NOT ${wally_FOUND}))
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
@@ -92,11 +106,29 @@ target_include_directories(${PROJECT_NAME}
     include
     univalue/include
 )
-
 target_link_directories(${PROJECT_NAME}
   PRIVATE
     ./
 )
+set(USE_INSTALLED_LIBRARY  FALSE)
+else()
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<INSTALL_INTERFACE:include>
+  PRIVATE
+    .
+    include
+    univalue/include
+    ${wally_DIR}/../include
+)
+target_link_directories(${PROJECT_NAME}
+  PRIVATE
+    ./
+    ${wally_DIR}/../lib
+)
+set(USE_INSTALLED_LIBRARY  TRUE)
+endif()
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
@@ -107,6 +139,44 @@ target_link_libraries(${PROJECT_NAME}
     ${UNIVALUE_LIBRARY}
     ${GCOV_LIBRARY}
 )
+
+
+if(USE_INSTALLED_LIBRARY)
+set(INSTALLED_LIBRARY_DIR  ${wally_DIR}/../lib)
+if(ENABLE_SHARED)
+set(LIB_PREFIX  ${CMAKE_SHARED_LIBRARY_PREFIX})
+set(LIB_SUFFIX  ${CMAKE_SHARED_LIBRARY_SUFFIX})
+else()
+set(LIB_PREFIX  ${CMAKE_STATIC_LIBRARY_PREFIX})
+set(LIB_SUFFIX  ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
+set(LIBWALLY_LIB_PATH  ${INSTALLED_LIBRARY_DIR}/${LIB_PREFIX}wally${LIB_SUFFIX})
+set(UNIVALUE_LIB_PATH  ${INSTALLED_LIBRARY_DIR}/${LIB_PREFIX}univalue${LIB_SUFFIX})
+
+add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy  ${LIBWALLY_LIB_PATH} ${CFD_OBJ_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy  ${UNIVALUE_LIB_PATH} ${CFD_OBJ_BINARY_DIR}
+)
+
+if(NOT ENABLE_SHARED)
+set(LIB_PREFIX  ${CMAKE_SHARED_LIBRARY_PREFIX})
+set(LIB_SUFFIX  ${CMAKE_SHARED_LIBRARY_SUFFIX})
+set(LIBWALLY_LIB_PATH  ${INSTALLED_LIBRARY_DIR}/${LIB_PREFIX}wally${LIB_SUFFIX})
+set(UNIVALUE_LIB_PATH  ${INSTALLED_LIBRARY_DIR}/${LIB_PREFIX}univalue${LIB_SUFFIX})
+
+if(EXISTS ${CFDCORE_LIB_PATH})
+add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy  ${LIBWALLY_LIB_PATH} ${CFD_OBJ_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy  ${UNIVALUE_LIB_PATH} ${CFD_OBJ_BINARY_DIR}
+)
+endif(EXISTS ${CFDCORE_LIB_PATH})
+endif(NOT ENABLE_SHARED)
+endif()   # USE_INSTALLED_LIBRARY
 
 
 ####################

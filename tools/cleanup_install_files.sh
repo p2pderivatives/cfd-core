@@ -8,6 +8,7 @@ rm -rf /usr/local/lib/libcfdcore.* /usr/local/lib/libunivalue.*
 rm -rf /usr/local/lib/libcfd.*
 rm -rf /usr/local/lib/pkgconfig/wallycore.pc /usr/local/lib/pkgconfig/wally.pc
 rm -rf /usr/local/lib/pkgconfig/libunivalue.pc /usr/local/lib/pkgconfig/libunivalue-uninstalled.pc
+rm -rf /usr/local/lib/pkgconfig/univalue.pc /usr/local/lib/pkgconfig/univalue-uninstalled.pc
 rm -rf /usr/local/lib/pkgconfig/cfd.pc /usr/local/lib/pkgconfig/cfd-core.pc
 rm -rf /usr/local/cmake/cfd*.cmake /usr/local/cmake/univalue-*.cmake
 rm -rf /usr/local/cmake/wally-*.cmake /usr/local/cmake/wallycore-*.cmake
