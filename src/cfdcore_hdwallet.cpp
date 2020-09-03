@@ -188,12 +188,17 @@ static std::vector<uint32_t> ToArrayFromString(
       continue;  // master key
     }
     if (str.empty()) {
-      warn(
-          CFD_LOG_SOURCE, "{} bip32 string path fail. empty item.",
-          caller_name);
-      throw CfdException(
-          CfdError::kCfdIllegalArgumentError,
-          caller_name + " bip32 string path fail. empty item.");
+      if (index == 0) {
+        // start slash pattern
+        continue;
+      } else {
+        warn(
+            CFD_LOG_SOURCE, "{} bip32 string path fail. empty item.",
+            caller_name);
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            caller_name + " bip32 string path fail. empty item.");
+      }
     }
 
     // strtol関数による変換

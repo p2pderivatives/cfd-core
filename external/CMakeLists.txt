@@ -55,7 +55,7 @@ if(LIBWALLY_TARGET_VERSION)
 set(LIBWALLY_TARGET_TAG  ${LIBWALLY_TARGET_VERSION})
 message(STATUS "[external project local] libwally-core target=${LIBWALLY_TARGET_VERSION}")
 else()
-set(LIBWALLY_TARGET_TAG  refs/tags/cfd-0.0.4)
+set(LIBWALLY_TARGET_TAG  refs/tags/cfd-0.0.6)
 endif()
 
 if(${USE_GIT_SSH})
