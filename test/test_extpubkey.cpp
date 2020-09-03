@@ -160,6 +160,10 @@ TEST(ExtPubkey, DerivePubkeyTest) {
   EXPECT_STREQ(child2.GetPubkey().GetHex().c_str(), child.GetPubkey().GetHex().c_str());
 
   EXPECT_THROW((child2 = extkey.DerivePubkey("m/1/1")), CfdException);  // master 
+
+  EXPECT_NO_THROW((child2 = extkey.DerivePubkey("/1/1")));  // start slash
+
+  EXPECT_THROW((child2 = extkey.DerivePubkey("1/2//3")), CfdException);  // empty number
 }
 
 TEST(ExtPubkey, DerivePubTweakTest) {

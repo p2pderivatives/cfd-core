@@ -125,6 +125,22 @@ static ByteData CalculateRangeProof(
       (script_item[0].GetOpCode() == ScriptOperator::OP_RETURN) ||
       (script_byte.size() > Script::kMaxScriptSize)) {
     min_range_value = 0;
+  } else if (value == 0) {
+    warn(
+        CFD_LOG_SOURCE,
+        "Amount is 0. Cannot specify 0 for amount "
+        "if there is a valid confidential address.");  // NOLINT
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "Amount is 0. Cannot specify 0 for amount "
+        "if there is a valid confidential address.");  // NOLINT
+  }
+
+  if (value < static_cast<uint64_t>(min_range_value)) {
+    warn(CFD_LOG_SOURCE, "amount less than minimumRangeValue");
+    throw CfdException(
+        kCfdIllegalArgumentError,
+        "The amount is less than the minimumRangeValue.");
   }
 
   if (pubkey == nullptr) {
