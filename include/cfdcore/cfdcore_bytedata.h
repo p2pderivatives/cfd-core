@@ -91,6 +91,13 @@ class CFD_CORE_EXPORT ByteData {
   bool Equals(const ByteData& bytedata) const;
 
   /**
+   * @brief Get head data only 1 byte.
+   * @details empty is return 0.
+   * @return 1byte data
+   */
+  uint8_t GetHeadData() const;
+
+  /**
    * @brief byte data情報をserializeする.
    * @return serialize data
    */
@@ -165,7 +172,7 @@ class CFD_CORE_EXPORT ByteData {
   template <class ByteTop, class... ByteDataClass>
   ByteData Concat(const ByteTop& top, const ByteDataClass&... args) const {
     ByteData result = Concat(top);
-    return result.Join(args...);
+    return result.Concat(args...);
   }
 
   /**
@@ -278,6 +285,13 @@ class CFD_CORE_EXPORT ByteData160 {
    * @return byte data
    */
   ByteData GetData() const;
+
+  /**
+   * @brief Get head data only 1 byte.
+   * @details empty is return 0.
+   * @return 1byte data
+   */
+  uint8_t GetHeadData() const;
 
   /**
    * @brief Join byte data list.
@@ -426,6 +440,13 @@ class CFD_CORE_EXPORT ByteData256 {
    * @return byte data
    */
   ByteData GetData() const;
+
+  /**
+   * @brief Get head data only 1 byte.
+   * @details empty is return 0.
+   * @return 1byte data
+   */
+  uint8_t GetHeadData() const;
 
   /**
    * @brief Join byte data list.

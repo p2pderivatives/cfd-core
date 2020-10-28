@@ -19,6 +19,7 @@ typedef struct {
   std::string hex;
   bool expect_invalid;
   bool expect_compress;
+  bool parity;
 } PubkeyTestVector;
 
 // @formatter:off
@@ -27,16 +28,19 @@ const std::vector<PubkeyTestVector> pubkey_test_vectors = {
   {
     "021362bdf255b304dcd29bfdb6b5c63c68ef7df60e2b1fc156716efe077b794647",
     false,
-    true
+    true,
+    false
   },
   {
     "03990e1b210a8b1331b5d6c2cdd4bb75ebc699371ac190dcbd7f429171006dd444",
     false,
+    true,
     true
   },
   // uncompressed form
   {
     "041f45896f5828c86752260148328be7d6e8e9531cb5010737db6e258bfe6e190e820d30232d85cc3c5580cb92bf93ef4925f64ada02c0765391379db2b1999255",
+    false,
     false,
     false
   },
@@ -44,10 +48,12 @@ const std::vector<PubkeyTestVector> pubkey_test_vectors = {
   {
     "061362bdf255b304dcd29bfdb6b5c63c68ef7df60e2b1fc156716efe077b7946474bcfcf28d1972f5479d9631ef825c29afc4af6a08f8f7eaf427b449bd8790b56",
     false,
+    false,
     false
   },
   {
     "072078e969c197c71d02df1185f34b717d63265e152a4a125e6a280b12bcfd7985d3c0d487a1e3e3d1409881d83b117f8337896f2db4ee480282d2723f06c91ac7",
+    false,
     false,
     false
   }
@@ -80,6 +86,11 @@ TEST(Pubkey, ConstructorTest) {
     // ByteData constructor
     pubkey = Pubkey(ByteData(test_vector.hex));
     pubkeyFieldTest(pubkey, test_vector);
+    if (test_vector.parity) {
+      EXPECT_TRUE(pubkey.IsParity());
+    } else {
+      EXPECT_FALSE(pubkey.IsParity());
+    }
   }
 }
 
@@ -218,46 +229,67 @@ TEST(Pubkey, VerifyEcSignature) {
   EXPECT_FALSE(pubkey.VerifyEcSignature(sighash, bad_signature2));
 }
 
-TEST(Pubkey, Combine) {
-  // Arrange
-  Privkey oracle_privkey(
-      "0000000000000000000000000000000000000000000000000000000000000001");
-  Pubkey oracle_pubkey = oracle_privkey.GeneratePubkey();
-  Privkey oracle_k_value(
-      "0000000000000000000000000000000000000000000000000000000000000002");
-  std::string message = "WIN";
-  Privkey local_fund_privkey(
-      "0000000000000000000000000000000000000000000000000000000000000003");
-  Pubkey local_fund_pubkey = local_fund_privkey.GeneratePubkey();
-  Privkey local_sweep_privkey(
-      "0000000000000000000000000000000000000000000000000000000000000004");
-  Pubkey local_sweep_pubkey = local_sweep_privkey.GeneratePubkey();
-  std::vector<Pubkey> oracle_r_points = {};
+TEST(Pubkey, TweakTest) {
+  ByteData256 tweak1("bd7d5d628f259c5f141519a932fb97e57e03852fd6fc5c42f41eee3df2a09e3a");
+  ByteData256 tweak2("dc66de3b954578f60b68ab5d241c98b24c0b91038d1b5b158a63fbafa7cc9073");
+  std::string exp_pk_t23 = "03ffcfb532fc3131cec229b3be66a1c0b4808b0d0a84468cd0c39caa88aa8a8d58";
 
-  // Act
-  auto signature = SignatureUtil::CalculateSchnorrSignatureWithNonce(
-      oracle_privkey, oracle_k_value, HashUtil::Sha256(message));
+  Pubkey pk_a("034d18084bb47027f47d428b2ed67e1ccace5520fdc36f308e272394e288d53b6d");
+  Pubkey pk_b("03dc82121e4ff8d23745f3859e8939ecb0a38af63e6ddea2fff97a7fd61a1d2d54");
 
-  // auto committed_key =
-  //     DlcUtil::GetCommittedKey(oracle_pubkey, oracle_r_points, {});
-  auto pubkey = Pubkey::GetSchnorrPubkey(oracle_pubkey,
-      oracle_k_value.GeneratePubkey(), HashUtil::Sha256(message));
-  // auto committed_key = Pubkey::CombinePubkey({pubkey});
-  auto committed_key = pubkey;
+  Pubkey pk_t11 = pk_a + tweak1;
+  Pubkey pk_t12 = pk_b;
+  pk_t12 += tweak2;
+  Pubkey pk_t13 = pk_a * tweak1;
 
-  Pubkey combine_pubkey =
-      Pubkey::CombinePubkey(local_fund_pubkey, committed_key);
-  auto hashPub = Privkey(HashUtil::Sha256(local_sweep_pubkey.GetData()))
-      .GeneratePubkey();
-  auto combined_pubkey = Pubkey::CombinePubkey(combine_pubkey, hashPub);
+  Pubkey pk_t21 = pk_t11 - tweak1;
+  Pubkey pk_t22 = pk_t12;
+  pk_t22 -= tweak2;
+  Pubkey pk_t23 = pk_t13;
+  pk_t23 *= tweak1;
 
-  Privkey tweaked_key = local_fund_privkey.CreateTweakAdd(signature);
-  auto hash = HashUtil::Sha256(local_sweep_pubkey);
-  auto tweak_priv = tweaked_key.CreateTweakAdd(hash);
+  EXPECT_EQ(pk_a.GetHex(), pk_t21.GetHex());
+  EXPECT_EQ(pk_b.GetHex(), pk_t22.GetHex());
+  EXPECT_EQ(exp_pk_t23, pk_t23.GetHex());
+}
 
-  // Assert
-  EXPECT_EQ(tweak_priv.GeneratePubkey().GetHex(), combined_pubkey.GetHex());
-  EXPECT_TRUE(SignatureUtil::VerifySchnorrSignatureWithNonce(
-      oracle_pubkey, oracle_k_value.GeneratePubkey(), signature,
-      HashUtil::Sha256(message)));
+TEST(Pubkey, CombineTest) {
+  // https://planethouki.wordpress.com/2018/03/15/pubkey-add-ecdsa/
+  Privkey sk_a("1d52f68124c59c3125d5c2e043cabf01cef46fafaf45be3132fc1f52ff0ec434");
+  Privkey sk_b("353a88e3c404380d9970d9b2d8ee9f6051b3d817ab32aabc12f5c3c65086e659");
+  std::string exp_sk_c = "528d7f64e8c9d43ebf469c931cb95e6220a847c75a7868ed45f1e3194f95aa8d";
+  std::string exp_pk_c = "03c6cf31d72599553158c6ffed6139946bbd3a1648a6b1ef56bea812878bb2df71";
+
+  auto pk_a = sk_a.GetPubkey();
+  auto pk_b = sk_b.GetPubkey();
+
+  auto pk_c1 = pk_a + pk_b;
+  Pubkey pk_c2 = pk_b;
+  pk_c2 += pk_a;
+
+  auto sk_c = sk_a + sk_b;
+  auto pk_c3 = sk_c.GetPubkey();
+
+  EXPECT_EQ(exp_pk_c, pk_c1.GetHex());
+  EXPECT_EQ(exp_pk_c, pk_c2.GetHex());
+  EXPECT_EQ(exp_pk_c, pk_c3.GetHex());
+  EXPECT_EQ(exp_sk_c, sk_c.GetHex());
+
+  Pubkey pk_a1("024d18084bb47027f47d428b2ed67e1ccace5520fdc36f308e272394e288d53b6d");
+  Pubkey pk_a2("034d18084bb47027f47d428b2ed67e1ccace5520fdc36f308e272394e288d53b6d");
+  Pubkey pk_b1("02dc82121e4ff8d23745f3859e8939ecb0a38af63e6ddea2fff97a7fd61a1d2d54");
+  Pubkey pk_b2("03dc82121e4ff8d23745f3859e8939ecb0a38af63e6ddea2fff97a7fd61a1d2d54");
+  std::string exp_pk_cp = "02c6cf31d72599553158c6ffed6139946bbd3a1648a6b1ef56bea812878bb2df71";
+  std::string exp_pk_c2 = "03417885176062c3ae707af06059e7b5e65f733938f818da509eb3e5c4074b8124";
+  std::string exp_pk_c2p = "02417885176062c3ae707af06059e7b5e65f733938f818da509eb3e5c4074b8124";
+
+  auto pk_c11 = pk_a1 + pk_b1;
+  auto pk_c12 = pk_a2 + pk_b1;
+  auto pk_c13 = pk_a1 + pk_b2;
+  auto pk_c14 = pk_a2 + pk_b2;
+
+  EXPECT_EQ(exp_pk_cp, pk_c11.GetHex());
+  EXPECT_EQ(exp_pk_c2, pk_c12.GetHex());
+  EXPECT_EQ(exp_pk_c2p, pk_c13.GetHex());
+  EXPECT_EQ(exp_pk_c, pk_c14.GetHex());
 }

@@ -172,54 +172,6 @@ class Secp256k1 {
       const ByteData256& tweak_sum, const std::vector<ByteData>& online_keys,
       const std::vector<ByteData>& offline_keys, uint32_t whitelist_index);
 
-  /**
-   * @brief Create a schnorr signature using the a given private key and nonce.
-   * @param[in] oracle_privkey  The private key to sign with.
-   * @param[in] k_value         The nonce to use in the signature generation.
-   * @param[in] message         The message to sign.
-   * @param[in] nonce_function_type   The nonce function type.
-   *            (0: default, 1: DLC)
-   * @param[out] nonce_is_negated     The nonce is nagated.
-   * @return data of schnorr signature.
-   * @throw CfdException if invalid data.
-   */
-  ByteData CalculateSchnorrsigSecp256k1(
-      const ByteData& oracle_privkey, const ByteData& k_value,
-      const ByteData256& message, int nonce_function_type,
-      int* nonce_is_negated);
-
-  /**
-   * @brief Verify a schnorr signature.
-   * @param[in] pubkey      The public key to verify the signature against.
-   * @param[in] signature   The signature to verify.
-   * @param[in] message     The message that the signature was made for.
-   * @retval true   verify success
-   * @retval false  verify fail
-   */
-  bool VerifySchnorrsigSecp256k1(
-      const ByteData& pubkey, const ByteData& signature,
-      const ByteData256& message);
-
-  /**
-   * @brief function for schnorr public key.
-   * @param[in] oracle_pubkey   the public key of the oracle.
-   * @param[in] oracle_r_point  the R point for the event.
-   * @param[in] message         the message for the outcome.
-   * @return data of public key.
-   * @throw CfdException if invalid data.
-   */
-  ByteData GetSchnorrPubkeySecp256k1(
-      const ByteData& oracle_pubkey, const ByteData& oracle_r_point,
-      const ByteData256& message);
-
-  /**
-   * @brief function for schnorr public nonce.
-   * @param[in] privkey   The K value.
-   * @return data of public nonce.
-   * @throw CfdException if invalid data.
-   */
-  ByteData GetSchnorrPublicNonceSecp256k1(const ByteData& privkey);
-
  private:
   /**
    * @brief \~japanese Secp256k1コンテキスト

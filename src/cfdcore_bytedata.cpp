@@ -90,6 +90,10 @@ bool ByteData::Equals(const ByteData& bytedata) const {
   return false;
 }
 
+uint8_t ByteData::GetHeadData() const {
+  return (data_.empty()) ? 0 : data_[0];
+}
+
 ByteData ByteData::Serialize() const {
   return ByteData(SerializeFromBuffer(data_));
 }
@@ -196,6 +200,8 @@ bool ByteData160::Equals(const ByteData160& bytedata) const {
 
 ByteData ByteData160::GetData() const { return ByteData(data_); }
 
+uint8_t ByteData160::GetHeadData() const { return data_[0]; }
+
 ByteData ByteData160::Serialize() const {
   return ByteData(SerializeFromBuffer(data_));
 }
@@ -253,6 +259,8 @@ bool ByteData256::Equals(const ByteData256& bytedata) const {
 }
 
 ByteData ByteData256::GetData() const { return ByteData(data_); }
+
+uint8_t ByteData256::GetHeadData() const { return data_[0]; }
 
 ByteData ByteData256::Serialize() const {
   return ByteData(SerializeFromBuffer(data_));
