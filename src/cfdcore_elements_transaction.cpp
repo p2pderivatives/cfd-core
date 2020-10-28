@@ -40,6 +40,14 @@ using logger::warn;
 static constexpr uint8_t kConfidentialVersion_1 = 1;
 /// Definition of No Witness Transaction version
 static constexpr uint32_t kTransactionVersionNoWitness = 0x40000000;
+
+/// issuance's append size: entity(32),hash(32),amount(8+1),key(8+1)
+static constexpr const uint32_t kIssuanceAppendSize = 82;
+/// blind issuance's append size: entity,hash,amount(33),key(33)
+static constexpr const uint32_t kIssuanceBlindSize = 130;
+/// pegin size: btc(9),asset(33),block(33),fedpeg(-),txSize(3),txoutproof(152)
+static constexpr const uint32_t kPeginWitnessSize = 230;
+
 /// Size of asset at unblind
 static constexpr size_t kAssetSize = ASSET_TAG_LEN;
 /// Size of asset at Nonce
@@ -172,11 +180,13 @@ static ByteData CalculateRangeProof(
 
 /**
  * @brief calculate rangeproof size.
+ * @param[in] amount          target amount
  * @param[in] exponent        blinding exponent
  * @param[in] minimum_bits    blinding minimum bits
  * @return rangeproof size.
  */
-static uint32_t CalculateRangeProofSize(int exponent, int minimum_bits) {
+static uint32_t CalculateRangeProofSize(
+    int64_t amount, int exponent, int minimum_bits) {
   // dummy value
   ByteData vbf_data(
       "e863b2791be1be9659a940123143f210b9760a3b85862bf0833ef27c80c83816");
@@ -189,9 +199,10 @@ static uint32_t CalculateRangeProofSize(int exponent, int minimum_bits) {
   Privkey privkey(key_data);
   std::vector<uint8_t> commitment;
   std::vector<uint8_t> range_proof;
+  uint64_t value = static_cast<uint64_t>(amount);
   CalculateRangeProof(
-      uint64_t{10000000}, nullptr, privkey, asset, empty_factor, vbf, Script(),
-      1, exponent, minimum_bits, &commitment, &range_proof);
+      value, nullptr, privkey, asset, empty_factor, vbf, Script(), 1, exponent,
+      minimum_bits, &commitment, &range_proof);
   uint32_t rangeproof_size =
       static_cast<uint32_t>(ByteData(range_proof).GetSerializeSize());
   info(
@@ -765,15 +776,8 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
     uint32_t *witness_area_size, uint32_t *no_witness_area_size,
     bool is_reissuance, const Script *scriptsig_template, int exponent,
     int minimum_bits, uint32_t *rangeproof_size) {
-  // issuance時の追加サイズ: entity(32),hash(32),amount(8+1),key(8+1)
-  static constexpr const uint32_t kIssuanceAppendSize = 82;
-  // blind issuance時の追加サイズ: entity,hash,amount(33),key(33)
-  static constexpr const uint32_t kIssuanceBlindSize = 130;
-  // issuance rangeproof size
-  // static constexpr const uint32_t kTxInRangeproof = 2893 + 3;
-  // pegin size:
-  // btc(9),asset(33),block(33),fedpegSize(-),txSize(3),txoutproof(152)
-  static constexpr const uint32_t kPeginWitnessSize = 230;
+  // TODO(k-matsuzawa): Set amount upper limit and calculate maximum size
+  static constexpr const int64_t kIssuanceAmount = kMaxAmount;
   uint32_t witness_size = 0;
   uint32_t size = 0;
   TxIn::EstimateTxInSize(
@@ -809,7 +813,8 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
       if ((rangeproof_size != nullptr) && (*rangeproof_size != 0)) {
         work_proof_size = *rangeproof_size;
       } else {
-        work_proof_size = 4 + CalculateRangeProofSize(exponent, minimum_bits);
+        work_proof_size = 4 + CalculateRangeProofSize(
+                                  kIssuanceAmount, exponent, minimum_bits);
         if (rangeproof_size != nullptr) *rangeproof_size = work_proof_size;
       }
       if (is_reissuance) {
@@ -863,6 +868,68 @@ ConfidentialTxInReference::ConfidentialTxInReference(
 ConfidentialTxInReference::ConfidentialTxInReference()
     : ConfidentialTxInReference(ConfidentialTxIn(Txid(), 0, 0)) {
   // do nothing
+}
+
+uint32_t ConfidentialTxInReference::EstimateTxInSize(
+    AddressType addr_type, Script redeem_script, bool is_blind, int exponent,
+    int minimum_bits, Script fedpeg_script, const Script *scriptsig_template,
+    uint32_t *witness_area_size, uint32_t *no_witness_area_size) const {
+  uint32_t witness_size = 0;
+  uint32_t size = 0;
+  TxIn::EstimateTxInSize(
+      addr_type, redeem_script, &witness_size, &size, scriptsig_template);
+
+  bool is_issuance = !issuance_amount_.IsEmpty();
+  bool is_reissuance = !blinding_nonce_.IsEmpty();
+  if (is_issuance)
+    size += (is_blind) ? kIssuanceBlindSize : kIssuanceAppendSize;
+
+  if ((!pegin_witness_.IsEmpty()) || is_issuance || (witness_size != 0)) {
+    if (witness_size == 0) witness_size += 1;  // witness num
+
+    if ((!pegin_witness_.IsEmpty()) && (pegin_witness_.GetWitnessNum() > 5)) {
+      uint32_t pegin_btc_tx_size =
+          static_cast<uint32_t>(pegin_witness_.GetWitness()[4].GetDataSize());
+      witness_size += pegin_btc_tx_size + kPeginWitnessSize;
+      if (!fedpeg_script.IsEmpty())
+        witness_size +=
+            static_cast<uint32_t>(fedpeg_script.GetData().GetSerializeSize());
+    }
+    witness_size += 1;  // pegin witness num
+
+    if ((!is_issuance && !is_reissuance) || !is_blind) {
+      witness_size += 2;  // issuance rangeproof size
+    } else {
+      int64_t asset_amount = issuance_amount_.GetAmount().GetSatoshiValue();
+      if (asset_amount == 0) asset_amount = kMaxAmount;
+      witness_size +=
+          4 + CalculateRangeProofSize(asset_amount, exponent, minimum_bits);
+      if (is_reissuance) {
+        witness_size += 1;
+      } else {
+        int64_t token_amount = inflation_keys_.GetAmount().GetSatoshiValue();
+        if (token_amount == 0) token_amount = 1;
+        witness_size +=
+            4 + CalculateRangeProofSize(token_amount, exponent, minimum_bits);
+      }
+    }
+  }
+
+  if (witness_area_size != nullptr) *witness_area_size = witness_size;
+  if (no_witness_area_size != nullptr) *no_witness_area_size = size;
+  return size + witness_size;
+}
+
+uint32_t ConfidentialTxInReference::EstimateTxInVsize(
+    AddressType addr_type, Script redeem_script, bool is_blind, int exponent,
+    int minimum_bits, Script fedpeg_script,
+    const Script *scriptsig_template) const {
+  uint32_t witness_size = 0;
+  uint32_t no_witness_size = 0;
+  EstimateTxInSize(
+      addr_type, redeem_script, is_blind, exponent, minimum_bits,
+      fedpeg_script, scriptsig_template, &witness_size, &no_witness_size);
+  return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
 // -----------------------------------------------------------------------------
@@ -1052,8 +1119,13 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
     uint32_t work_proof_size = 0;
     if ((rangeproof_size != nullptr) && (*rangeproof_size != 0)) {
       work_proof_size = *rangeproof_size;
+    } else if (confidential_value_.HasBlinding()) {
+      work_proof_size = 4 + range_proof_.GetDataSize();
     } else {
-      work_proof_size = 4 + CalculateRangeProofSize(exponent, minimum_bits);
+      int64_t amount = confidential_value_.GetAmount().GetSatoshiValue();
+      if (amount == 0) amount = kMaxAmount;
+      work_proof_size =
+          4 + CalculateRangeProofSize(amount, exponent, minimum_bits);
       if (rangeproof_size != nullptr) *rangeproof_size = work_proof_size;
     }
     witness_size += work_proof_size;

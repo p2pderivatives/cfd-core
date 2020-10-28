@@ -123,7 +123,8 @@ Amount Amount::operator*=(const int64_t value) {
   return *this;
 }
 Amount Amount::operator/=(const int64_t value) {
-  double calc_amount = static_cast<double>(amount_) / value;
+  double calc_amount =
+      static_cast<double>(amount_) / static_cast<double>(value);
   amount_ = static_cast<int64_t>(std::round(calc_amount));
   CheckValidAmount(amount_);
   return *this;

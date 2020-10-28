@@ -62,18 +62,6 @@ jobs:
         os: [ubuntu-20.04, ubuntu-18.04]
         shared: [on]
         elements: [on, off]
-        cmake_cache: [false]
-# Currently using cmake 3.17.0 by default
-#        exclude:
-#          - os: ubuntu-18.04
-#            cmake_cache: false
-#          - os: ubuntu-16.04
-#            cmake_cache: false
-#        include:
-#          - os: ubuntu-18.04
-#            cmake_cache: true
-#          - os: ubuntu-16.04
-#            cmake_cache: true
 
     steps:
     - uses: actions/checkout@v2
@@ -81,31 +69,6 @@ jobs:
       run: |
         cmake --version
         gcc --version
-    - name: cmake-useCache-ubuntu
-      uses: actions/cache@v1
-      if: matrix.cmake_cache == 'true'
-      with:
-        path: cache/cmake
-        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-0
-        restore-keys: |
-          ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-
-    - name: cmake-download-ubuntu
-      if: matrix.cmake_cache == 'true' && steps.cache.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p cache/cmake
-        cd cache/cmake
-        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
-        cd ../..
-    - name: cmake-setting-ubuntu
-      if: matrix.cmake_cache == 'true'
-      run: |
-        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
-        cd cache/cmake
-        tar zxvf $cmake_file_name.tar.gz
-        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
-        export CURRENT_DIR=$(pwd)
-        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
-        cd ../..
     - name: ubuntu-apt-install
       if: matrix.elements == 'on'
       run: |
@@ -137,9 +100,6 @@ jobs:
       with:
         name: output-lcov-cfdcore-${{ matrix.os }}
         path: ./build/lcov_cfdcore_output.zip
-    - name: ubuntu-after
-      if: matrix.cmake_cache == 'true'
-      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   doxygen-ubuntu:
     name: doxygen-check

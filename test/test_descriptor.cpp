@@ -982,12 +982,42 @@ TEST(DescriptorKeyInfo, GetExtPrivkeyInformation) {
   EXPECT_STREQ(key_str.c_str(), ext_path_str.c_str());
 }
 
+TEST(DescriptorKeyInfo, GetExtPrivkeyInformation_root) {
+  std::string extkey = "xprv9s21ZrQH143K3h3fDYiay8mocZ3afhfULfb5GX8kCBdno77K4HiA15Tg23wpbeF1pLfs1c5SPmYHrEpTuuRhxMwvKDwqdKiGJS9XFKzUsAF";
+  ExtPrivkey privkey(extkey);
+  std::string path = "m/0'/1";
+  std::string ext_str = "[00000000]";
+  std::string ext_path_str = "[00000000/0'/1]";
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPrivkeyInformation(privkey, ""));
+  EXPECT_STREQ(key_str.c_str(), ext_str.c_str());
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPrivkeyInformation(privkey, path));
+  EXPECT_STREQ(key_str.c_str(), ext_path_str.c_str());
+}
+
 TEST(DescriptorKeyInfo, GetExtPubkeyInformation) {
   std::string extkey = "tpubDDNapBCUaChXpE91grWNGp8xWg84GcS1iRSR7iynAFTv6JAGnKTEUB3vkHtsV4NbkZf6SfjYM6PvW3kZ77KLUZ2GTYNBN4PJRWCKN1ERjJe";
   ExtPubkey pubkey(extkey);
   std::string path = "0/1";
   std::string ext_str = "[b7665978]";
   std::string ext_path_str = "[b7665978/" + path + "]";
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPubkeyInformation(pubkey, ""));
+  EXPECT_STREQ(key_str.c_str(), ext_str.c_str());
+
+  EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPubkeyInformation(pubkey, path));
+  EXPECT_STREQ(key_str.c_str(), ext_path_str.c_str());
+}
+
+TEST(DescriptorKeyInfo, GetExtPubkeyInformation_root) {
+  std::string extkey = "xpub661MyMwAqRbcGB88KaFbLGiYAat55APKhtWg4uYMkXAmfuSTbq2QYsn9sKJCj1YqZPafsboef4h4YbXXhNhPwMbkHTpkf3zLhx7HvFw1NDy";
+  ExtPubkey pubkey(extkey);
+  std::string path = "m/0/1";
+  std::string ext_str = "[00000000]";
+  std::string ext_path_str = "[00000000/0/1]";
   std::string key_str;
 
   EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPubkeyInformation(pubkey, ""));

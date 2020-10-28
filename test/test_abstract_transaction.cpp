@@ -314,17 +314,9 @@ TEST(AbstractTransaction, CopyVariableBuffer) {
 
 TEST(AbstractTransaction, TxSizeByException) {
   TestTransaction tx;
-  // input/output共に0個の場合、libwallyがElementsTransactionと誤認してしまう。
-  // そのためElementsの有効無効に合わせてテスト結果を変えてチェックする。
-#ifndef CFD_DISABLE_ELEMENTS
-  EXPECT_EQ(tx.GetTotalSize(), 11);
-  EXPECT_EQ(tx.GetVsize(), 11);
-  EXPECT_EQ(tx.GetWeight(), 44);
-#else
   EXPECT_EQ(tx.GetTotalSize(), 10);
   EXPECT_EQ(tx.GetVsize(), 10);
   EXPECT_EQ(tx.GetWeight(), 40);
-#endif  // CFD_DISABLE_ELEMENTS
 }
 
 TEST(AbstractTransaction, TxArray) {

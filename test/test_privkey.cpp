@@ -300,65 +300,48 @@ TEST(Privkey, CalculateEcSignature) {
   EXPECT_STREQ(err_sig.GetHex().c_str(), "");
 }
 
-TEST(Privkey, CombineMultipleMessages) {
-  // Arrange
-  Privkey oracle_privkey(
-      "0000000000000000000000000000000000000000000000000000000000000001");
-  Pubkey oracle_pubkey = oracle_privkey.GeneratePubkey();
-  std::vector<Privkey> oracle_k_values = {
-      Privkey(
-          "0000000000000000000000000000000000000000000000000000000000000002"),
-      Privkey(
-          "0000000000000000000000000000000000000000000000000000000000000003"),
-      Privkey(
-          "0000000000000000000000000000000000000000000000000000000000000004")};
-  std::vector<Pubkey> oracle_r_points;
-  std::vector<std::string> messages = {"W", "I", "N"};
-  Privkey local_fund_privkey(
-      "0000000000000000000000000000000000000000000000000000000000000005");
-  Pubkey local_fund_pubkey = local_fund_privkey.GeneratePubkey();
-  Privkey local_sweep_privkey(
-      "0000000000000000000000000000000000000000000000000000000000000006");
-  Pubkey local_sweep_pubkey = local_sweep_privkey.GeneratePubkey();
+TEST(Privkey, TweakTest) {
+  // https://planethouki.wordpress.com/2018/03/15/pubkey-add-ecdsa/
+  Privkey sk_a("1d52f68124c59c3125d5c2e043cabf01cef46fafaf45be3132fc1f52ff0ec434");
+  Privkey sk_b("353a88e3c404380d9970d9b2d8ee9f6051b3d817ab32aabc12f5c3c65086e659");
+  ByteData256 tweak("353a88e3c404380d9970d9b2d8ee9f6051b3d817ab32aabc12f5c3c65086e659");
 
-  for (auto kval : oracle_k_values) {
-    oracle_r_points.push_back(kval.GetSchnorrPublicNonce());
-  }
+  auto pk_a = sk_a.GetPubkey();
+  auto pk_b = sk_b.GetPubkey();
 
-  // Act
-  std::vector<ByteData> signatures;
-  for (size_t i = 0; i < messages.size(); ++i) {
-    auto sig = SignatureUtil::CalculateSchnorrSignatureWithNonce(
-        oracle_privkey, oracle_k_values[i], HashUtil::Sha256(messages[i]));
-    signatures.push_back(sig.GetData());
-  }
+  auto sk_c1 = sk_a + sk_b;
+  auto sk_c2 = sk_a - sk_b;
+  auto sk_c3 = sk_a + tweak;
+  auto sk_c4 = sk_a - tweak;
+  auto sk_m1 = sk_a * sk_b;
+  auto sk_m2 = sk_a * tweak;
 
-  // auto combined_pubkey =
-  //     DlcUtil::GetCombinedKey(oracle_pubkey, oracle_r_points, messages,
-  //                             local_fund_pubkey, local_sweep_pubkey);
-  std::vector<Pubkey> pubkeys;
-  for (int i = 0; (size_t)i < oracle_r_points.size(); i++) {
-    auto pubkey = Pubkey::GetSchnorrPubkey(oracle_pubkey,
-        oracle_r_points[i], HashUtil::Sha256(messages[i]));
-    pubkeys.push_back(pubkey);
-  }
-  auto committed_key = Pubkey::CombinePubkey(pubkeys);
-  // auto committed_key = pubkey;
-  Pubkey combine_pubkey =
-      Pubkey::CombinePubkey(local_fund_pubkey, committed_key);
-  auto hashPub = Privkey(HashUtil::Sha256(local_sweep_pubkey.GetData()))
-      .GeneratePubkey();
-  auto combined_pubkey = Pubkey::CombinePubkey(combine_pubkey, hashPub);
+  Privkey sk_c5 = sk_a;
+  Privkey sk_c6 = sk_a;
+  sk_c5 += sk_b;
+  sk_c6 += tweak;
 
-  // auto tweak_priv = DlcUtil::GetTweakedPrivkey(signatures, local_fund_privkey,
-  //                                              local_sweep_pubkey);
-  Privkey tweaked_key = local_fund_privkey;
-  for (auto signature : signatures) {
-    tweaked_key = tweaked_key.CreateTweakAdd(ByteData256(signature));
-  }
-  auto hash = HashUtil::Sha256(local_sweep_pubkey);
-  auto tweak_priv = tweaked_key.CreateTweakAdd(hash);
+  Privkey sk_m3 = sk_a;
+  Privkey sk_m4 = sk_a;
+  sk_m3 *= sk_b;
+  sk_m4 *= tweak;
 
-  // Assert
-  EXPECT_EQ(tweak_priv.GeneratePubkey().GetHex(), combined_pubkey.GetHex());
+  std::string exp_sk_c1 = "528d7f64e8c9d43ebf469c931cb95e6220a847c75a7868ed45f1e3194f95aa8d";
+  std::string exp_sk_c2 = "e8186d9d60c164238c64e92d6adc1fa037ef747eb35bb3b0dfd8ba197ebe1f1c";
+  std::string exp_sk_c3 = "528d7f64e8c9d43ebf469c931cb95e6220a847c75a7868ed45f1e3194f95aa8d";
+  std::string exp_sk_c4 = "e8186d9d60c164238c64e92d6adc1fa037ef747eb35bb3b0dfd8ba197ebe1f1c";
+  std::string exp_sk_m1 = "5ef544d2eb21fcabf9d31d103631fd6da8a653a118e086b5c16b27baa4b1efa0";
+  std::string exp_sk_m2 = "5ef544d2eb21fcabf9d31d103631fd6da8a653a118e086b5c16b27baa4b1efa0";
+
+  EXPECT_EQ(exp_sk_c1, sk_c1.GetHex());
+  EXPECT_EQ(exp_sk_c2, sk_c2.GetHex());
+  EXPECT_EQ(exp_sk_c3, sk_c3.GetHex());
+  EXPECT_EQ(exp_sk_c4, sk_c4.GetHex());
+  EXPECT_EQ(exp_sk_m1, sk_m1.GetHex());
+  EXPECT_EQ(exp_sk_m2, sk_m2.GetHex());
+
+  EXPECT_EQ(exp_sk_c1, sk_c5.GetHex());
+  EXPECT_EQ(exp_sk_c3, sk_c6.GetHex());
+  EXPECT_EQ(exp_sk_m1, sk_m3.GetHex());
+  EXPECT_EQ(exp_sk_m2, sk_m4.GetHex());
 }

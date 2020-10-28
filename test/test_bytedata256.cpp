@@ -29,6 +29,9 @@ TEST(ByteData256, DefaultConstructor) {
   EXPECT_NO_THROW(byte_class_data = byte_data.GetData());
   EXPECT_EQ(byte_data.GetBytes(), byte_class_data.GetBytes());
   EXPECT_TRUE(byte_data.Empty());   // TODO(k-matsuzawa): deprecated API
+
+  EXPECT_EQ(0, byte_data.GetHeadData());
+  EXPECT_EQ(0x20, byte_data.Serialize().GetHeadData());
 }
 
 TEST(ByteData256, HexConstructor) {

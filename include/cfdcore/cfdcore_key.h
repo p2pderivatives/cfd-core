@@ -59,7 +59,7 @@ class CFD_CORE_EXPORT Pubkey {
    * @brief HEX文字列からPublicKeyモデルを復元するコンストラクタ.
    * @param[in] hex_string PublicKeyのHEX文字列
    */
-  explicit Pubkey(const std::string& hex_string);
+  explicit Pubkey(const std::string &hex_string);
 
   /**
    * @brief 自身のByteDataからHEX文字列を取得する.
@@ -80,6 +80,13 @@ class CFD_CORE_EXPORT Pubkey {
   bool IsCompress() const;
 
   /**
+   * @brief Get y-parity flag.
+   * @details This function is enable on compressed pubkey only.
+   * @return parity bit
+   */
+  bool IsParity() const;
+
+  /**
    * @brief 公開鍵として正しい形式であるかを検証する.
    * @retval true   正常フォーマット
    * @retval false  不正フォーマット
@@ -92,14 +99,14 @@ class CFD_CORE_EXPORT Pubkey {
    * @retval true   一致
    * @retval false  不一致
    */
-  bool Equals(const Pubkey& pubkey) const;
+  bool Equals(const Pubkey &pubkey) const;
 
   /**
    * @brief 合成Pubkeyを生成する.
    * @param[in] pubkeys 合成元Pubkey list
    * @return 合成したPubkeyインスタンス
    */
-  static Pubkey CombinePubkey(const std::vector<Pubkey>& pubkeys);
+  static Pubkey CombinePubkey(const std::vector<Pubkey> &pubkeys);
 
   /**
    * @brief 合成Pubkeyを生成する.
@@ -107,30 +114,30 @@ class CFD_CORE_EXPORT Pubkey {
    * @param[in] message_key 合成するmessage Pubkey
    * @return 合成したPubkeyインスタンス
    */
-  static Pubkey CombinePubkey(const Pubkey& pubkey, const Pubkey& message_key);
+  static Pubkey CombinePubkey(const Pubkey &pubkey, const Pubkey &message_key);
 
   /**
    * @brief Create new public key with tweak added.
    * @details This function doesn't have no side-effect.
-   *     It always returns new instance of Privkey.
+   *     It always returns new instance of pubkey.
    * @param[in] tweak     tweak to be added
    * @return new instance of pubkey key with tweak added.
    */
-  Pubkey CreateTweakAdd(const ByteData256& tweak) const;
+  Pubkey CreateTweakAdd(const ByteData256 &tweak) const;
 
   /**
    * @brief Create new negated public key with tweak multiplied.
    * @details This function doesn't have no side-effect.
-   *     It always returns new instance of Privkey.
+   *     It always returns new instance of pubkey.
    * @param[in] tweak     tweak to be added
    * @return new instance of pubkey key with tweak added.
    */
-  Pubkey CreateTweakMul(const ByteData256& tweak) const;
+  Pubkey CreateTweakMul(const ByteData256 &tweak) const;
 
   /**
    * @brief Create new negated public key.
    * @details This function doesn't have no side-effect.
-   *     It always returns new instance of Privkey.
+   *     It always returns new instance of pubkey.
    * @return new instance of pubkey key with tweak added.
    */
   Pubkey CreateNegate() const;
@@ -154,19 +161,7 @@ class CFD_CORE_EXPORT Pubkey {
    * @return true if the signature is valid, false if not.
    */
   bool VerifyEcSignature(
-      const ByteData256& signature_hash, const ByteData& signature) const;
-
-  /**
-   * @brief function for schnorr public key.
-   * @param[in] oracle_pubkey   the public key of the oracle.
-   * @param[in] oracle_r_point  the R point for the event.
-   * @param[in] message         the message for the outcome.
-   * @return data of public key.
-   * @throw CfdException if invalid data.
-   */
-  static Pubkey GetSchnorrPubkey(
-      const Pubkey& oracle_pubkey, const Pubkey& oracle_r_point,
-      const ByteData256& message);
+      const ByteData256 &signature_hash, const ByteData &signature) const;
 
   /**
    * @brief 公開鍵として正しい形式であるかを検証する.
@@ -174,7 +169,7 @@ class CFD_CORE_EXPORT Pubkey {
    * @retval true   正常フォーマット
    * @retval false  不正フォーマット
    */
-  static bool IsValid(const ByteData& byte_data);
+  static bool IsValid(const ByteData &byte_data);
 
   /**
    * @brief 指定された2つの公開鍵のHEX値を比較する.
@@ -183,7 +178,32 @@ class CFD_CORE_EXPORT Pubkey {
    * @retval true   大きい
    * @retval false  小さい
    */
-  static bool IsLarge(const Pubkey& source, const Pubkey& destination);
+  static bool IsLarge(const Pubkey &source, const Pubkey &destination);
+
+  /**
+   * @brief combine pubkey.
+   * @param[in] right   pubkey data
+   * @return combined pubkey
+   */
+  Pubkey operator+=(const Pubkey &right);
+  /**
+   * @brief tweak add pubkey.
+   * @param[in] right   tweak data
+   * @return tweaked pubkey
+   */
+  Pubkey operator+=(const ByteData256 &right);
+  /**
+   * @brief negate and tweak add for pubkey.
+   * @param[in] right   tweak data (before negate)
+   * @return tweaked pubkey
+   */
+  Pubkey operator-=(const ByteData256 &right);
+  /**
+   * @brief tweak mul for pubkey.
+   * @param[in] right   tweak data
+   * @return tweaked pubkey
+   */
+  Pubkey operator*=(const ByteData256 &right);
 
  private:
   /**
@@ -210,19 +230,19 @@ class CFD_CORE_EXPORT Privkey {
    * @brief コンストラクタ
    * @param[in] byte_data 秘密鍵のByteDataインスタンス
    */
-  explicit Privkey(const ByteData& byte_data);
+  explicit Privkey(const ByteData &byte_data);
 
   /**
    * @brief コンストラクタ
    * @param[in] byte_data 秘密鍵のByteDataインスタンス
    */
-  explicit Privkey(const ByteData256& byte_data);
+  explicit Privkey(const ByteData256 &byte_data);
 
   /**
    * @brief 文字列からPrivateKeyモデルを復元するコンストラクタ.
    * @param[in] hex_str PrivateKeyのHEX文字列
    */
-  explicit Privkey(const std::string& hex_str);
+  explicit Privkey(const std::string &hex_str);
 
   /**
    * @brief 自身のByteDataからHEX文字列を取得する.
@@ -264,7 +284,15 @@ class CFD_CORE_EXPORT Privkey {
    * @param[in] tweak     tweak to be added
    * @return new instance of private key with tweak added.
    */
-  Privkey CreateTweakAdd(const ByteData256& tweak) const;
+  Privkey CreateTweakAdd(const ByteData256 &tweak) const;
+  /**
+   * @brief Create new private key with tweak added.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @param[in] tweak     tweak to be added
+   * @return new instance of private key with tweak added.
+   */
+  Privkey CreateTweakAdd(const Privkey &tweak) const;
 
   /**
    * @brief Create new private key with tweak multiplied.
@@ -273,7 +301,15 @@ class CFD_CORE_EXPORT Privkey {
    * @param[in] tweak     tweak to be added
    * @return new instance of private key with tweak added.
    */
-  Privkey CreateTweakMul(const ByteData256& tweak) const;
+  Privkey CreateTweakMul(const ByteData256 &tweak) const;
+  /**
+   * @brief Create new private key with tweak multiplied.
+   * @details This function doesn't have no side-effect.
+   *     It always returns new instance of Privkey.
+   * @param[in] tweak     tweak to be added
+   * @return new instance of private key with tweak added.
+   */
+  Privkey CreateTweakMul(const Privkey &tweak) const;
 
   /**
    * @brief Create new negated private key.
@@ -282,12 +318,6 @@ class CFD_CORE_EXPORT Privkey {
    * @return new instance of private key with tweak added.
    */
   Privkey CreateNegate() const;
-
-  /**
-   * @brief get schnorr public nonce.
-   * @return data of public nonce.
-   */
-  Pubkey GetSchnorrPublicNonce() const;
 
   /**
    * @brief PrivateKeyの設定状態が不正であるかを返却する.
@@ -310,7 +340,7 @@ class CFD_CORE_EXPORT Privkey {
    * @retval true   match
    * @retval false  not match
    */
-  bool Equals(const Privkey& privkey) const;
+  bool Equals(const Privkey &privkey) const;
 
   /**
    * @brief calculate ec signature from sighash.
@@ -319,7 +349,7 @@ class CFD_CORE_EXPORT Privkey {
    * @return signature
    */
   ByteData CalculateEcSignature(
-      const ByteData256& signature_hash, bool has_grind_r = true) const;
+      const ByteData256 &signature_hash, bool has_grind_r = true) const;
 
   /**
    * @brief set pubkey compressed flag.
@@ -335,7 +365,7 @@ class CFD_CORE_EXPORT Privkey {
    * @return Privkeyインスタンス
    */
   static Privkey FromWif(
-      const std::string& wif, NetType net_type, bool is_compressed = true);
+      const std::string &wif, NetType net_type, bool is_compressed = true);
 
   /**
    * @brief 乱数からPrivkeyインスタンスを生成する.
@@ -354,8 +384,45 @@ class CFD_CORE_EXPORT Privkey {
    * @retval false  other format.
    */
   static bool HasWif(
-      const std::string& wif, NetType* net_type = nullptr,
-      bool* is_compressed = nullptr);
+      const std::string &wif, NetType *net_type = nullptr,
+      bool *is_compressed = nullptr);
+
+  /**
+   * @brief tweak add privkey.
+   * @param[in] right   tweak privkey
+   * @return tweaked privkey
+   */
+  Privkey operator+=(const Privkey &right);
+  /**
+   * @brief tweak add privkey.
+   * @param[in] right   tweak data
+   * @return tweaked privkey
+   */
+  Privkey operator+=(const ByteData256 &right);
+  /**
+   * @brief negate and tweak add for privkey.
+   * @param[in] right   tweak privkey (before negate)
+   * @return tweaked privkey
+   */
+  Privkey operator-=(const Privkey &right);
+  /**
+   * @brief negate and tweak add for privkey.
+   * @param[in] right   tweak data (before negate)
+   * @return tweaked privkey
+   */
+  Privkey operator-=(const ByteData256 &right);
+  /**
+   * @brief tweak mul for privkey.
+   * @param[in] right   tweak privkey
+   * @return tweaked privkey
+   */
+  Privkey operator*=(const Privkey &right);
+  /**
+   * @brief tweak mul for privkey.
+   * @param[in] right   tweak data
+   * @return tweaked privkey
+   */
+  Privkey operator*=(const ByteData256 &right);
 
  private:
   /**
@@ -373,8 +440,86 @@ class CFD_CORE_EXPORT Privkey {
    * @retval true   正常フォーマット
    * @retval false  不正フォーマット
    */
-  static bool IsValid(const std::vector<uint8_t>& buffer);
+  static bool IsValid(const std::vector<uint8_t> &buffer);
 };
+
+// global operator overloading
+
+/**
+ * @brief combine pubkey.
+ * @param[in] left    base pubkey
+ * @param[in] right   pubkey data
+ * @return combined pubkey
+ */
+CFD_CORE_EXPORT Pubkey operator+(const Pubkey &left, const Pubkey &right);
+
+/**
+ * @brief tweak add pubkey.
+ * @param[in] left    base pubkey
+ * @param[in] right   tweak data
+ * @return tweaked pubkey
+ */
+CFD_CORE_EXPORT Pubkey operator+(const Pubkey &left, const ByteData256 &right);
+/**
+ * @brief negate and tweak add for pubkey.
+ * @param[in] left    base pubkey
+ * @param[in] right   tweak data (before negate)
+ * @return tweaked pubkey
+ */
+CFD_CORE_EXPORT Pubkey operator-(const Pubkey &left, const ByteData256 &right);
+/**
+ * @brief tweak mul for pubkey.
+ * @param[in] left    base pubkey
+ * @param[in] right   tweak data
+ * @return tweaked pubkey
+ */
+CFD_CORE_EXPORT Pubkey operator*(const Pubkey &left, const ByteData256 &right);
+
+/**
+ * @brief tweak add privkey.
+ * @param[in] left    base privkey
+ * @param[in] right   tweak privkey
+ * @return tweaked privkey
+ */
+CFD_CORE_EXPORT Privkey operator+(const Privkey &left, const Privkey &right);
+/**
+ * @brief tweak add privkey.
+ * @param[in] left    base privkey
+ * @param[in] right   tweak data
+ * @return tweaked privkey
+ */
+CFD_CORE_EXPORT Privkey
+operator+(const Privkey &left, const ByteData256 &right);
+/**
+ * @brief negate and tweak add for privkey.
+ * @param[in] left    base privkey
+ * @param[in] right   tweak privkey (before negate)
+ * @return tweaked privkey
+ */
+CFD_CORE_EXPORT Privkey operator-(const Privkey &left, const Privkey &right);
+/**
+ * @brief negate and tweak add for privkey.
+ * @param[in] left    base privkey
+ * @param[in] right   tweak data (before negate)
+ * @return tweaked privkey
+ */
+CFD_CORE_EXPORT Privkey
+operator-(const Privkey &left, const ByteData256 &right);
+/**
+ * @brief tweak mul for privkey.
+ * @param[in] left    base privkey
+ * @param[in] right   tweak privkey
+ * @return tweaked privkey
+ */
+CFD_CORE_EXPORT Privkey operator*(const Privkey &left, const Privkey &right);
+/**
+ * @brief tweak mul for privkey.
+ * @param[in] left    base privkey
+ * @param[in] right   tweak data
+ * @return tweaked privkey
+ */
+CFD_CORE_EXPORT Privkey
+operator*(const Privkey &left, const ByteData256 &right);
 
 }  // namespace core
 }  // namespace cfd

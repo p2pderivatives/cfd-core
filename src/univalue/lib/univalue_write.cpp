@@ -62,7 +62,9 @@ std::string UniValue::write(unsigned int prettyIndent,
 
 static void indentStr(unsigned int prettyIndent, unsigned int indentLevel, std::string& s)
 {
-    s.append(prettyIndent * indentLevel, ' ');
+    if ((prettyIndent <= 0xff) && (indentLevel <= 0xff)) {
+        s.append(prettyIndent * indentLevel, ' ');
+    }
 }
 
 void UniValue::writeArray(unsigned int prettyIndent, unsigned int indentLevel, std::string& s) const

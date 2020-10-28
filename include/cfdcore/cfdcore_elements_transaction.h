@@ -608,6 +608,50 @@ class CFD_CORE_EXPORT ConfidentialTxInReference
     return pegin_witness_.GetWitnessNum();
   }
 
+  /**
+   * @brief estimate txin's size, and witness size.
+   * @param[in] addr_type           address type
+   * @param[in] redeem_script       redeem script
+   * @param[in] is_blind            blind transaction (for issuance/reissuance)
+   * @param[in] exponent                  rangeproof exponent value.
+   *   -1 to 18. -1 is public value. 0 is most private.
+   * @param[in] minimum_bits              rangeproof blinding bits.
+   *   0 to 64. Number of bits of the value to keep private. 0 is auto.
+   * @param[in] fedpeg_script       fedpeg script
+   * @param[in] scriptsig_template     scriptsig template
+   * @param[out] witness_area_size     witness area size
+   * @param[out] no_witness_area_size  no witness area size
+   * @return TxIn size.
+   */
+  uint32_t EstimateTxInSize(
+      AddressType addr_type, Script redeem_script = Script(),
+      bool is_blind = false, int exponent = 0,
+      int minimum_bits = kDefaultBlindMinimumBits,
+      Script fedpeg_script = Script(),
+      const Script* scriptsig_template = nullptr,
+      uint32_t* witness_area_size = nullptr,
+      uint32_t* no_witness_area_size = nullptr) const;
+
+  /**
+   * @brief estimate txin's virtual size direct.
+   * @param[in] addr_type           address type
+   * @param[in] redeem_script       redeem script
+   * @param[in] is_blind            blind transaction (for issuance/reissuance)
+   * @param[in] exponent                  rangeproof exponent value.
+   *   -1 to 18. -1 is public value. 0 is most private.
+   * @param[in] minimum_bits              rangeproof blinding bits.
+   *   0 to 64. Number of bits of the value to keep private. 0 is auto.
+   * @param[in] fedpeg_script       fedpeg script
+   * @param[in] scriptsig_template  scriptsig template
+   * @return TxIn virtual size.
+   */
+  uint32_t EstimateTxInVsize(
+      AddressType addr_type, Script redeem_script = Script(),
+      bool is_blind = false, int exponent = 0,
+      int minimum_bits = kDefaultBlindMinimumBits,
+      Script fedpeg_script = Script(),
+      const Script* scriptsig_template = nullptr) const;
+
  private:
   ByteData256 blinding_nonce_;           //!< nonce for blind
   ByteData256 asset_entropy_;            //!< asset entropy

@@ -43,6 +43,8 @@ TEST_CFDCORE_SOURCES= \
     test_signatureutil.cpp \
     test_randomnumberutil.cpp \
     test_sighashtype.cpp \
+    test_schnorrsig.cpp \
+    test_ecdsa_adaptor.cpp \
     ${TEST_CFDCORE_ELEMENTS_SOURCES}
 
 TEST_CFDCORE_STATIC_SOURCES= \

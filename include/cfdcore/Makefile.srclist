@@ -23,5 +23,7 @@ CFDCORE_PKGINCLUDE_FILES = \
   cfdcore_exception.h \
   cfdcore_iterator.h \
   cfdcore_logger_interface.h \
+  cfdcore_schnorrsig.h \
+  cfdcore_ecdsa_adaptor.h \
   $(CFDCORE_ELEMENTS_PKGINCLUDE_FILES)
 

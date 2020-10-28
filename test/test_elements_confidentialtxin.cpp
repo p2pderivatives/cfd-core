@@ -4,6 +4,7 @@
 
 #include "cfdcore/cfdcore_elements_transaction.h"
 #include "cfdcore/cfdcore_address.h"
+#include "cfdcore/cfdcore_amount.h"
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_bytedata.h"
@@ -12,6 +13,7 @@
 #include "cfdcore/cfdcore_util.h"
 
 using cfd::core::AddressType;
+using cfd::core::Amount;
 using cfd::core::CfdException;
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
@@ -253,12 +255,12 @@ TEST(ConfidentialTxIn, EstimateTxInSize) {
     {AddressType::kP2wpkhAddress, 610, 569, Script(), 226, Script("51"), false, false, false, "", 0, 0},
     // issue
     {AddressType::kP2wpkhAddress, 234, 111, Script(), 0, Script(), true, false, false, "", 0, 0},
-    {AddressType::kP2wpkhAddress, 6064, 5893, Script(), 0, Script(), true, true, false,
+    {AddressType::kP2wpkhAddress, /*6064*/ 8498, /*5893*/ 8327, Script(), 0, Script(), true, true, false,
         "", 0, 36},
     {AddressType::kP2wpkhAddress, 8626, 8455, Script(), 0, Script(), true, true, false,
         "", 0, 52},
     // reissue
-    {AddressType::kP2wpkhAddress, 3173, 3002, Script(), 0, Script(), true, true, true,
+    {AddressType::kP2wpkhAddress, /*3173*/ 4390, /*3002*/ 4219, Script(), 0, Script(), true, true, true,
         "", 0, 36},
     {AddressType::kP2wpkhAddress, 4454, 4283, Script(), 0, Script(), true, true, true,
         "", 0, 52},
@@ -281,7 +283,8 @@ TEST(ConfidentialTxIn, EstimateTxInSize) {
     EXPECT_EQ(size, test_data.size);
     EXPECT_EQ(wit_size, test_data.witness_size);
     if (test_data.minimum_bits == 36) {
-      EXPECT_EQ(cache_size, 2892);
+      // EXPECT_EQ(cache_size, 2892);
+      EXPECT_EQ(cache_size, 4109);
     } else if (test_data.minimum_bits == 52) {
       EXPECT_EQ(cache_size, 4173);
     }
@@ -302,10 +305,10 @@ TEST(ConfidentialTxIn, EstimateTxInVsize) {
     {AddressType::kP2wpkhAddress, 184, 0, Script(), 226, Script("51"), false, false, false, "", 0, 0},
     // issue
     {AddressType::kP2wpkhAddress, 151, 0, Script(), 0, Script(), true, false, false, "", 0, 0},
-    {AddressType::kP2wpkhAddress, 1645, 0, Script(), 0, Script(), true, true, false, "", 0, 36},
+    {AddressType::kP2wpkhAddress, /*1645*/ 2253, 0, Script(), 0, Script(), true, true, false, "", 0, 36},
     {AddressType::kP2wpkhAddress, 2285, 0, Script(), 0, Script(), true, true, false, "", 0, 52},
     // reissue
-    {AddressType::kP2wpkhAddress, 922, 0, Script(), 0, Script(), true, true, true, "", 0, 36},
+    {AddressType::kP2wpkhAddress, /*922*/ 1226, 0, Script(), 0, Script(), true, true, true, "", 0, 36},
     {AddressType::kP2wpkhAddress, 1242, 0, Script(), 0, Script(), true, true, true, "", 0, 52},
   };
 
@@ -371,6 +374,173 @@ TEST(ConfidentialTxInReference, Constractor) {
   for (size_t idx = 0; idx < test_peg_vector.size(); ++idx) {
     EXPECT_STREQ(test_peg_vector[idx].GetHex().c_str(),
         exp_peg_vector[idx].GetHex().c_str());
+  }
+}
+
+struct TestEstimateConfidentialTxInRefVector {
+  ConfidentialTxIn txin;
+  AddressType addr_type;
+  uint32_t size;
+  uint32_t witness_size;
+  Script redeem_script;
+  Script fedpeg_script;
+  bool is_blind;
+  std::string script_template;
+  int exponent;
+  int minimum_bits;
+};
+
+TEST(ConfidentialTxInReference, EstimateTxInSize) {
+  static const std::string multisig_script = "522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae";
+  static const std::string scriptsig_template = "00473044022047ac8e878352d3ebbde1c94ce3a10d057c24175747116f8288e5d794d12d482f0220217f36a485cae903c713331d877c1f64677e3622ad4010726870540656fe9dcb014752210205ffcdde75f262d66ada3dd877c7471f8f8ee9ee24d917c3e18d01cee458bafe2102be61f4350b4ae7544f99649a917f48ba16cf48c983ac1599774958d88ad17ec552ae";
+
+  Amount issue_amount(uint32_t{10000000});
+  Amount token_amount(uint32_t{10000000});
+  ConfidentialTxIn txin;
+  ConfidentialTxIn pegin_txin;
+  {
+    pegin_txin.AddPeginWitnessStack(ByteData("00e1f50500000000"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "c23bd031406aa9f7ac994f7385cd8d2605adaadf5a473c82557b4586192681d3"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData("0014e8d28b573816ddfcf98578d7b28543e273f5a72a"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "02000000014578ddc14da3e19445b6e7b4c61d4af711d29e2703161aa9c11e4e6b0ea08843010000006b483045022100eea27e89c3cf2867393263bece040f34c03e0cddfa93a1a18c0d2e4322a37df7022074273c0ab3836affba53737c83673ca6c0d69bffdf722b4accfd7c0a9b2ea4e60121020bfcdbda850cd250c3995dfdb426dc40a9c8a5b378be2bf39f6b0642a783daf2feffffff02281d2418010000001976a914b56872c7b363bfb3f5af84d071ff282cf2abfe3988ac00e1f5050000000017a9141d4796c6e855ae00acecb0c20f65dd8bbeffb1ec87d1000000"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "03000030ffba1d575800bf37a1ee1962dee7e153c18bcfc93cd013e7c297d5363b36cc2d63d5c4a9fdc746b9d3f4f62995d611c34ee9740ff2b5193ce458fdac6d173800ec402e5affff7f200500000002000000027ce06590120cf8c2bef7726200f0fa655940cadcf62708d7dc9f8f2a417c890b81af4d4299758e7e7a0daa6e7e3d3ec37f97df4ef2392ae5e6d286fc5e7e01d90105"));
+  }
+  ConfidentialTxIn issue_txin;
+  ConfidentialTxIn reissue_txin;
+  ConfidentialValue issuance_amount(issue_amount);
+  ConfidentialValue inflation_keys(token_amount);
+  BlindFactor entropy("6f9ccf5949eba5d6a08bff7a015e825c97824e82d57c8a0c77f9a41908fe8306");
+  BlindFactor blind_factor("c8082e8f6980cb5c938cbeff8d72fd5109eddc337417c3b7a7e62deb9a1b9acf");
+  {
+    issue_txin.SetIssuance(
+        ByteData256(), ByteData256(), issuance_amount,
+        inflation_keys, ByteData(), ByteData());
+    reissue_txin.SetIssuance(
+        entropy.GetData(), blind_factor.GetData(), issuance_amount,
+        ConfidentialValue(), ByteData(), ByteData());
+  }
+
+  const std::vector<TestEstimateConfidentialTxInRefVector> test_vector = {
+    {txin, AddressType::kP2pkhAddress, 149, 0, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shAddress, 204, 0, exp_script, Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wpkhAddress, 174, 111, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wshAddress, 220, 145, Script("51"), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wpkhAddress, 152, 111, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wshAddress, 207, 166, exp_script,Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wshAddress, 300, 259, Script(multisig_script), Script(), false,
+      "", 0, 0},
+    {txin, AddressType::kP2wshAddress, 190, 149, exp_script, Script(), false,
+      scriptsig_template, 0, 0},
+    // pegin
+    {pegin_txin, AddressType::kP2wpkhAddress, 608, 567, Script(), Script("51"), false, "", 0, 0},
+    // issue
+    {issue_txin, AddressType::kP2wpkhAddress, 4142, 3971, Script(), Script(), true, "", 0, 0},
+    {issue_txin, AddressType::kP2wpkhAddress, 6064, 5893, Script(), Script(), true, "", 0, 36},
+    {issue_txin, AddressType::kP2wpkhAddress, 8626, 8455, Script(), Script(), true, "", 0, 52},
+    // reissue
+    {reissue_txin, AddressType::kP2wpkhAddress, 3173, 3002, Script(), Script(), true, "", 0, 36},
+    {reissue_txin, AddressType::kP2wpkhAddress, 4454, 4283, Script(),Script(), true, "", 0, 52},
+  };
+
+  for (const auto& test_data : test_vector) {
+    uint32_t size = 0;
+    uint32_t wit_size = 0;
+    Script script_template(test_data.script_template);
+    Script* template_ptr = nullptr;
+    if (!test_data.script_template.empty()) {
+      template_ptr = &script_template;
+    }
+    ConfidentialTxInReference txin_ref(test_data.txin);
+    EXPECT_NO_THROW((size = txin_ref.EstimateTxInSize(
+        test_data.addr_type, test_data.redeem_script, test_data.is_blind,
+        test_data.exponent, test_data.minimum_bits, test_data.fedpeg_script,
+        template_ptr, &wit_size, nullptr)));
+    EXPECT_EQ(size, test_data.size);
+    EXPECT_EQ(wit_size, test_data.witness_size);
+  }
+}
+
+TEST(ConfidentialTxInReference, EstimateTxInVsize) {
+  static const std::string multisig_script = "522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae";
+
+  Amount issue_amount(uint32_t{10000000});
+  Amount token_amount(uint32_t{10000000});
+  ConfidentialTxIn txin;
+  ConfidentialTxIn pegin_txin;
+  {
+    pegin_txin.AddPeginWitnessStack(ByteData("00e1f50500000000"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "c23bd031406aa9f7ac994f7385cd8d2605adaadf5a473c82557b4586192681d3"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData("0014e8d28b573816ddfcf98578d7b28543e273f5a72a"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "02000000014578ddc14da3e19445b6e7b4c61d4af711d29e2703161aa9c11e4e6b0ea08843010000006b483045022100eea27e89c3cf2867393263bece040f34c03e0cddfa93a1a18c0d2e4322a37df7022074273c0ab3836affba53737c83673ca6c0d69bffdf722b4accfd7c0a9b2ea4e60121020bfcdbda850cd250c3995dfdb426dc40a9c8a5b378be2bf39f6b0642a783daf2feffffff02281d2418010000001976a914b56872c7b363bfb3f5af84d071ff282cf2abfe3988ac00e1f5050000000017a9141d4796c6e855ae00acecb0c20f65dd8bbeffb1ec87d1000000"));
+    pegin_txin.AddPeginWitnessStack(
+        ByteData(
+            "03000030ffba1d575800bf37a1ee1962dee7e153c18bcfc93cd013e7c297d5363b36cc2d63d5c4a9fdc746b9d3f4f62995d611c34ee9740ff2b5193ce458fdac6d173800ec402e5affff7f200500000002000000027ce06590120cf8c2bef7726200f0fa655940cadcf62708d7dc9f8f2a417c890b81af4d4299758e7e7a0daa6e7e3d3ec37f97df4ef2392ae5e6d286fc5e7e01d90105"));
+  }
+  ConfidentialTxIn issue_txin;
+  ConfidentialTxIn reissue_txin;
+  ConfidentialValue issuance_amount(issue_amount);
+  ConfidentialValue inflation_keys(token_amount);
+  BlindFactor entropy("6f9ccf5949eba5d6a08bff7a015e825c97824e82d57c8a0c77f9a41908fe8306");
+  BlindFactor blind_factor("c8082e8f6980cb5c938cbeff8d72fd5109eddc337417c3b7a7e62deb9a1b9acf");
+  {
+    issue_txin.SetIssuance(
+        ByteData256(), ByteData256(), issuance_amount,
+        inflation_keys, ByteData(), ByteData());
+    reissue_txin.SetIssuance(
+        entropy.GetData(), blind_factor.GetData(), issuance_amount,
+        ConfidentialValue(), ByteData(), ByteData());
+  }
+
+  const std::vector<TestEstimateConfidentialTxInRefVector> test_vector = {
+    {txin, AddressType::kP2pkhAddress, 149, 0, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shAddress, 204, 0, exp_script, Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wpkhAddress, 91, 0, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wshAddress, 112, 0, Script("51"), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wpkhAddress, 69, 0, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wshAddress, 83, 0, exp_script, Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wshAddress, 106, 0, Script(multisig_script), Script(), false, "", 0, 0},
+    // pegin
+    {pegin_txin, AddressType::kP2wpkhAddress, 183, 0, Script(), Script("51"), false, "", 0, 0},
+    // issue
+    {issue_txin, AddressType::kP2wpkhAddress, 1164, 0, Script(), Script(), true, "", 0, 0},
+    {issue_txin, AddressType::kP2wpkhAddress, 1645, 0, Script(), Script(), true, "", 0, 36},
+    {issue_txin, AddressType::kP2wpkhAddress, 2285, 0, Script(), Script(), true, "", 0, 52},
+    // reissue
+    {reissue_txin, AddressType::kP2wpkhAddress, 922, 0, Script(),Script(), true, "", 0, 36},
+    {reissue_txin, AddressType::kP2wpkhAddress, 1242, 0, Script(), Script(), true, "", 0, 52},
+  };
+
+  for (const auto& test_data : test_vector) {
+    uint32_t vsize = 0;
+    Script script_template(test_data.script_template);
+    Script* template_ptr = nullptr;
+    if (!test_data.script_template.empty()) {
+      template_ptr = &script_template;
+    }
+    ConfidentialTxInReference txin_ref(test_data.txin);
+    EXPECT_NO_THROW((vsize = txin_ref.EstimateTxInVsize(
+        test_data.addr_type, test_data.redeem_script, test_data.is_blind,
+        test_data.exponent, test_data.minimum_bits,
+        test_data.fedpeg_script, template_ptr)));
+    EXPECT_EQ(vsize, test_data.size);
   }
 }
 

@@ -28,8 +28,8 @@ using logger::warn;
 // ----------------------------------------------------------------------------
 Pubkey::Pubkey() : data_() {}
 
-bool Pubkey::IsValid(const ByteData& byte_data) {
-  const std::vector<uint8_t>& buffer = byte_data.GetBytes();
+bool Pubkey::IsValid(const ByteData &byte_data) {
+  const std::vector<uint8_t> &buffer = byte_data.GetBytes();
   if (buffer.size() > 0) {
     uint8_t header = buffer[0];
     if (header == 0x02 || header == 0x03) {
@@ -49,7 +49,7 @@ Pubkey::Pubkey(ByteData byte_data) : data_(byte_data) {
   }
 }
 
-Pubkey::Pubkey(const std::string& hex_string) : Pubkey(ByteData(hex_string)) {
+Pubkey::Pubkey(const std::string &hex_string) : Pubkey(ByteData(hex_string)) {
   // do nothing
 }
 
@@ -58,9 +58,8 @@ std::string Pubkey::GetHex() const { return data_.GetHex(); }
 ByteData Pubkey::GetData() const { return data_.GetBytes(); }
 
 bool Pubkey::IsCompress() const {
-  std::vector<uint8_t> buffer = data_.GetBytes();
-  if (buffer.size() > 0) {
-    uint8_t header = buffer[0];
+  if (!data_.IsEmpty()) {
+    uint8_t header = data_.GetHeadData();
     if (header == 0x02 || header == 0x03) {
       return true;
     } else if (header == 0x04 || header == 0x06 || header == 0x07) {
@@ -70,21 +69,23 @@ bool Pubkey::IsCompress() const {
   return false;
 }
 
+bool Pubkey::IsParity() const { return (data_.GetHeadData() == 0x03); }
+
 bool Pubkey::IsValid() const { return IsValid(data_); }
 
-bool Pubkey::Equals(const Pubkey& pubkey) const {
+bool Pubkey::Equals(const Pubkey &pubkey) const {
   return data_.Equals(pubkey.data_);
 }
 
-Pubkey Pubkey::CombinePubkey(const std::vector<Pubkey>& pubkeys) {
+Pubkey Pubkey::CombinePubkey(const std::vector<Pubkey> &pubkeys) {
   std::vector<ByteData> data_list;
-  for (const auto& pubkey : pubkeys) {
+  for (const auto &pubkey : pubkeys) {
     data_list.push_back(pubkey.GetData());
   }
   return Pubkey(WallyUtil::CombinePubkeySecp256k1Ec(data_list));
 }
 
-Pubkey Pubkey::CombinePubkey(const Pubkey& pubkey, const Pubkey& message_key) {
+Pubkey Pubkey::CombinePubkey(const Pubkey &pubkey, const Pubkey &message_key) {
   std::vector<ByteData> data_list;
   data_list.push_back(pubkey.GetData());
   data_list.push_back(message_key.GetData());
@@ -92,12 +93,12 @@ Pubkey Pubkey::CombinePubkey(const Pubkey& pubkey, const Pubkey& message_key) {
   return Pubkey(WallyUtil::CombinePubkeySecp256k1Ec(data_list));
 }
 
-Pubkey Pubkey::CreateTweakAdd(const ByteData256& tweak) const {
+Pubkey Pubkey::CreateTweakAdd(const ByteData256 &tweak) const {
   ByteData tweak_added = WallyUtil::AddTweakPubkey(data_, tweak);
   return Pubkey(tweak_added);
 }
 
-Pubkey Pubkey::CreateTweakMul(const ByteData256& tweak) const {
+Pubkey Pubkey::CreateTweakMul(const ByteData256 &tweak) const {
   ByteData tweak_muled = WallyUtil::MulTweakPubkey(data_, tweak);
   return Pubkey(tweak_muled);
 }
@@ -136,19 +137,58 @@ Pubkey Pubkey::Uncompress() const {
   return Pubkey(decompress_data);
 }
 
-bool Pubkey::IsLarge(const Pubkey& source, const Pubkey& destination) {
+bool Pubkey::IsLarge(const Pubkey &source, const Pubkey &destination) {
   return ByteData::IsLarge(source.data_, destination.data_);
 }
 
 bool Pubkey::VerifyEcSignature(
-    const ByteData256& signature_hash, const ByteData& signature) const {
+    const ByteData256 &signature_hash, const ByteData &signature) const {
   return SignatureUtil::VerifyEcSignature(signature_hash, *this, signature);
 }
 
-Pubkey Pubkey::GetSchnorrPubkey(
-    const Pubkey& oracle_pubkey, const Pubkey& oracle_r_point,
-    const ByteData256& message) {
-  return WallyUtil::GetSchnorrPubkey(oracle_pubkey, oracle_r_point, message);
+Pubkey Pubkey::operator+=(const Pubkey &right) {
+  Pubkey key = Pubkey::CombinePubkey(*this, right);
+  *this = key;
+  return *this;
+}
+
+Pubkey Pubkey::operator+=(const ByteData256 &right) {
+  Pubkey key = CreateTweakAdd(right);
+  *this = key;
+  return *this;
+}
+
+Pubkey Pubkey::operator-=(const ByteData256 &right) {
+  Privkey sk(right);
+  auto neg = sk.CreateNegate();
+  Pubkey key = CreateTweakAdd(ByteData256(neg.GetData()));
+  *this = key;
+  return *this;
+}
+
+Pubkey Pubkey::operator*=(const ByteData256 &right) {
+  Pubkey key = CreateTweakMul(right);
+  *this = key;
+  return *this;
+}
+
+// global operator overloading
+Pubkey operator+(const Pubkey &left, const Pubkey &right) {
+  return Pubkey::CombinePubkey(left, right);
+}
+
+Pubkey operator+(const Pubkey &left, const ByteData256 &right) {
+  return left.CreateTweakAdd(right);
+}
+
+Pubkey operator-(const Pubkey &left, const ByteData256 &right) {
+  Pubkey key = left;
+  key -= right;
+  return key;
+}
+
+Pubkey operator*(const Pubkey &left, const ByteData256 &right) {
+  return left.CreateTweakMul(right);
 }
 
 // ----------------------------------------------------------------------------
@@ -163,7 +203,7 @@ Privkey::Privkey() : data_() {
   // do nothing
 }
 
-Privkey::Privkey(const ByteData& byte_data) : data_(byte_data) {
+Privkey::Privkey(const ByteData &byte_data) : data_(byte_data) {
   if (!IsValid(data_.GetBytes())) {
     warn(CFD_LOG_SOURCE, "Invalid Privkey data. hex={}.", data_.GetHex());
     throw CfdException(
@@ -171,7 +211,7 @@ Privkey::Privkey(const ByteData& byte_data) : data_(byte_data) {
   }
 }
 
-Privkey::Privkey(const ByteData256& byte_data)
+Privkey::Privkey(const ByteData256 &byte_data)
     : data_(ByteData(byte_data.GetBytes())) {
   if (!IsValid(data_.GetBytes())) {
     warn(CFD_LOG_SOURCE, "Invalid Privkey data. hex={}.", data_.GetHex());
@@ -180,7 +220,7 @@ Privkey::Privkey(const ByteData256& byte_data)
   }
 }
 
-Privkey::Privkey(const std::string& hex_str) : data_(ByteData(hex_str)) {
+Privkey::Privkey(const std::string &hex_str) : data_(ByteData(hex_str)) {
   if (!IsValid(data_.GetBytes())) {
     warn(CFD_LOG_SOURCE, "Invalid Privkey data. hex={}.", data_.GetHex());
     throw CfdException(
@@ -197,7 +237,7 @@ std::string Privkey::ConvertWif(NetType net_type, bool is_compressed) const {
   uint32_t flags =
       (is_compressed ? WALLY_WIF_FLAG_COMPRESSED
                      : WALLY_WIF_FLAG_UNCOMPRESSED);
-  char* wif_ptr = NULL;
+  char *wif_ptr = NULL;
 
   int ret = wally_wif_from_bytes(
       data_.GetBytes().data(), data_.GetDataSize(), prefix, flags, &wif_ptr);
@@ -213,7 +253,7 @@ std::string Privkey::ConvertWif(NetType net_type, bool is_compressed) const {
 }
 
 Privkey Privkey::FromWif(
-    const std::string& wif, NetType net_type, bool is_compressed) {
+    const std::string &wif, NetType net_type, bool is_compressed) {
   std::vector<uint8_t> privkey(kPrivkeySize);
   uint32_t prefix = (net_type == kMainnet ? kPrefixMainnet : kPrefixTestnet);
   uint32_t flags =
@@ -240,7 +280,7 @@ Privkey Privkey::FromWif(
 }
 
 bool Privkey::HasWif(
-    const std::string& wif, NetType* net_type, bool* is_compressed) {
+    const std::string &wif, NetType *net_type, bool *is_compressed) {
   static constexpr size_t kWifMinimumSize = EC_PRIVATE_KEY_LEN + 1;
 
   size_t is_uncompressed = 0;
@@ -321,17 +361,25 @@ Privkey Privkey::GenerageRandomKey() {
   return Privkey(ByteData(privkey));
 }
 
-Pubkey Privkey::GetSchnorrPublicNonce() const {
-  return WallyUtil::GetSchnorrPublicNonce(*this);
-}
-
-Privkey Privkey::CreateTweakAdd(const ByteData256& tweak) const {
+Privkey Privkey::CreateTweakAdd(const ByteData256 &tweak) const {
   ByteData tweak_added = WallyUtil::AddTweakPrivkey(data_, tweak);
   return Privkey(tweak_added);
 }
 
-Privkey Privkey::CreateTweakMul(const ByteData256& tweak) const {
+Privkey Privkey::CreateTweakAdd(const Privkey &tweak) const {
+  ByteData tweak_added =
+      WallyUtil::AddTweakPrivkey(data_, ByteData256(tweak.data_));
+  return Privkey(tweak_added);
+}
+
+Privkey Privkey::CreateTweakMul(const ByteData256 &tweak) const {
   ByteData tweak_muled = WallyUtil::MulTweakPrivkey(data_, tweak);
+  return Privkey(tweak_muled);
+}
+
+Privkey Privkey::CreateTweakMul(const Privkey &tweak) const {
+  ByteData tweak_muled =
+      WallyUtil::MulTweakPrivkey(data_, ByteData256(tweak.data_));
   return Privkey(tweak_muled);
 }
 
@@ -344,11 +392,11 @@ bool Privkey::IsInvalid() const { return !IsValid(); }
 
 bool Privkey::IsValid() const { return IsValid(data_.GetBytes()); }
 
-bool Privkey::Equals(const Privkey& privkey) const {
+bool Privkey::Equals(const Privkey &privkey) const {
   return data_.Equals(privkey.data_);
 }
 
-bool Privkey::IsValid(const std::vector<uint8_t>& buffer) {
+bool Privkey::IsValid(const std::vector<uint8_t> &buffer) {
   if (buffer.size() > 0) {
     int ret = wally_ec_private_key_verify(buffer.data(), buffer.size());
     return ret == WALLY_OK;
@@ -358,13 +406,79 @@ bool Privkey::IsValid(const std::vector<uint8_t>& buffer) {
 }
 
 ByteData Privkey::CalculateEcSignature(
-    const ByteData256& signature_hash, bool has_grind_r) const {
+    const ByteData256 &signature_hash, bool has_grind_r) const {
   return SignatureUtil::CalculateEcSignature(
       signature_hash, *this, has_grind_r);
 }
 
 void Privkey::SetPubkeyCompressed(bool is_compressed) {
   is_compressed_ = is_compressed;
+}
+
+Privkey Privkey::operator+=(const Privkey &right) {
+  Privkey key = CreateTweakAdd(right);
+  *this = key;
+  return *this;
+}
+
+Privkey Privkey::operator+=(const ByteData256 &right) {
+  Privkey key = CreateTweakAdd(right);
+  *this = key;
+  return *this;
+}
+
+Privkey Privkey::operator-=(const Privkey &right) {
+  Privkey key = CreateTweakAdd(right.CreateNegate());
+  *this = key;
+  return *this;
+}
+
+Privkey Privkey::operator-=(const ByteData256 &right) {
+  Privkey sk(right);
+  Privkey key = CreateTweakAdd(sk.CreateNegate());
+  *this = key;
+  return *this;
+}
+
+Privkey Privkey::operator*=(const Privkey &right) {
+  Privkey key = CreateTweakMul(right);
+  *this = key;
+  return *this;
+}
+
+Privkey Privkey::operator*=(const ByteData256 &right) {
+  Privkey key = CreateTweakMul(right);
+  *this = key;
+  return *this;
+}
+
+// global operator overloading
+Privkey operator+(const Privkey &left, const Privkey &right) {
+  return left.CreateTweakAdd(right);
+}
+
+Privkey operator+(const Privkey &left, const ByteData256 &right) {
+  return left.CreateTweakAdd(right);
+}
+
+Privkey operator-(const Privkey &left, const Privkey &right) {
+  Privkey key = left;
+  key -= right;
+  return key;
+}
+
+Privkey operator-(const Privkey &left, const ByteData256 &right) {
+  Privkey key = left;
+  key -= right;
+  return key;
+}
+
+Privkey operator*(const Privkey &left, const Privkey &right) {
+  return left.CreateTweakMul(right);
+}
+
+Privkey operator*(const Privkey &left, const ByteData256 &right) {
+  return left.CreateTweakMul(right);
 }
 
 }  // namespace core

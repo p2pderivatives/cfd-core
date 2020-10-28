@@ -27,6 +27,9 @@ TEST(ByteData, DefaultConstructor) {
     byte_data.Serialize().GetHex().c_str(),
     "00");
   EXPECT_TRUE(byte_data.Empty());   // TODO(k-matsuzawa): deprecated API
+
+  EXPECT_EQ(0, byte_data.GetHeadData());
+  EXPECT_EQ(0, byte_data.Serialize().GetHeadData());
 }
 
 TEST(ByteData, HexConstructor) {
@@ -37,10 +40,12 @@ TEST(ByteData, HexConstructor) {
   EXPECT_STREQ(byte_data.GetHex().c_str(), target.c_str());
   EXPECT_EQ(byte_data.GetDataSize(), (target.size() / 2));
   EXPECT_FALSE(byte_data.IsEmpty());
-  // TODO: fujita Serialize
   EXPECT_STREQ(
     byte_data.Serialize().GetHex().c_str(),
     "21123456789012345678901234567890123456789012345678901234567890123456");
+
+  EXPECT_EQ(0x12, byte_data.GetHeadData());
+  EXPECT_EQ(0x21, byte_data.Serialize().GetHeadData());
 }
 
 TEST(ByteData, BytesConstructor) {
