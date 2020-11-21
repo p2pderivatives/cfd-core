@@ -969,6 +969,20 @@ struct UnblindParameter {
 using BlindParameter = UnblindParameter;
 
 /**
+ * @brief blind data.
+ */
+struct BlindData {
+  uint32_t vout = 0;               //!< txout array number
+  ConfidentialAssetId asset;       //!< confidential asset
+  BlindFactor abf;                 //!< asset blind factor
+  BlindFactor vbf;                 //!< value blind factor
+  ConfidentialValue value;         //!< unblinded value
+  OutPoint issuance_outpoint;      //!< issuance outpoint
+  bool is_issuance = false;        //!< issuance asset
+  bool is_issuance_token = false;  //!< issuance token
+};
+
+/**
  * @brief Issuance confidentialKeyペア構造体
  */
 struct IssuanceBlindingKeyPair {
@@ -1401,7 +1415,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    */
   void RemoveTxOut(uint32_t index);
   /**
-   * @brief Transactionのblindingを行う.
+   * @brief Blinding transaction.
    * @param[in] txin_info_list            txin blind info list.
    * @param[in] issuance_blinding_keys    issue blinding key list.
    * @param[in] txout_confidential_keys   blinding pubkey list.
@@ -1411,13 +1425,15 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    *   -1 to 18. -1 is public value. 0 is most private.
    * @param[in] minimum_bits              rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
+   * @param[out] blinder_list             blinder list. (default is null)
    */
   void BlindTransaction(
       const std::vector<BlindParameter>& txin_info_list,
       const std::vector<IssuanceBlindingKeyPair>& issuance_blinding_keys,
       const std::vector<Pubkey>& txout_confidential_keys,
       int64_t minimum_range_value = 1, int exponent = 0,
-      int minimum_bits = kDefaultBlindMinimumBits);
+      int minimum_bits = kDefaultBlindMinimumBits,
+      std::vector<BlindData>* blinder_list = nullptr);
   /**
    * @brief TransactionのTxOutのblindingを行う.
    * @param[in] txin_info_list            txin blind info list.
@@ -1428,12 +1444,14 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    *   -1 to 18. -1 is public value. 0 is most private.
    * @param[in] minimum_bits              rangeproof blinding bits.
    *   0 to 64. Number of bits of the value to keep private. 0 is auto.
+   * @param[out] blinder_list             blinder list. (default is null)
    */
   void BlindTxOut(
       const std::vector<BlindParameter>& txin_info_list,
       const std::vector<Pubkey>& txout_confidential_keys,
       int64_t minimum_range_value = 1, int exponent = 0,
-      int minimum_bits = kDefaultBlindMinimumBits);
+      int minimum_bits = kDefaultBlindMinimumBits,
+      std::vector<BlindData>* blinder_list = nullptr);
   /**
    * @brief indexで指定されたInputに対して、unblind処理を行う.
    * @param tx_in_index TxInのindex値

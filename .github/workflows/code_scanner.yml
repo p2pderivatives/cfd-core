@@ -7,6 +7,13 @@ on:
     - develop
     - features/sprint*
     - feature/code_scanning
+    paths:
+    - '**.js'
+    - '**.ts'
+    - '**.cpp'
+    - '**.h'
+    - '**/code_scanner.yml'
+    - '**/external_project_local_setting.config'
   pull_request:
     branches:
     - master
@@ -16,7 +23,7 @@ on:
 jobs:
   analyze-CodeQL:
     name: CodeQL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     strategy:
       fail-fast: false
@@ -68,7 +75,7 @@ jobs:
   OSSAR-Scan:
     # OSSAR runs on windows-latest.
     # ubuntu-latest and macos-latest support coming soon
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     steps:
       # Checkout your code repository to scan
