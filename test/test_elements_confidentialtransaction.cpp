@@ -14,6 +14,7 @@ using cfd::core::CfdException;
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
 using cfd::core::ByteData256;
+using cfd::core::BlindData;
 using cfd::core::BlindFactor;
 using cfd::core::Amount;
 using cfd::core::Txid;
@@ -887,14 +888,48 @@ TEST(ConfidentialTransaction, BlindTransactionTest1) {
   pubkeys.push_back(pubkeyIssue2);
   pubkeys.push_back(pubkey1);
   pubkeys.push_back(Pubkey());
+  std::vector<BlindData> blinder_list;
 
-  EXPECT_NO_THROW((tx.BlindTransaction(blind_list, issue_keys, pubkeys)));
+  EXPECT_NO_THROW((tx.BlindTransaction(
+      blind_list, issue_keys, pubkeys, 1, 0,
+      cfd::core::kDefaultBlindMinimumBits, &blinder_list)));
   // 乱数が混ざるため、サイズだけチェック
   EXPECT_EQ(tx.GetHex().length(), 43728);
   std::string blind_tx = tx.GetHex();
   // if(tx.GetHex().length() != 30918) {
   //   EXPECT_STREQ("", blind_tx.c_str());
   // }
+  EXPECT_EQ(blinder_list.size(), 5);
+  if (blinder_list.size() == 5) {
+    EXPECT_EQ(blinder_list[0].value.GetAmount().GetSatoshiValue(), 1000000000);
+    EXPECT_EQ(blinder_list[1].value.GetAmount().GetSatoshiValue(), 100000000);
+    EXPECT_EQ(blinder_list[2].value.GetAmount().GetSatoshiValue(), 1000000000);
+    EXPECT_EQ(blinder_list[3].value.GetAmount().GetSatoshiValue(), 100000000);
+    EXPECT_EQ(blinder_list[4].value.GetAmount().GetSatoshiValue(), 170000);
+    for (uint32_t index = 0; index < 5; ++index) {
+      if (index == 0) {
+        EXPECT_TRUE(blinder_list[index].is_issuance);
+      } else {
+        EXPECT_FALSE(blinder_list[index].is_issuance);
+      }
+    }
+    for (uint32_t index = 0; index < 5; ++index) {
+      if (index == 1) {
+        EXPECT_TRUE(blinder_list[index].is_issuance_token);
+      } else {
+        EXPECT_FALSE(blinder_list[index].is_issuance_token);
+      }
+    }
+    for (uint32_t index = 0; index < 5; ++index) {
+      if ((index == 0) || (index == 1)) {
+        EXPECT_TRUE(blinder_list[index].issuance_outpoint.IsValid());
+        EXPECT_EQ(blinder_list[index].vout, 0);
+      } else {
+        EXPECT_FALSE(blinder_list[index].issuance_outpoint.IsValid());
+        EXPECT_EQ(blinder_list[index].vout, index - 2);
+      }
+    }
+  }
 
   std::vector<Privkey> blinding_keys;
   blinding_keys.push_back(privkeyIssue1);

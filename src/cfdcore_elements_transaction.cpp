@@ -2211,7 +2211,8 @@ void ConfidentialTransaction::BlindTransaction(
     const std::vector<BlindParameter> &txin_info_list,
     const std::vector<IssuanceBlindingKeyPair> &issuance_blinding_keys,
     const std::vector<Pubkey> &txout_confidential_keys,
-    int64_t minimum_range_value, int exponent, int minimum_bits) {
+    int64_t minimum_range_value, int exponent, int minimum_bits,
+    std::vector<BlindData> *blinder_list) {
   std::vector<uint64_t> input_values;
   std::vector<uint8_t> input_generators;  // serialize
   std::vector<uint8_t> input_asset_ids;   // serialize
@@ -2429,6 +2430,16 @@ void ConfidentialTransaction::BlindTransaction(
           vbf, Script(), minimum_range_value, exponent, minimum_bits,
           &commitment, &range_proof);
 
+      if (blinder_list != nullptr) {
+        BlindData data;
+        data.is_issuance = true;
+        data.vout = static_cast<uint32_t>(index);
+        data.issuance_outpoint = txin.GetOutPoint();
+        data.asset = issue.asset;
+        data.vbf = BlindFactor(ByteData(vbf));
+        data.value = vin_[index].GetIssuanceAmount();
+        blinder_list->push_back(data);
+      }
       txin.SetIssuance(
           txin.GetBlindingNonce(), txin.GetAssetEntropy(),
           ConfidentialValue(ByteData(commitment)), txin.GetInflationKeys(),
@@ -2453,7 +2464,16 @@ void ConfidentialTransaction::BlindTransaction(
             issuance_blinding_keys[index].token_key, issue.token, empty_factor,
             vbf, Script(), minimum_range_value, exponent, minimum_bits,
             &commitment, &range_proof);
-
+        if (blinder_list != nullptr) {
+          BlindData data;
+          data.is_issuance_token = true;
+          data.vout = static_cast<uint32_t>(index);
+          data.issuance_outpoint = txin.GetOutPoint();
+          data.asset = issue.token;
+          data.vbf = BlindFactor(ByteData(vbf));
+          data.value = vin_[index].GetInflationKeys();
+          blinder_list->push_back(data);
+        }
         txin.SetIssuance(
             txin.GetBlindingNonce(), txin.GetAssetEntropy(),
             txin.GetIssuanceAmount(), ConfidentialValue(ByteData(commitment)),
@@ -2593,6 +2613,15 @@ void ConfidentialTransaction::BlindTransaction(
     }
     surjection_proof.resize(size);
 
+    if (blinder_list != nullptr) {
+      BlindData data;
+      data.vout = static_cast<uint32_t>(txout_index);
+      data.asset = output.GetAsset();
+      data.abf = BlindFactor(output_abfs[count]);
+      data.vbf = BlindFactor(output_vbfs[count]);
+      data.value = output.GetConfidentialValue();
+      blinder_list->push_back(data);
+    }
     SetTxOutCommitment(
         static_cast<uint32_t>(txout_index),
         ConfidentialAssetId(ByteData(generator)),
@@ -2606,10 +2635,12 @@ void ConfidentialTransaction::BlindTransaction(
 void ConfidentialTransaction::BlindTxOut(
     const std::vector<BlindParameter> &txin_info_list,
     const std::vector<Pubkey> &txout_confidential_keys,
-    int64_t minimum_range_value, int exponent, int minimum_bits) {
+    int64_t minimum_range_value, int exponent, int minimum_bits,
+    std::vector<BlindData> *blinder_list) {
   BlindTransaction(
       txin_info_list, std::vector<IssuanceBlindingKeyPair>(),
-      txout_confidential_keys, minimum_range_value, exponent, minimum_bits);
+      txout_confidential_keys, minimum_range_value, exponent, minimum_bits,
+      blinder_list);
 }
 
 ByteData ConfidentialTransaction::GetRangeProof(
