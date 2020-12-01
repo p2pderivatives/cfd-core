@@ -417,7 +417,7 @@ TEST(Secp256k1, RangeProofInfoSecp256k1Test) {
   struct secp256k1_context_struct *ctx = wally_get_secp_context();
   Secp256k1 secp = Secp256k1(ctx);
 
-  for (const RangeProofInfoTestVector test_vector : range_proof_info_test_vectors) {
+  for (const RangeProofInfoTestVector& test_vector : range_proof_info_test_vectors) {
     int exponent;
     int mantissa;
     uint64_t min_value;
