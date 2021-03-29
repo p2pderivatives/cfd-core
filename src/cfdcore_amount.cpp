@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_amount.cpp
  *
- * @brief \~japanese Amountを表現するクラス
- *   \~english Class to show amount.
+ * @brief Class to show amount.
  */
 #include "cfdcore/cfdcore_amount.h"
 

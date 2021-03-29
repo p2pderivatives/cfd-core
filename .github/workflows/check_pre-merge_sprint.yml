@@ -40,7 +40,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-10.15, macos-11.0]
+        os: [macos-10.15]
+        # os: [macos-10.15, macos-11.0]
 
     steps:
     - uses: actions/checkout@v2
@@ -103,6 +104,41 @@ jobs:
       with:
         name: output-lcov-cfdcore-${{ matrix.os }}
         path: ./build/lcov_cfdcore_output.zip
+
+  ubuntu-valgrind:
+    name: valgrind-ubuntu
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+        shared: [on]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: dump version
+      run: |
+        cmake --version
+        gcc --version
+    - name: ubuntu-apt-install
+      run: |
+        cat /etc/os-release
+        sudo apt-get update
+        sudo apt-get install -y valgrind
+    - name: cmake-build
+      run: |
+        cmake --version
+        cmake -S . -B build -G "Unix Makefiles"
+        cmake -DENABLE_SHARED=${{ matrix.shared }} -DCMAKE_BUILD_TYPE=Debug -DTARGET_RPATH=./build/Debug --build build
+        cmake --build build --config Debug --parallel 4
+    - name: valgrind
+      run: |
+         # --valgrind-stacksize=1048576 --num-callers=12
+         valgrind -v --tool=memcheck --leak-check=full --valgrind-stacksize=10485760 --log-file=./valgrind.log --time-stamp=yes ./build/Debug/cfdcore_test
+    - name: upload coverage
+      uses: actions/upload-artifact@v1
+      with:
+        name: valgrind-log
+        path: ./valgrind.log
 
   doxygen-ubuntu:
     name: doxygen-check

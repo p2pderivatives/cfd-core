@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_elements_transaction.h
  *
- * @brief Elements Transaction関連クラスを定義する。
+ * @brief Define Elements Transaction related classes.
  *
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ELEMENTS_TRANSACTION_H_
@@ -26,56 +26,65 @@ class BlindFactor;
 constexpr const int kDefaultBlindMinimumBits = 52;
 
 /**
- * @brief nonce情報を保持するクラス
+ * @brief Class that holds nonce information
  */
 class CFD_CORE_EXPORT ConfidentialNonce {
  public:
   /**
-   * @brief コンストラクタ.
-   *
-   * リスト定義等における初期化のため、定義する。
+   * @brief constructor.
    */
   ConfidentialNonce();
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] hex_string      hex string.
    */
   explicit ConfidentialNonce(const std::string& hex_string);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] byte_data       byte array data.
    */
   explicit ConfidentialNonce(const ByteData& byte_data);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] pubkey          pubkey.
    */
   explicit ConfidentialNonce(const Pubkey& pubkey);
   /**
-   * @brief デストラクタ.
+   * @brief destructor.
    */
   virtual ~ConfidentialNonce() {
     // do nothing
   }
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  ConfidentialNonce(const ConfidentialNonce& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  ConfidentialNonce& operator=(const ConfidentialNonce& object);
 
   /**
-   * @brief バイトデータを取得する.
+   * @brief Get byte data.
    * @return byte array data.
    */
   ByteData GetData() const;
   /**
-   * @brief HEX文字列を取得する.
+   * @brief Get the HEX string.
    * @return hex string
    */
   std::string GetHex() const;
   /**
-   * @brief blind有無を取得する.
+   * @brief Get if it is blind.
    * @retval true  blind
    * @retval false unblind
    */
   bool HasBlinding() const;
   /**
-   * @brief 空かどうかを取得する.
+   * @brief Get if it's empty.
    * @retval true  empty
    * @retval false exist value
    */
@@ -93,56 +102,65 @@ class CFD_CORE_EXPORT ConfidentialNonce {
 };
 
 /**
- * @brief AssetId情報を保持するクラス
+ * @brief Class that holds AssetId information
  */
 class CFD_CORE_EXPORT ConfidentialAssetId {
  public:
   /**
-   * @brief コンストラクタ.
-   *
-   * リスト定義等における初期化のため、定義する。
+   * @brief constructor.
    */
   ConfidentialAssetId();
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] hex_string      hex string.
    */
   explicit ConfidentialAssetId(const std::string& hex_string);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] byte_data       byte array data.
    */
   explicit ConfidentialAssetId(const ByteData& byte_data);
   /**
-   * @brief デストラクタ.
+   * @brief destructor.
    */
   virtual ~ConfidentialAssetId() {
     // do nothing
   }
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  ConfidentialAssetId(const ConfidentialAssetId& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  ConfidentialAssetId& operator=(const ConfidentialAssetId& object);
 
   /**
-   * @brief バイトデータを取得する.
+   * @brief Get byte data.
    * @return byte array data.
    */
   ByteData GetData() const;
   /**
-   * @brief HEX文字列を取得する.
+   * @brief Get the HEX string.
    * @return hex string (reverse data)
    */
   std::string GetHex() const;
   /**
-   * @brief blind有無を取得する.
+   * @brief Get if it is blind.
    * @retval true  blind
    * @retval false unblind
    */
   bool HasBlinding() const;
   /**
-   * @brief unblind時、バイトデータを取得する.
+   * @brief Get unblinded byte data.
    * @return byte array data.
    */
   ByteData GetUnblindedData() const;
   /**
-   * @brief 空かどうかを取得する.
+   * @brief Get if it's empty.
    * @retval true  empty
    * @retval false exist value
    */
@@ -170,76 +188,85 @@ class CFD_CORE_EXPORT ConfidentialAssetId {
 };
 
 /**
- * @brief value情報を保持するクラス
+ * @brief Class that holds value information
  */
 class CFD_CORE_EXPORT ConfidentialValue {
  public:
   /**
-   * @brief コンストラクタ.
-   *
-   * リスト定義等における初期化のため、定義する。
+   * @brief constructor.
    */
   ConfidentialValue();
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] hex_string      hex string.
    */
   explicit ConfidentialValue(const std::string& hex_string);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] byte_data       byte array data.
    */
   explicit ConfidentialValue(const ByteData& byte_data);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] amount          amount
    */
   explicit ConfidentialValue(const Amount& amount);
   /**
-   * @brief デストラクタ.
+   * @brief destructor.
    */
   virtual ~ConfidentialValue() {
     // do nothing
   }
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  ConfidentialValue(const ConfidentialValue& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  ConfidentialValue& operator=(const ConfidentialValue& object);
 
   /**
-   * @brief バイトデータを取得する.
+   * @brief Get byte data.
    * @return byte array data.
    */
   ByteData GetData() const;
   /**
-   * @brief HEX文字列を取得する.
+   * @brief Get the HEX string.
    * @return hex string
    */
   std::string GetHex() const;
   /**
-   * @brief Amountを取得する.
+   * @brief Get Amount.
    *
-   * なおblind状態では0を返却する。
+   * In the blind state, 0 is returned.
    * @return Amount
    */
   Amount GetAmount() const;
   /**
-   * @brief blind有無を取得する.
+   * @brief Get if it is blind.
    * @retval true  blind
    * @retval false unblind
    */
   bool HasBlinding() const;
   /**
-   * @brief 空かどうかを取得する.
+   * @brief Get if it's empty.
    * @retval true  empty
    * @retval false exist value
    */
   bool IsEmpty() const;
 
   /**
-   * @brief satoshiをConfidentialValueへと変換する.
+   * @brief Convert satoshi to Confidential Value.
    * @param[in] value     amount value.
    * @return ConfidentialValue
    */
   static ByteData ConvertToConfidentialValue(const Amount& value);
   /**
-   * @brief ConfidentialValueをsatoshiへと変換する.
+   * @brief Convert Confidential Value to satoshi.
    * @param[in] value     ConfidentialValue.
    * @return amount value
    */
@@ -268,50 +295,59 @@ class CFD_CORE_EXPORT ConfidentialValue {
 };
 
 /**
- * @brief factor情報を保持するクラス
+ * @brief Class that holds blind factor information
  */
 class CFD_CORE_EXPORT BlindFactor {
  public:
   /**
-   * @brief コンストラクタ.
-   *
-   * リスト定義等における初期化のため、定義する。
+   * @brief constructor.
    */
   BlindFactor();
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] hex_string      hex string.
    */
   explicit BlindFactor(const std::string& hex_string);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] byte_data       byte array data.
    */
   explicit BlindFactor(const ByteData& byte_data);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] byte_data       byte array data.
    */
   explicit BlindFactor(const ByteData256& byte_data);
   /**
-   * @brief デストラクタ.
+   * @brief destructor.
    */
   virtual ~BlindFactor() {
     // do nothing
   }
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  BlindFactor(const BlindFactor& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  BlindFactor& operator=(const BlindFactor& object);
 
   /**
-   * @brief バイトデータを取得する.
+   * @brief Get byte data.
    * @return byte array data.
    */
   ByteData256 GetData() const;
   /**
-   * @brief HEX文字列を取得する.
+   * @brief Get the HEX string.
    * @return hex string (reverse data)
    */
   std::string GetHex() const;
   /**
-   * @brief 空かどうかを取得する.
+   * @brief Get if it's empty.
    * @retval true  empty
    * @retval false exist value
    */
@@ -322,7 +358,7 @@ class CFD_CORE_EXPORT BlindFactor {
 };
 
 /**
- * @brief TxIn情報を保持するクラス
+ * @brief Class that holds TxIn information
  */
 class CFD_CORE_EXPORT ConfidentialTxIn : public AbstractTxIn {
  public:
@@ -383,37 +419,37 @@ class CFD_CORE_EXPORT ConfidentialTxIn : public AbstractTxIn {
       uint32_t* rangeproof_size = nullptr);
 
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    */
   ConfidentialTxIn();
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid        txid
-   * @param[in] index       txidのトランザクションのTxOutのIndex情報(vout)
+   * @param[in] index       txout's index (vout)
    */
   ConfidentialTxIn(const Txid& txid, uint32_t index);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid        txid
-   * @param[in] index       txidのトランザクションのTxOutのIndex情報(vout)
-   * @param[in] sequence    sequence情報
+   * @param[in] index       txout's index (vout)
+   * @param[in] sequence    sequence
    */
   ConfidentialTxIn(const Txid& txid, uint32_t index, uint32_t sequence);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid              txid
-   * @param[in] index             txidのトランザクションのTxOutのIndex情報(vout)
-   * @param[in] sequence          sequence情報
+   * @param[in] index             txout's index (vout)
+   * @param[in] sequence          sequence
    * @param[in] unlocking_script  unlocking script
    */
   ConfidentialTxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
       const Script& unlocking_script);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid              txid
-   * @param[in] index             txidのトランザクションのTxOutのIndex情報(vout)
-   * @param[in] sequence          sequence情報
+   * @param[in] index             txout's index (vout)
+   * @param[in] sequence          sequence
    * @param[in] unlocking_script  unlocking script
    * @param[in] witness_stack     witness stack
    * @param[in] blinding_nonce    blinding nonce
@@ -434,14 +470,14 @@ class CFD_CORE_EXPORT ConfidentialTxIn : public AbstractTxIn {
       const ByteData& inflation_keys_rangeproof,
       const ScriptWitness& pegin_witness);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~ConfidentialTxIn() {
     // do nothing
   }
 
   /**
-   * @brief 情報を更新する.
+   * @brief Update issuance information.
    * @param[in] blinding_nonce    blinding nonce
    * @param[in] asset_entropy     asset entropy
    * @param[in] issuance_amount   issuance amount
@@ -456,72 +492,72 @@ class CFD_CORE_EXPORT ConfidentialTxIn : public AbstractTxIn {
       const ByteData& issuance_amount_rangeproof,
       const ByteData& inflation_keys_rangeproof);
   /**
-   * @brief BlindingNonceを取得する
-   * @return BlindingNonceのByteData256インスタンス
+   * @brief Get Blinding Nonce
+   * @return BlindingNonce
    */
   ByteData256 GetBlindingNonce() const { return blinding_nonce_; }
   /**
-   * @brief AssetEntropyを取得する
-   * @return AssetEntropyのByteData256インスタンス
+   * @brief Get Asset Entropy
+   * @return AssetEntropy
    */
   ByteData256 GetAssetEntropy() const { return asset_entropy_; }
   /**
-   * @brief IssuanceAmountを取得する
-   * @return IssuanceAmountのByteDataインスタンス
+   * @brief Get IssuanceAmount
+   * @return IssuanceAmount
    */
   ConfidentialValue GetIssuanceAmount() const { return issuance_amount_; }
   /**
-   * @brief InflationKeysを取得する
-   * @return InflationKeysのByteDataインスタンス
+   * @brief Get InflationKeys
+   * @return InflationKeys
    */
   ConfidentialValue GetInflationKeys() const { return inflation_keys_; }
   /**
-   * @brief IssuanceAmountRangeproofを取得する
-   * @return IssuanceAmountRangeproofのByteDataインスタンス
+   * @brief Get IssuanceAmountRangeproof
+   * @return IssuanceAmountRangeproof
    */
   ByteData GetIssuanceAmountRangeproof() const {
     return issuance_amount_rangeproof_;
   }
   /**
-   * @brief InflationKeysRangeproofを取得する
-   * @return InflationKeysRangeproofのByteDataインスタンス
+   * @brief Get InflationKeysRangeproof
+   * @return InflationKeysRangeproof
    */
   ByteData GetInflationKeysRangeproof() const {
     return inflation_keys_rangeproof_;
   }
   /**
-   * @brief PeginWitnessを取得する
-   * @return PeginWitnessのScriptWitnessインスタンス
+   * @brief Get PeginWitness
+   * @return PeginWitness's 'ScriptWitness
    */
   ScriptWitness GetPeginWitness() const { return pegin_witness_; }
   /**
-   * @brief pegin witnessの現在のstack数を取得する.
-   * @return pegin witnessのstack数
+   * @brief Get the current stack count of pegin witness.
+   * @return stack count of pegin witness.
    */
   uint32_t GetPeginWitnessStackNum() const {
     return pegin_witness_.GetWitnessNum();
   }
 
   /**
-   * @brief pegin witnessにバイトデータを追加する.
-   * @param[in] data    witness stack情報
-   * @return pegin witnessのScriptWitnessインスタンス
+   * @brief Add byte data to pegin witness.
+   * @param[in] data    witness stack data
+   * @return Script Witness instance of pegin witness
    */
   ScriptWitness AddPeginWitnessStack(const ByteData& data);
   /**
-   * @brief pegin witnessにバイトデータを設定する.
-   * @param[in] index   witness stackのindex値
-   * @param[in] data    witness stack情報
-   * @return pegin witnessのScriptWitnessインスタンス
+   * @brief Set byte data to pegin witness.
+   * @param[in] index   witness stack index
+   * @param[in] data    witness stack data
+   * @return Script Witness instance of pegin witness
    */
   ScriptWitness SetPeginWitnessStack(uint32_t index, const ByteData& data);
   /**
-   * @brief pegin witnessを全て削除する.
+   * @brief Remove all pegin witness.
    */
   void RemovePeginWitnessStackAll();
 
   /**
-   * @brief witness hashを取得する.
+   * @brief Get the witness hash.
    * @return witness hash
    */
   ByteData256 GetWitnessHash() const;
@@ -537,72 +573,70 @@ class CFD_CORE_EXPORT ConfidentialTxIn : public AbstractTxIn {
 };
 
 /**
- * @brief TxIn情報を参照するためのクラス
+ * @brief Class for referencing TxIn information
  */
 class CFD_CORE_EXPORT ConfidentialTxInReference
     : public AbstractTxInReference {
  public:
   /**
-   * @brief コンストラクタ.
-   * @param[in] tx_in 参照するTxInインスタンス
+   * @brief constructor.
+   * @param[in] tx_in   TxIn
    */
   explicit ConfidentialTxInReference(const ConfidentialTxIn& tx_in);
   /**
-   * @brief デフォルトコンストラクタ.
-   *
-   * リスト作成用。
+   * @brief default constructor.
    */
   ConfidentialTxInReference();
 
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~ConfidentialTxInReference() {
     // do nothing
   }
 
   /**
-   * @brief BlindingNonceを取得する
-   * @return BlindingNonceのByteData256インスタンス
+   * @brief Get Blinding Nonce
+   * @return BlindingNonce
    */
   ByteData256 GetBlindingNonce() const { return blinding_nonce_; }
   /**
-   * @brief AssetEntropyを取得する
-   * @return AssetEntropyのByteData256インスタンス
+   * @brief Get AssetEntropy
+   * @return AssetEntropy
    */
   ByteData256 GetAssetEntropy() const { return asset_entropy_; }
   /**
-   * @brief IssuanceAmountを取得する
-   * @return IssuanceAmountのByteDataインスタンス
+   * @brief Get IssuanceAmount
+   * @return IssuanceAmount
    */
   ConfidentialValue GetIssuanceAmount() const { return issuance_amount_; }
   /**
-   * @brief InflationKeysを取得する
-   * @return InflationKeysのByteDataインスタンス
+   * @brief Get InflationKeys
+   * @return InflationKeys
    */
   ConfidentialValue GetInflationKeys() const { return inflation_keys_; }
   /**
-   * @brief IssuanceAmountRangeproofを取得する
-   * @return IssuanceAmountRangeproofのByteDataインスタンス
+   * @brief Get IssuanceAmountRangeproof
+   * @return IssuanceAmountRangeproof
    */
   ByteData GetIssuanceAmountRangeproof() const {
     return issuance_amount_rangeproof_;
   }
   /**
-   * @brief InflationKeysRangeproofを取得する
-   * @return InflationKeysRangeproofのByteDataインスタンス
+   * @brief Get InflationKeysRangeproof
+   * @return InflationKeysRangeproof
    */
   ByteData GetInflationKeysRangeproof() const {
     return inflation_keys_rangeproof_;
   }
   /**
-   * @brief PeginWitnessを取得する
-   * @return PeginWitnessのScriptWitnessインスタンス
+   * @brief Get PeginWitness
+   * @return ScriptWitness instance of PeginWitness
    */
   ScriptWitness GetPeginWitness() const { return pegin_witness_; }
   /**
-   * @brief pegin witnessの現在のstack数を取得する.
-   * @return pegin witnessのstack数
+   * @brief Get the current stack count of pegin witness.
+   * @return stack count of pegin witness.
    */
   uint32_t GetPeginWitnessStackNum() const {
     return pegin_witness_.GetWitnessNum();
@@ -674,16 +708,16 @@ struct RangeProofInfo {
 };
 
 /**
- * @brief Confidential TransactionのTxOut情報を保持するクラス
+ * @brief Class that holds TxOut information of Confidential Transaction
  */
 class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    */
   ConfidentialTxOut();
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] locking_script      locking script.
    * @param[in] asset               asset.
    * @param[in] confidential_value  value by confidential transaction.
@@ -692,9 +726,9 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
       const Script& locking_script, const ConfidentialAssetId& asset,
       const ConfidentialValue& confidential_value);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    *
-   * blind後の情報登録用.
+   * For information registration after blind.
    * @param[in] locking_script      locking script.
    * @param[in] asset               asset.
    * @param[in] confidential_value  value by confidential transaction.
@@ -708,9 +742,9 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
       const ConfidentialNonce& nonce, const ByteData& surjection_proof,
       const ByteData& range_proof);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    *
-   * fee追加用.
+   * For additional fee.
    * @param[in] asset               asset.
    * @param[in] confidential_value  value by confidential transaction.
    */
@@ -718,15 +752,15 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
       const ConfidentialAssetId& asset,
       const ConfidentialValue& confidential_value);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    *
-   * fee追加用.
+   * For additional fee.
    * @param[in] asset               asset.
    * @param[in] amount              amount.
    */
   ConfidentialTxOut(const ConfidentialAssetId& asset, const Amount& amount);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] address             address.
    * @param[in] asset               asset.
    * @param[in] amount              amount.
@@ -735,7 +769,7 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
       const Address& address, const ConfidentialAssetId& asset,
       const Amount& amount);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] confidential_address  confidential address.
    * @param[in] asset                 asset.
    * @param[in] amount                amount.
@@ -744,7 +778,7 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
       const ElementsConfidentialAddress& confidential_address,
       const ConfidentialAssetId& asset, const Amount& amount);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~ConfidentialTxOut() {
     // do nothing
@@ -772,18 +806,18 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
    */
   void SetNonce(const ConfidentialNonce& nonce);
   /**
-   * @brief valueを設定する。
+   * @brief set amount value.
    * @param[in] value     amount value.
    */
   virtual void SetValue(const Amount& value);
   /**
-   * @brief assetを取得する。
+   * @brief set asset.
    * @return asset
    */
   ConfidentialAssetId GetAsset() const { return asset_; }
 
   /**
-   * @brief confidential valueを取得する。
+   * @brief Get confidential value.
    * @return confidential value
    */
   ConfidentialValue GetConfidentialValue() const {
@@ -791,25 +825,25 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
   }
 
   /**
-   * @brief nonceを取得する。
+   * @brief Get nonce
    * @return nonce
    */
   ConfidentialNonce GetNonce() const { return nonce_; }
 
   /**
-   * @brief surjection proofを取得する。
+   * @brief Get surjection proof
    * @return surjection proof
    */
   ByteData GetSurjectionProof() const { return surjection_proof_; }
 
   /**
-   * @brief range proofを取得する。
+   * @brief Get range proof
    * @return range proof
    */
   ByteData GetRangeProof() const { return range_proof_; }
 
   /**
-   * @brief witness hashを取得する.
+   * @brief Get witness hash
    * @return witness hash
    */
   ByteData256 GetWitnessHash() const;
@@ -840,40 +874,38 @@ class CFD_CORE_EXPORT ConfidentialTxOut : public AbstractTxOut {
 };
 
 /**
- * @brief Confidential TransactionのTxOut情報を参照するためのクラス
+ * @brief Class for referencing TxOut information of Confidential Transaction
  */
 class CFD_CORE_EXPORT ConfidentialTxOutReference
     : public AbstractTxOutReference {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    * @param[in] tx_out            Confidential Transaction's TxOut.
    */
   explicit ConfidentialTxOutReference(const ConfidentialTxOut& tx_out);
   /**
-   * @brief デフォルトコンストラクタ.
-   *
-   * リスト作成用。
+   * @brief default constructor.
    */
   ConfidentialTxOutReference()
       : ConfidentialTxOutReference(ConfidentialTxOut()) {
     // do nothing
   }
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~ConfidentialTxOutReference() {
     // do nothing
   }
 
   /**
-   * @brief assetを取得する。
+   * @brief Get asset
    * @return asset
    */
   ConfidentialAssetId GetAsset() const { return asset_; }
 
   /**
-   * @brief confidential valueを取得する。
+   * @brief Get confidential value
    * @return confidential value
    */
   ConfidentialValue GetConfidentialValue() const {
@@ -881,19 +913,19 @@ class CFD_CORE_EXPORT ConfidentialTxOutReference
   }
 
   /**
-   * @brief nonceを取得する。
+   * @brief Get nonce
    * @return nonce
    */
   ConfidentialNonce GetNonce() const { return nonce_; }
 
   /**
-   * @brief surjection proofを取得する。
+   * @brief Get surjection proof
    * @return surjection proof
    */
   ByteData GetSurjectionProof() const { return surjection_proof_; }
 
   /**
-   * @brief range proofを取得する。
+   * @brief Get range proof
    * @return range proof
    */
   ByteData GetRangeProof() const { return range_proof_; }
@@ -945,7 +977,7 @@ class CFD_CORE_EXPORT ConfidentialTxOutReference
 };
 
 /**
- * @brief Issuance出力情報構造体
+ * @brief Issuance output information structure
  */
 struct IssuanceParameter {
   BlindFactor entropy;        //!< entropy
@@ -954,7 +986,7 @@ struct IssuanceParameter {
 };
 
 /**
- * @brief Unblind出力情報構造体
+ * @brief Unblind output information structure
  */
 struct UnblindParameter {
   ConfidentialAssetId asset;  //!< confidential asset
@@ -964,7 +996,7 @@ struct UnblindParameter {
 };
 
 /**
- * @brief Blind用情報構造体
+ * @brief Information structure for Blind
  */
 using BlindParameter = UnblindParameter;
 
@@ -983,7 +1015,7 @@ struct BlindData {
 };
 
 /**
- * @brief Issuance confidentialKeyペア構造体
+ * @brief Issuance confidentialKey pair structure
  */
 struct IssuanceBlindingKeyPair {
   Privkey asset_key;  //!< asset blinding key
@@ -991,7 +1023,7 @@ struct IssuanceBlindingKeyPair {
 };
 
 /**
- * @brief PegOut Key情報構造体
+ * @brief PegOut Key Information Structure
  */
 struct PegoutKeyData {
   Pubkey btc_pubkey_bytes;   //!< bitcoin pubkey byte data
@@ -999,28 +1031,26 @@ struct PegoutKeyData {
 };
 
 /**
- * @brief Confidential Transaction情報クラス
+ * @brief Confidential Transaction information class
  */
 class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
  public:
-  /// ElementsTransactionの最小サイズ
+  /// Minimum size of Elements Transaction
   static constexpr size_t kElementsTransactionMinimumSize = 11;
 
   /**
-   * @brief コンストラクタ.
-   *
-   * リスト作成用。
+   * @brief constructor.
    */
   ConfidentialTransaction();
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    * @param[in] version       version
    * @param[in] lock_time     lock time
    */
   explicit ConfidentialTransaction(int32_t version, uint32_t lock_time);
   /**
-   * @brief コンストラクタ
-   * @param[in] hex_string    txバイトデータのHEX文字列
+   * @brief constructor
+   * @param[in] hex_string    tx hex string
    */
   explicit ConfidentialTransaction(const std::string& hex_string);
   /**
@@ -1029,155 +1059,155 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    */
   explicit ConfidentialTransaction(const ByteData& byte_data);
   /**
-   * @brief コンストラクタ
-   * @param[in] transaction   トランザクション情報
+   * @brief copy constructor
+   * @param[in] transaction   transaction object
    */
   explicit ConfidentialTransaction(const ConfidentialTransaction& transaction);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~ConfidentialTransaction() {
     // do nothing
   }
   /**
-   * @brief コピーコンストラクタ.
-   * @param[in] transaction   トランザクション情報
-   * @return Confidential Transactionオブジェクト
+   * @brief copy constructor.
+   * @param[in] transaction   transaction object
+   * @return Confidential Transaction
    */
   ConfidentialTransaction& operator=(
       const ConfidentialTransaction& transaction) &;
   /**
-   * @brief TxInを取得する.
-   * @param[in] index   取得するindex位置
-   * @return 指定indexのTxInインスタンス
+   * @brief Get TxIn.
+   * @param[in] index   index
+   * @return ConfidentialTxInReference
    */
   const ConfidentialTxInReference GetTxIn(uint32_t index) const;
   /**
-   * @brief TxInのindexを取得する.
-   * @param[in] txid   取得するTxInのtxid
-   * @param[in] vout   取得するTxInのvout
-   * @return 条件に合致するTxInのindex番号
+   * @brief Get TxIn index.
+   * @param[in] txid   txid
+   * @param[in] vout   vout
+   * @return index
    */
   virtual uint32_t GetTxInIndex(const Txid& txid, uint32_t vout) const;
   /**
-   * @brief TxOutのindexを取得する.
+   * @brief Get the index of TxOut.
    * @param[in] locking_script  locking script
-   * @return 条件に合致するTxOutのindex番号
+   * @return TxOut index
    */
   virtual uint32_t GetTxOutIndex(const Script& locking_script) const;
   /**
-   * @brief TxOutのindexを一括取得する.
+   * @brief Get the indexes of TxOut.
    * @param[in] locking_script  locking script
-   * @return 条件に合致するTxOutのindex番号の一覧
+   * @return TxOut index list.
    */
   virtual std::vector<uint32_t> GetTxOutIndexList(
       const Script& locking_script) const;
 
   /**
-   * @brief 保持しているTxInの数を取得する.
-   * @return TxIn数
+   * @brief Get the count of TxIns.
+   * @return count of TxIns.
    */
   uint32_t GetTxInCount() const;
   /**
-   * @brief TxIn一覧を取得する.
-   * @return TxInReference一覧
+   * @brief Get TxIn list.
+   * @return TxInReference list
    */
   const std::vector<ConfidentialTxInReference> GetTxInList() const;
   /**
-   * @brief TxInを追加する.
+   * @brief Add TxIn.
    * @param[in] txid                txid
    * @param[in] index               vout
    * @param[in] sequence            sequence
-   * @param[in] unlocking_script    unlocking script (未指定時はEmptyを設定する. default Script::Empty)
-   * @return 追加したTxInのindex位置
+   * @param[in] unlocking_script    unlocking script
+   * @return Added TxIn index
    */
   uint32_t AddTxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
       const Script& unlocking_script = Script::Empty);
   /**
-   * @brief TxIn情報を削除する.
-   * @param[in] index     削除するindex位置
+   * @brief Delete TxIn
+   * @param[in] index     txin index
    */
   void RemoveTxIn(uint32_t index);
   /**
-   * @brief unlocking scriptを設定する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] unlocking_script  TxInに設定するunlocking script (Push Op Only)
+   * @brief Set unlocking script.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] unlocking_script  unlocking script (Push Op Only)
    */
   void SetUnlockingScript(
       uint32_t tx_in_index, const Script& unlocking_script);
   /**
-   * @brief unlocking scriptを設定する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] unlocking_script  TxInに設定するunlocking scriptの構成要素リスト
+   * @brief Set unlocking script.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] unlocking_script  Unlocking script component list
    */
   void SetUnlockingScript(
       uint32_t tx_in_index, const std::vector<ByteData>& unlocking_script);
   /**
-   * @brief witness stackの現在の個数を取得する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @return witness stackの個数
+   * @brief Get the count of witness stacks.
+   * @param[in] tx_in_index       TxIn index
+   * @return count of witness stacks.
    */
   uint32_t GetScriptWitnessStackNum(uint32_t tx_in_index) const;
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const ByteData& data);
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する20byte情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const ByteData160& data);
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const ByteData256& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する20byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData160& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData256& data);
   /**
-   * @brief script witnessを全て削除する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
+   * @brief Remove all script witness.
+   * @param[in] tx_in_index       TxIn index
    */
   void RemoveScriptWitnessStackAll(uint32_t tx_in_index);
   /**
    * @brief 情報を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
+   * @param[in] tx_in_index       TxIn index
    * @param[in] blinding_nonce    blinding nonce
    * @param[in] asset_entropy     asset entropy
    * @param[in] issuance_amount   issuance amount
@@ -1193,69 +1223,69 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const ByteData inflation_keys_rangeproof);
   /**
    * @brief witness stackの現在の個数を取得する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
+   * @param[in] tx_in_index       TxIn index
    * @return witness stackの個数
    */
   uint32_t GetPeginWitnessStackNum(uint32_t tx_in_index) const;
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddPeginWitnessStack(
       uint32_t tx_in_index, const ByteData& data);
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する20byte情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddPeginWitnessStack(
       uint32_t tx_in_index, const ByteData160& data);
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddPeginWitnessStack(
       uint32_t tx_in_index, const ByteData256& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetPeginWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する20byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetPeginWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData160& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetPeginWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData256& data);
   /**
-   * @brief script witnessを全て削除する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
+   * @brief Remove all script witness.
+   * @param[in] tx_in_index       TxIn index
    */
   void RemovePeginWitnessStackAll(uint32_t tx_in_index);
 
   /**
-   * @brief IssueAssetの情報を設定する.
+   * @brief Set the Issue Asset information.
    * @param[in] tx_in_index           Txin index
    * @param[in] asset_amount          issuance amount
    * @param[in] asset_locking_script  asset locking script
@@ -1274,7 +1304,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const ConfidentialNonce& token_nonce, bool is_blind,
       const ByteData256& contract_hash);
   /**
-   * @brief IssueAssetの情報を設定する.
+   * @brief Set the Issue Asset information.
    * @param[in] tx_in_index                Txin index
    * @param[in] asset_amount               issuance amount
    * @param[in] asset_output_amount_list   asset output list
@@ -1300,7 +1330,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const ByteData256& contract_hash);
 
   /**
-   * @brief ReissueAssetの情報を設定する.
+   * @brief ReSet the Issue Asset information.
    * @param[in] tx_in_index             Txin index
    * @param[in] asset_amount            reissuance amount
    * @param[in] asset_locking_script    asset locking script
@@ -1315,7 +1345,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const ConfidentialNonce& asset_blind_nonce,
       const BlindFactor& asset_blind_factor, const BlindFactor& entropy);
   /**
-   * @brief ReissueAssetの情報を設定する.
+   * @brief ReSet the Issue Asset information.
    * @param[in] tx_in_index                Txin index
    * @param[in] asset_amount               reissuance amount
    * @param[in] asset_output_amount_list   asset output list
@@ -1333,61 +1363,61 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const BlindFactor& asset_blind_factor, const BlindFactor& entropy);
 
   /**
-   * @brief TxOutを取得する.
-   * @param[in] index     取得するindex位置
-   * @return TxOutReference
+   * @brief Get TxOut.
+   * @param[in] index     index
+   * @return ConfidentialTxOutReference
    */
   const ConfidentialTxOutReference GetTxOut(uint32_t index) const;
   /**
-   * @brief 保持しているTxOutの数を取得する.
-   * @return TxOut数
+   * @brief Get the count of TxOuts.
+   * @return count of TxOuts.
    */
   uint32_t GetTxOutCount() const;
   /**
-   * @brief TxOut一覧を取得する.
-   * @return TxOutReference一覧
+   * @brief Get TxOut list.
+   * @return ConfidentialTxOutReference list
    */
   const std::vector<ConfidentialTxOutReference> GetTxOutList() const;
   /**
-   * @brief TxOut情報を追加する.
+   * @brief Add TxOut information.
    * @param[in] value           amount
    * @param[in] asset           asset
    * @param[in] locking_script  locking script
-   * @return 追加したTxOutのindex位置
+   * @return Added TxOut index
    */
   uint32_t AddTxOut(
       const Amount& value, const ConfidentialAssetId& asset,
       const Script& locking_script);
   /**
-   * @brief TxOut情報を追加する.
+   * @brief Add TxOut information.
    * @param[in] value           amount
    * @param[in] asset           asset
    * @param[in] locking_script  locking script
    * @param[in] nonce           nonce
-   * @return 追加したTxOutのindex位置
+   * @return Added TxOut index
    */
   uint32_t AddTxOut(
       const Amount& value, const ConfidentialAssetId& asset,
       const Script& locking_script, const ConfidentialNonce& nonce);
   /**
-   * @brief TxOut情報を追加する.
+   * @brief Add TxOut information.
    * @param[in] value               amount
    * @param[in] asset               asset
    * @param[in] locking_script      locking script
    * @param[in] nonce               nonce.
    * @param[in] surjection_proof    surjection proof.
    * @param[in] range_proof         range proof.
-   * @return 追加したTxOutのindex位置
+   * @return Added TxOut index
    */
   uint32_t AddTxOut(
       const Amount& value, const ConfidentialAssetId& asset,
       const Script& locking_script, const ConfidentialNonce& nonce,
       const ByteData& surjection_proof, const ByteData& range_proof);
   /**
-   * @brief TxOut情報としてfeeを追加する.
+   * @brief Add fee as TxOut information.
    * @param[in] value           amount
    * @param[in] asset           asset
-   * @return 追加したTxOutのindex位置
+   * @return Added TxOut index
    */
   uint32_t AddTxOutFee(const Amount& value, const ConfidentialAssetId& asset);
   /**
@@ -1397,8 +1427,8 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
    */
   void SetTxOutValue(uint32_t index, const Amount& value);
   /**
-   * @brief TxOut情報を更新する.
-   * @param[in] index               index位置
+   * @brief Update TxOut information.
+   * @param[in] index               index
    * @param[in] asset               asset
    * @param[in] value               amount
    * @param[in] nonce               nonce.
@@ -1410,10 +1440,27 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const ConfidentialValue& value, const ConfidentialNonce& nonce,
       const ByteData& surjection_proof, const ByteData& range_proof);
   /**
-   * @brief TxOut情報を削除する.
-   * @param[in] index     取得するindex位置
+   * @brief Delete the TxOut information.
+   * @param[in] index     index
    */
   void RemoveTxOut(uint32_t index);
+
+  /**
+   * @brief Get the total byte size of Transaction.
+   * @return Total byte size
+   */
+  virtual uint32_t GetTotalSize() const;
+  /**
+   * @brief Get vsize information of Transaction.
+   * @return vsize
+   */
+  virtual uint32_t GetVsize() const;
+  /**
+   * @brief Get the Weight information of Transaction.
+   * @return weight
+   */
+  virtual uint32_t GetWeight() const;
+
   /**
    * @brief Blinding transaction.
    * @param[in] txin_info_list            txin blind info list.
@@ -1435,7 +1482,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       int minimum_bits = kDefaultBlindMinimumBits,
       std::vector<BlindData>* blinder_list = nullptr);
   /**
-   * @brief TransactionのTxOutのblindingを行う.
+   * @brief Blinding TxOut of Transaction.
    * @param[in] txin_info_list            txin blind info list.
    * @param[in] txout_confidential_keys   blinding pubkey list.
    * @param[in] minimum_range_value       rangeproof minimum value.
@@ -1453,39 +1500,39 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       int minimum_bits = kDefaultBlindMinimumBits,
       std::vector<BlindData>* blinder_list = nullptr);
   /**
-   * @brief indexで指定されたInputに対して、unblind処理を行う.
-   * @param tx_in_index TxInのindex値
-   * @param blinding_key blinding key(秘密鍵)
-   * @param token_blinding_key token blinding key(秘密鍵).
-   * @return unblindの出力データを格納したUnblindParameter構造体
+   * @brief Performs unblind processing for the specified Input.
+   * @param tx_in_index TxIn index
+   * @param blinding_key blinding key(private key)
+   * @param token_blinding_key token blinding key(private key).
+   * @return UnblindParameter structure containing unblind output data list
    */
   std::vector<UnblindParameter> UnblindTxIn(
       uint32_t tx_in_index, const Privkey& blinding_key,
       const Privkey token_blinding_key = Privkey());
   /**
-   * @brief indexで指定されたOutputに対して、unblind処理を行う.
-   * @param tx_out_index TxOutのindex値
-   * @param blinding_key blinding key(秘密鍵)
-   * @return unblindの出力データを格納したUnblindParameter構造体
+   * @brief Performs unblind processing for the specified Output.
+   * @param tx_out_index TxOut index
+   * @param blinding_key blinding key(private key)
+   * @return UnblindParameter structure containing unblind output data
    */
   UnblindParameter UnblindTxOut(
       uint32_t tx_out_index, const Privkey& blinding_key);
   /**
-   * @brief Transactionの全てのOutputに対して、unblind処理を行う.
-   * @param[in] blinding_keys blinding key(秘密鍵) list
-   * @return unblindの出力データを格納したUnblindParameter構造体リスト
+   * @brief Unblind processing is performed for all Outputs of Transaction.
+   * @param[in] blinding_keys blinding key(private key) list
+   * @return UnblindParameter structure containing unblind output data list
    */
   std::vector<UnblindParameter> UnblindTxOut(
       const std::vector<Privkey>& blinding_keys);
 
   /**
-   * @brief Elements用signatureハッシュを取得する.
-   * @param[in] txin_index    TxInのindex値
-   * @param[in] script_data   unlocking script もしくは witness_program.
+   * @brief Get the signature hash for Confidential Transaction.
+   * @param[in] txin_index    TxIn index
+   * @param[in] script_data   unlocking script or witness program.
    * @param[in] sighash_type  SigHashType(@see cfdcore_util.h)
-   * @param[in] value         TxInのAmount/amountcommitment値.
+   * @param[in] value         TxIn Amount/amountcommitment.
    * @param[in] version       Witness version
-   * @return signatureハッシュ
+   * @return signature hash
    */
   ByteData256 GetElementsSignatureHash(
       uint32_t txin_index, const ByteData& script_data,
@@ -1494,32 +1541,32 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       WitnessVersion version = WitnessVersion::kVersionNone) const;
 
   /**
-   * @brief TxOutの順序をランダムソートする.
-   * @details ブラインド前のみ実施可能.
+   * @brief Randomly sort the order of TxOut.
+   * @details Can only be done before the blinds.
    */
   void RandomSortTxOut();
 
   /**
-   * @brief witness情報のみのHashを取得する.
+   * @brief Get a Hash of witness information only.
    * @return witness only hash
    */
   ByteData256 GetWitnessOnlyHash() const;
 
   /**
-   * @brief witness情報かどうかを取得する.
-   * @retval true   witness
-   * @retval false  witnessではない
+   * @brief Get if it have witness information.
+   * @retval true   witness exist
+   * @retval false  witness not found
    */
   virtual bool HasWitness() const;
 
   /**
-   * @brief libwally処理用フラグを取得する。
-   * @return libwally用フラグ
+   * @brief libwally Get the processing flag.
+   * @return libwally flag
    */
   virtual uint32_t GetWallyFlag() const;
 
   /**
-   * @brief Bitcoin Transaction情報を取得する。
+   * @brief Get Bitcoin Transaction information.
    * @param[in] bitcoin_tx_data     bitcoin transaction data
    * @param[in] is_remove_witness   remove witness flag
    * @return transaction data.
@@ -1527,7 +1574,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   static ByteData GetBitcoinTransaction(
       const ByteData& bitcoin_tx_data, bool is_remove_witness = false);
   /**
-   * @brief asset entropyの情報を算出する.
+   * @brief Calculate asset entropy information.
    * @param[in] txid              utxo txid
    * @param[in] vout              utxo vout
    * @param[in] contract_hash     asset entropy
@@ -1536,13 +1583,13 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   static BlindFactor CalculateAssetEntropy(
       const Txid& txid, const uint32_t vout, const ByteData256& contract_hash);
   /**
-   * @brief assetの情報を算出する.
+   * @brief Calculate asset information.
    * @param[in] entropy           asset entropy
    * @return asset id (ConfidentialAssetId).
    */
   static ConfidentialAssetId CalculateAsset(const BlindFactor& entropy);
   /**
-   * @brief reissuance tokenの情報を算出する.
+   * @brief Calculate the reissuance token information.
    * @param[in] entropy           asset entropy
    * @param[in] is_blind          asset is blinded or not
    * @return reissuance token (ConfidentialAssetId).
@@ -1550,7 +1597,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   static ConfidentialAssetId CalculateReissuanceToken(
       const BlindFactor& entropy, bool is_blind);
   /**
-   * @brief IssueAssetの情報を設定する.
+   * @brief Set the Issue Asset information.
    * @param[in] txid              utxo txid
    * @param[in] vout              utxo vout
    * @param[in] is_blind          blinding issuance
@@ -1562,7 +1609,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const Txid& txid, uint32_t vout, bool is_blind,
       const ByteData256& contract_hash, const ByteData256& asset_entropy);
   /**
-   * @brief issuance/reissuanceのblinding keyを取得する.
+   * @brief Get the blinding key of issuance / reissuance.
    * @param[in] master_blinding_key master blindingKey
    * @param[in] txid                issuance utxo txid
    * @param[in] vout                issuance utxo vout
@@ -1571,7 +1618,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
   static Privkey GetIssuanceBlindingKey(
       const Privkey& master_blinding_key, const Txid& txid, uint32_t vout);
   /**
-   * @brief pegoutで使用するpubkey情報を取得する.
+   * @brief Get the pubkey information used by pegout.
    * @param[in] online_pubkey       online pubkey
    * @param[in] master_online_key   online privkey
    * @param[in] bitcoin_descriptor  bip32 pubkey (m/0/\*)
@@ -1593,107 +1640,106 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       Address* descriptor_derive_address = nullptr);
 
  protected:
-  std::vector<ConfidentialTxIn> vin_;    ///< TxIn配列
-  std::vector<ConfidentialTxOut> vout_;  ///< TxOut配列
+  std::vector<ConfidentialTxIn> vin_;    ///< TxIn array
+  std::vector<ConfidentialTxOut> vout_;  ///< TxOut array
 
   /**
-   * @brief HEX文字列からTransaction情報を設定する.
-   * @param[in] hex_string    TransactionバイトデータのHEX文字列
+   * @brief Set Transaction information from HEX string.
+   * @param[in] hex_string    HEX string.
    */
   void SetFromHex(const std::string& hex_string);
 
  private:
   /**
-   * @brief TxIn配列のIndex範囲をチェックする.
-   * @param[in] index     TxIn配列のIndex値
-   * @param[in] line      行数
-   * @param[in] caller    コール元関数名
+   * @brief check TxIn array range.
+   * @param[in] index     TxIn Index
+   * @param[in] line      Number of lines
+   * @param[in] caller    Calling function name
    */
   virtual void CheckTxInIndex(
       uint32_t index, int line, const char* caller) const;
   /**
-   * @brief TxOut配列のIndex範囲をチェックする.
    * @brief check TxOut array range.
-   * @param[in] index     TxOut配列のIndex値
-   * @param[in] line      行数
-   * @param[in] caller    コール元関数名
+   * @param[in] index     TxOut Index
+   * @param[in] line      Number of lines
+   * @param[in] caller    Calling function name
    */
   virtual void CheckTxOutIndex(
       uint32_t index, int line, const char* caller) const;
   /**
-   * @brief witness stackに情報を追加する.
-   * @param[in] tx_in_index   TxIn配列のindex値
-   * @param[in] data          witness stackに追加するバイトデータ
+   * @brief Add information to the witness stack.
+   * @param[in] tx_in_index   TxIn index
+   * @param[in] data          data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const std::vector<uint8_t>& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index,
       const std::vector<uint8_t>& data);
   /**
-   * @brief witness stackに情報を追加する.
-   * @param[in] tx_in_index   TxIn配列のindex値
-   * @param[in] data          witness stackに追加するバイトデータ
+   * @brief Add information to the pegin witness stack.
+   * @param[in] tx_in_index   TxIn index
+   * @param[in] data          data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddPeginWitnessStack(
       uint32_t tx_in_index, const std::vector<uint8_t>& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Update the specified index position of the pegin witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Information to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetPeginWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index,
       const std::vector<uint8_t>& data);
   /**
-   * @brief Transactionのバイトデータを取得する.
-   * @param[in] has_witness   witnessを含めるかのフラグ
-   * @return バイトデータ
+   * @brief Get the byte data of Transaction.
+   * @param[in] has_witness   Flag to include witness
+   * @return ByteData
    */
   ByteData GetByteData(bool has_witness) const;
   /**
-   * @brief ElementsのTx状態フラグ(libwally値)を設定する。
+   * @brief Set the Tx status flag (libwally value) of Elements.
    */
   void SetElementsTxState();
   /**
-   * @brief 配列をByteDataへと変換する.
+   * @brief Convert the array to ByteData.
    * @param[in] data      buffer
    * @param[in] size      size
    * @return ByteData
    */
   static ByteData ConvertToByteData(const uint8_t* data, size_t size);
   /**
-   * @brief ConfidentialNonce情報をコピーする。
-   * @param[in] buffer            コピー元のバッファ
-   * @param[in] buffer_size       バッファサイズ
-   * @param[in] explicit_size     unblind時のサイズ
-   * @param[in] address           コピー先のアドレス
-   * @return 移動後のアドレス
+   * @brief Copy the Confidential Nonce information.
+   * @param[in] buffer            Copy source buffer
+   * @param[in] buffer_size       Copy source buffer size
+   * @param[in] explicit_size     Unblind size
+   * @param[in] address           Copy destination address
+   * @return Address after moving
    */
   static uint8_t* CopyConfidentialCommitment(
       const void* buffer, size_t buffer_size, size_t explicit_size,
       uint8_t* address);
 
   /**
-   * blindされたデータに対して、unblind処理をかける
-   * @param[in] nonce             nonce値
-   * @param[in] blinding_key      blindingした際の秘密鍵
-   * @param[in] rangeproof        asset amountの検証に用いる検証値
-   * @param[in] value_commitment  blindされたvalueのcommitement値
-   * @param[in] extra             unblindに必要な情報
+   * @brief Unblind processing is applied to blinded data
+   * @param[in] nonce             nonce
+   * @param[in] blinding_key      blinding private key
+   * @param[in] rangeproof        asset amount rangeproof
+   * @param[in] value_commitment  blind value commitement
+   * @param[in] extra             unblind need data
    * @param[in] asset             confidential asset id
-   * @return Unblindされた際に出力されたUnblindParameter構造体
+   * @return UnblindParameter structure output when unblinded
    */
   static UnblindParameter CalculateUnblindData(
       const ConfidentialNonce& nonce, const Privkey& blinding_key,
@@ -1701,13 +1747,13 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const Script& extra, const ConfidentialAssetId& asset);
 
   /**
-   * blindされたIssueデータに対して、unblind処理をかける
-   * @param[in] blinding_key      blindingした際の秘密鍵
-   * @param[in] rangeproof        asset amountの検証に用いる検証値
-   * @param[in] value_commitment  blindされたvalueのcommitement値
-   * @param[in] extra             unblindに必要な情報
+   * @brief Unblind processing is applied to the blinded Issue data
+   * @param[in] blinding_key      blinding private key
+   * @param[in] rangeproof        asset amount rangeproof
+   * @param[in] value_commitment  blind value commitement
+   * @param[in] extra             unblind need data
    * @param[in] asset             confidential asset id
-   * @return Unblindされた際に出力されたUnblindParameter構造体
+   * @return UnblindParameter structure output when unblinded
    */
   static UnblindParameter CalculateUnblindIssueData(
       const Privkey& blinding_key, const ByteData& rangeproof,
@@ -1715,7 +1761,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       const ConfidentialAssetId& asset);
 
   /**
-   * @brief rangeProofなどを生成する。
+   * @brief Generate rangeProof etc.
    * @param[in] value             amount
    * @param[in] pubkey            public key
    * @param[in] privkey           private key
@@ -1741,7 +1787,7 @@ class CFD_CORE_EXPORT ConfidentialTransaction : public AbstractTransaction {
       std::vector<uint8_t>* commitment, std::vector<uint8_t>* range_proof);
 
   /**
-   * @brief Descriptor情報から拡張Keyを生成する.
+   * @brief Generate an extended Key from Descriptor information.
    * @param[in] bitcoin_descriptor    descriptor
    * @param[in] bip32_counter         bip32 counter
    * @param[in] prefix                extend pubkey prefix

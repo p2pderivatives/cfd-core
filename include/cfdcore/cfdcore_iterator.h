@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_iterator.h
  *
- * @brief Iterator Wrapperクラス定義
+ * @brief The Iterator Wrapper class definition
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ITERATOR_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ITERATOR_H_
@@ -19,14 +19,14 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief IteratorのWrapperクラス
+ * @brief Iterator's Wrapper class.
  */
 template <class T>
 class IteratorWrapper {
  public:
   /**
    * @brief constructor.
-   * @details 引数で指定されたvectorのiterator wrapperインスタンスの作成をする.
+   * @details Create an iterator wrapper instance of the vector specified by the argument.
    * @param vector
    * @param error_message
    * @param is_reverse
@@ -48,9 +48,10 @@ class IteratorWrapper {
     // do nothing
   }
   /**
-   * @brief 次の要素が取得可能であるかを返却する.
-   * @retval true 次の要素が取得可能であるとき
-   * @retval true 次の要素が取得できないとき（イテレータが末端を指しているとき）
+   * @brief Returns whether the next element is available.
+   * @retval true   When the next element is available
+   * @retval false  When the next element cannot be obtained \
+   *   (when the iterator points to the end)
    */
   bool hasNext() const {
     if (reverse_) {
@@ -59,9 +60,10 @@ class IteratorWrapper {
     return iterator_ != vector_.cend();
   }
   /**
-   * @brief 前の要素が取得可能であるかを返却する.
-   * @retval true 前の要素が取得可能であるとき
-   * @retval true 前の要素が取得できないとき（イテレータが始端を指しているとき）
+   * @brief Returns whether the previous element is available.
+   * @retval true   When the previous element is available
+   * @retval false  When the previous element cannot be obtained \
+   *    (when the iterator points to the beginning)
    */
   bool hasBack() const {
     if (reverse_) {
@@ -70,8 +72,8 @@ class IteratorWrapper {
     return iterator_ != vector_.cbegin();
   }
   /**
-   * @brief 次の要素を取得する.
-   * @return 現在のイテレータの次の要素
+   * @brief Get the next element.
+   * @return The next element of the current iterator
    */
   T next() {
     if (!hasNext()) {
@@ -88,8 +90,8 @@ class IteratorWrapper {
     return *(iterator_++);
   }
   /**
-   * @brief 前の要素を取得する.
-   * @return 現在のイテレータの次の要素
+   * @brief Get the previous element.
+   * @return The next element of the current iterator
    */
   T back() {
     if (!hasBack()) {

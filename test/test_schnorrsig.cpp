@@ -238,3 +238,34 @@ TEST(SchnorrPubkey, TweakTest) {
   EXPECT_EQ(exp_pk_c, pk_c12.GetHex());
   EXPECT_EQ(exp_sk_c, sk_c.GetHex());
 }
+
+TEST(SchnorrUtil, ComputeSigPointBatch) {
+  std::vector<ByteData256> data = {
+      ByteData256(
+          "e48441762fb75010b2aa31a512b62b4148aa3fb08eb0765d76b252559064a614"),
+      ByteData256(
+          "80a1c2125d13d6b2d639f2da507772040719d36c6228ec141befd1aecb901b17"),
+      ByteData256(
+          "375a7aec74bba181ffca89ef03bd8a10d7ddae7813190d4616652d9e91bcff20"),
+  };
+
+  std::vector<SchnorrPubkey> nonces = {
+      SchnorrPubkey(
+          "4d18084bb47027f47d428b2ed67e1ccace5520fdc36f308e272394e288d53b6d"),
+      SchnorrPubkey(
+          "f14d7e54ff58c5d019ce9986be4a0e8b7d643bd08ef2cdf1099e1a457865b547"),
+      SchnorrPubkey(
+          "dc82121e4ff8d23745f3859e8939ecb0a38af63e6ddea2fff97a7fd61a1d2d54")};
+
+  std::vector<Pubkey> sig_points;
+  for (size_t i = 0; i < data.size(); i++) {
+    sig_points.push_back(
+        SchnorrUtil::ComputeSigPoint(data[i], nonces[i], pubkey));
+  }
+  auto expected_sig_point = Pubkey::CombinePubkey(sig_points);
+
+  auto actual_sig_point =
+      SchnorrUtil::ComputeSigPointBatch(data, nonces, pubkey);
+
+  ASSERT_EQ(expected_sig_point.GetHex(), actual_sig_point.GetHex());
+}

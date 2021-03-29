@@ -2,9 +2,9 @@
 /**
  * @file cfdcore_json_mapping_base.h
  *
- * @brief JSON-クラスマッピング処理を定義するファイル。
+ * @brief JSON-A file that defines the class mapping process.
  *
- * 継承クラスを作成して利用する。
+ * Create and use an inherited class.
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_JSON_MAPPING_BASE_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_JSON_MAPPING_BASE_H_
@@ -30,10 +30,10 @@ namespace cfd {
 namespace core {
 
 // -----------------------------------------------------------------------------
-// クラス定義
+// Class definition
 // -----------------------------------------------------------------------------
 /**
- * @brief Get/Set/Type処理用のテンプレート構造体
+ * @brief Template structure for Get / Set / Type processing.
  */
 template <typename T>
 struct CLASS_FUNCTION_TABLE {
@@ -43,15 +43,15 @@ struct CLASS_FUNCTION_TABLE {
 };
 
 /**
- * @brief Json型処理を行うためのマッピングテンプレート
+ * @brief Mapping template for Json type processing
  */
 template <class ClassName>
 using JsonTableMap = std::map<std::string, CLASS_FUNCTION_TABLE<ClassName>>;
 
 /**
- * @brief 文字列変換を行います。
- * @param[in] value   変換元の値
- * @return 文字列変換後の値
+ * @brief Performs character string conversion.
+ * @param[in] value   Source value
+ * @return Value after string conversion
  */
 inline std::string ConvertToString(const uint32_t& value) {  // NOLINT
   UniValue json_value(static_cast<uint64_t>(value));
@@ -60,18 +60,18 @@ inline std::string ConvertToString(const uint32_t& value) {  // NOLINT
 }
 
 /**
- * @brief 文字列変換を行います。
- * @param[in] value   変換元の値
- * @return 文字列変換後の値
+ * @brief Performs character string conversion.
+ * @param[in] value   Source value
+ * @return Value after string conversion
  */
 inline std::string ConvertToString(const uint64_t& value) {  // NOLINT
   return std::to_string(value);
 }
 
 /**
- * @brief 文字列変換を行います。
- * @param[in] value   変換元の値
- * @return 文字列変換後の値
+ * @brief Performs character string conversion.
+ * @param[in] value   Source value
+ * @return Value after string conversion
  */
 template <typename T>
 inline std::string ConvertToString(const T& value) {  // NOLINT
@@ -81,9 +81,9 @@ inline std::string ConvertToString(const T& value) {  // NOLINT
 }
 
 /**
- * @brief UniValueオブジェクトからstring型に変換します。
- * @param[out] value      変換後の設定値
- * @param[in] json_value  UniValueオブジェクト
+ * @brief Convert from UniValue object to string type.
+ * @param[out] value      Set value after conversion
+ * @param[in] json_value  UniValue object
  */
 inline void ConvertFromUniValue(
     std::string& value,            // NOLINT
@@ -102,9 +102,9 @@ inline void ConvertFromUniValue(
 }
 
 /**
- * @brief UniValueオブジェクトからbool型に変換します。
- * @param[out] value      変換後の設定値
- * @param[in] json_value  UniValueオブジェクト
+ * @brief Convert from UniValue object to bool type.
+ * @param[out] value      Set value after conversion
+ * @param[in] json_value  UniValue object
  */
 inline void ConvertFromUniValue(
     bool& value, const UniValue& json_value) {  // NOLINT
@@ -122,9 +122,9 @@ inline void ConvertFromUniValue(
 }
 
 /**
- * @brief UniValueオブジェクトからdouble型に変換します。
- * @param[out] value      変換後の設定値
- * @param[in] json_value  UniValueオブジェクト
+ * @brief Convert from UniValue object to double type.
+ * @param[out] value      Set value after conversion
+ * @param[in] json_value  UniValue object
  */
 inline void ConvertFromUniValue(
     double& value, const UniValue& json_value) {  // NOLINT
@@ -142,9 +142,9 @@ inline void ConvertFromUniValue(
 }
 
 /**
- * @brief UniValueオブジェクトからfloat型に変換します。
- * @param[out] value      変換後の設定値
- * @param[in] json_value  UniValueオブジェクト
+ * @brief Convert from UniValue object to float type.
+ * @param[out] value      Set value after conversion
+ * @param[in] json_value  UniValue object
  */
 inline void ConvertFromUniValue(
     float& value, const UniValue& json_value) {  // NOLINT
@@ -162,9 +162,9 @@ inline void ConvertFromUniValue(
 }
 
 /**
- * @brief UniValueオブジェクトからfloat型に変換します。
- * @param[out] value      変換後の設定値
- * @param[in] json_value  UniValueオブジェクト
+ * @brief Convert from UniValue object to unsigned 64bit type.
+ * @param[out] value      Set value after conversion
+ * @param[in] json_value  UniValue object
  */
 inline void ConvertFromUniValue(
     uint64_t& value, const UniValue& json_value) {  // NOLINT
@@ -203,9 +203,9 @@ inline void ConvertFromUniValue(
 }
 
 /**
- * @brief UniValueオブジェクトから指定された型に変換します。
- * @param[out] value      変換後の設定値
- * @param[in] json_value  UniValueオブジェクト
+ * @brief Convert from UniValue object to template type.
+ * @param[out] value      Set value after conversion
+ * @param[in] json_value  UniValue object
  */
 template <typename T>
 inline void ConvertFromUniValue(
@@ -259,51 +259,51 @@ inline void ConvertFromUniValue(
   }
 }
 
-// テンプレートクラス（JSON処理のためテンプレートに）
+// Template class (in template for JSON processing)
 /**
- * @brief Jsonマッピング変換クラスのベースクラス。
+ * @brief Base class for Json mapping transformation class.
  *
- * 本ファイル下部のマクロを利用して継承クラスを定義する。
+ * Define the inherited class using the macro at the bottom of this file.
  */
 template <typename TYPE>
 class JsonClassBase {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief Constructor.
    */
   JsonClassBase() {}
   /**
-   * @brief デストラクタ
+   * @brief Destructor.
    */
   virtual ~JsonClassBase() {}
   /**
-   * @brief シリアライズ開始前にコールされる関数。
+   * @brief A function that is called before serialization begins.
    *
-   * 必要に応じて継承クラス側でオーバーライドする。
+   * Override on the inherited class side if necessary.
    */
   virtual void PreSerialize() const {}
   /**
-   * @brief シリアライズ終了時にコールされる関数。
+   * @brief A function called at the end of serialization.
    *
-   * 必要に応じて継承クラス側でオーバーライドする。
+   * Override on the inherited class side if necessary.
    */
   virtual void PostSerialize() const {}
   /**
-   * @brief デシリアライズ開始前にコールされる関数。
+   * @brief A function that is called before deserialization begins.
    *
-   * 必要に応じて継承クラス側でオーバーライドする。
+   * Override on the inherited class side if necessary.
    */
   virtual void PreDeserialize() {}
   /**
-   * @brief デシリアライズ終了時にコールされる関数。
+   * @brief A function called at the end of deserialization.
    *
-   * 必要に応じて継承クラス側でオーバーライドする。
+   * Override on the inherited class side if necessary.
    */
   virtual void PostDeserialize() {}
 
   /**
-   * @brief シリアライズ処理（JSON文字列化）を行う。
-   * @return JSON文字列
+   * @brief Performs serialization processing (JSON character string conversion).
+   * @return JSON string
    */
   virtual std::string Serialize() const {
     PreSerialize();
@@ -339,8 +339,8 @@ class JsonClassBase {
   }
 
   /**
-   * @brief デシリアライズ処理（JSONオブジェクト化）を行う。
-   * @param[in] value   JSON文字列
+   * @brief Perform deserialization processing (JSON objectization).
+   * @param[in] value   JSON string.
    */
   virtual void Deserialize(const std::string& value) {
     UniValue object;
@@ -349,12 +349,12 @@ class JsonClassBase {
   }
 
   /**
-   * @brief デシリアライズ処理（JSONオブジェクト化）を行う。
-   * @param[in] value   UniValueオブジェクト
+   * @brief Perform deserialization processing (JSON objectization).
+   * @param[in] value   UniValue object.
    */
   virtual void DeserializeUniValue(const UniValue& value) {
     if (value.isArray()) {
-      // rootがリスト1つの場合、子クラスに引継ぎ
+      // If root is one list, take over to child class
       JsonTableMap<TYPE> mapper = GetJsonMapper();
       if (mapper.size() == 1) {
         PreDeserialize();
@@ -386,51 +386,54 @@ class JsonClassBase {
 
  protected:
   /**
-   * @brief JSONマッピングオブジェクトを取得する。
+   * @brief Get the JSON mapping object.
    *
-   * テンプレートを用いる関係上、実態を有する継承クラス側で実装する。
-   * @return JSONマッピングオブジェクト
+   * Since the template is used, it is implemented on the \
+   * inherited class side that has the actual situation.
+   * @return JSON mapping object.
    */
   virtual const JsonTableMap<TYPE>& GetJsonMapper() const = 0;
   /**
-   * @brief JSONマッピングのアイテム一覧を取得する。
+   * @brief Get the JSON mapping item list.
    *
-   * 対象の変数名を、定義順序に従い一覧取得する。
-   * テンプレートを用いる関係上、実態を有する継承クラス側で実装する。
-   * @return JSONマッピングのアイテム一覧
+   * Get a list of target variable names according to the definition order.
+   * Since the template is used, it is implemented on the inherited class \
+   * side that has the actual situation.
+   * @return JSON mapping item list.
    */
   virtual const std::vector<std::string>& GetJsonItemList() const = 0;
   /**
-   * @brief JSONマッピング時に無視するアイテム一覧を取得する。
+   * @brief Get a list of items to ignore during JSON mapping.
    *
-   * Serialize時に対象の変数を無視する。
-   * テンプレートを用いる関係上、実態を有する継承クラス側で実装する。
-   * @return JSONマッピング時に無視するアイテム一覧
+   * Ignore the target variable when serializing.
+   * Since the template is used, it is implemented on the \
+   * inherited class side that has the actual situation.
+   * @return Item list to ignore when JSON mapping
    */
   virtual const std::set<std::string>& GetIgnoreItem() const = 0;
 };
 
 /**
- * @brief Jsonマッピング変換リストクラスのベースクラス。
+ * @brief Base class for Json mapping transformation list class.
  *
- * 本ファイル下部のマクロを利用して継承クラスを定義する。
+ * Define the inherited class using the macro at the bottom of this file.
  */
 template <typename TYPE>
 class JsonVector : public std::vector<TYPE> {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief Constructor.
    */
   JsonVector() {}
   /**
-   * @brief デストラクタ
+   * @brief Destructor.
    */
   virtual ~JsonVector() {}
 
   /**
-   * @brief オペレーター（代入）
-   * @param[in] obj   代入する側のインスタンス
-   * @return 代入される側のインスタンス
+   * @brief Substitution operator.
+   * @param[in] obj   instance.
+   * @return setting object.
    */
   TYPE& operator=(const TYPE& obj) {
     std::string serialize_string = obj.Serialize();
@@ -439,14 +442,14 @@ class JsonVector : public std::vector<TYPE> {
   }
 
   /**
-   * @brief シリアライズ処理（JSON文字列化）を行う。
-   * @return JSON文字列
+   * @brief Performs serialization processing (JSON character string conversion).
+   * @return JSON string
    */
   virtual std::string Serialize() const = 0;
 
   /**
-   * @brief デシリアライズ処理（JSONオブジェクト化）を行う。
-   * @param[in] value   JSON文字列
+   * @brief Perform deserialization processing (JSON objectization).
+   * @param[in] value   JSON string
    */
   virtual void Deserialize(const std::string& value) {
     UniValue object;
@@ -455,32 +458,32 @@ class JsonVector : public std::vector<TYPE> {
   }
 
   /**
-   * @brief デシリアライズ処理（JSONオブジェクト化）を行う。
-   * @param[in] value   UniValueオブジェクト
+   * @brief Perform deserialization processing (JSON objectization).
+   * @param[in] value   UniValue object
    */
   virtual void DeserializeUniValue(const UniValue& value) = 0;
 };
 
 /**
- * @brief 設定値用のJsonマッピング変換リストクラスのベースクラス。
+ * @brief Base class of Json mapping transformation list class for settings.
  *
- * 本ファイル下部のマクロを利用して継承クラスを定義する。
+ * Define the inherited class using the macro at the bottom of this file.
  */
 template <typename TYPE>
 class JsonValueVector : public JsonVector<TYPE> {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief Constructor.
    */
   JsonValueVector() {}
   /**
-   * @brief デストラクタ
+   * @brief Destructor.
    */
   virtual ~JsonValueVector() {}
 
   /**
-   * @brief シリアライズ処理（JSON文字列化）を行う。
-   * @return JSON文字列
+   * @brief Performs serialization processing (JSON character string conversion).
+   * @return JSON string.
    */
   virtual std::string Serialize() const {
     std::string result;
@@ -505,8 +508,8 @@ class JsonValueVector : public JsonVector<TYPE> {
   }
 
   /**
-   * @brief デシリアライズ処理（JSONオブジェクト化）を行う。
-   * @param[in] value   UniValueオブジェクト
+   * @brief Perform deserialization processing (JSON objectization).
+   * @param[in] value   UniValue object.
    */
   virtual void DeserializeUniValue(const UniValue& value) {
     if (!value.isArray()) {
@@ -523,8 +526,8 @@ class JsonValueVector : public JsonVector<TYPE> {
   }
 
   /**
-   * @brief Struct情報からの変換処理を行う。
-   * @param[in] list    リスト情報
+   * @brief Performs conversion processing from Struct information.
+   * @param[in] list    List information
    */
   void ConvertFromStruct(const std::vector<TYPE>& list) {
     for (const auto& element : list) {
@@ -533,8 +536,8 @@ class JsonValueVector : public JsonVector<TYPE> {
   }
 
   /**
-   * @brief Struct情報への変換処理を行う。
-   * @return 変換済みリスト情報
+   * @brief Performs conversion processing to Struct information.
+   * @return Converted list information
    */
   std::vector<TYPE> ConvertToStruct() const {
     std::vector<TYPE> result;
@@ -547,25 +550,25 @@ class JsonValueVector : public JsonVector<TYPE> {
 };
 
 /**
- * @brief クラスオブジェクト用のJsonマッピング変換リストクラスのベースクラス。
+ * @brief Base class for Json mapping transformation list classes for class objects.
  *
- * 本ファイル下部のマクロを利用して継承クラスを定義する。
+ * Define the inherited class using the macro at the bottom of this file.
  */
 template <typename TYPE, typename STRUCT_TYPE>
 class JsonObjectVector : public JsonVector<TYPE> {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief Constructor.
    */
   JsonObjectVector() {}
   /**
-   * @brief デストラクタ
+   * @brief Destructor.
    */
   virtual ~JsonObjectVector() {}
 
   /**
-   * @brief シリアライズ処理（JSON文字列化）を行う。
-   * @return JSON文字列
+   * @brief Performs serialization processing (JSON character string conversion).
+   * @return JSON string.
    */
   virtual std::string Serialize() const {
     std::string result;
@@ -590,8 +593,8 @@ class JsonObjectVector : public JsonVector<TYPE> {
   }
 
   /**
-   * @brief デシリアライズ処理（JSONオブジェクト化）を行う。
-   * @param[in] value   UniValueオブジェクト
+   * @brief Perform deserialization processing (JSON objectization).
+   * @param[in] value   UniValue object
    */
   virtual void DeserializeUniValue(const UniValue& value) {
     if (!value.isArray()) {
@@ -608,8 +611,8 @@ class JsonObjectVector : public JsonVector<TYPE> {
   }
 
   /**
-   * @brief Struct情報からの変換処理を行う。
-   * @param[in] list    リスト情報
+   * @brief Performs conversion processing from Struct information.
+   * @param[in] list    List information
    */
   void ConvertFromStruct(const std::vector<STRUCT_TYPE>& list) {
     for (const auto& element : list) {
@@ -620,8 +623,8 @@ class JsonObjectVector : public JsonVector<TYPE> {
   }
 
   /**
-   * @brief Struct情報への変換処理を行う。
-   * @return 変換済みリスト情報
+   * @brief Performs conversion processing to Struct information.
+   * @return Converted list information
    */
   std::vector<STRUCT_TYPE> ConvertToStruct() const {
     std::vector<STRUCT_TYPE> result;

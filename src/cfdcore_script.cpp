@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_script.cpp
  *
- * @brief \~japanese Script関連クラス実装
- *   \~english implementation of Script related class
+ * @brief implementation of Script related class
  */
 
 #include "cfdcore/cfdcore_script.h"
@@ -173,6 +172,8 @@ const ScriptOperator ScriptOperator::OP_NOP7(kOpNop7, "OP_NOP7");
 const ScriptOperator ScriptOperator::OP_NOP8(kOpNop8, "OP_NOP8");
 const ScriptOperator ScriptOperator::OP_NOP9(kOpNop9, "OP_NOP9");
 const ScriptOperator ScriptOperator::OP_NOP10(kOpNop10, "OP_NOP10");
+const ScriptOperator ScriptOperator::OP_CHECKSIGADD(
+    kOpCheckSigAdd, "OP_CHECKSIGADD");
 const ScriptOperator ScriptOperator::OP_INVALIDOPCODE(
     kOpInvalidOpCode, "OP_INVALIDOPCODE");
 #ifndef CFD_DISABLE_ELEMENTS
@@ -189,6 +190,180 @@ const ScriptOperator ScriptOperator::OP_PUBKEYHASH(
     kOpPubkeyHash, "OP_PUBKEYHASH");
 const ScriptOperator ScriptOperator::OP_PUBKEY(kOpPubkey, "OP_PUBKEY");
 #endif  // CFD_DISABLE_ELEMENTS
+const ScriptOperator ScriptOperator::OP_SUCCESS80(
+    kOpSuccess80, "OP_SUCCESS80");
+const ScriptOperator ScriptOperator::OP_SUCCESS98(
+    kOpSuccess98, "OP_SUCCESS98");
+const ScriptOperator ScriptOperator::OP_SUCCESS126(
+    kOpSuccess126, "OP_SUCCESS126");
+const ScriptOperator ScriptOperator::OP_SUCCESS127(
+    kOpSuccess127, "OP_SUCCESS127");
+const ScriptOperator ScriptOperator::OP_SUCCESS128(
+    kOpSuccess128, "OP_SUCCESS128");
+const ScriptOperator ScriptOperator::OP_SUCCESS129(
+    kOpSuccess129, "OP_SUCCESS129");
+const ScriptOperator ScriptOperator::OP_SUCCESS131(
+    kOpSuccess131, "OP_SUCCESS131");
+const ScriptOperator ScriptOperator::OP_SUCCESS132(
+    kOpSuccess132, "OP_SUCCESS132");
+const ScriptOperator ScriptOperator::OP_SUCCESS133(
+    kOpSuccess133, "OP_SUCCESS133");
+const ScriptOperator ScriptOperator::OP_SUCCESS134(
+    kOpSuccess134, "OP_SUCCESS134");
+const ScriptOperator ScriptOperator::OP_SUCCESS137(
+    kOpSuccess137, "OP_SUCCESS137");
+const ScriptOperator ScriptOperator::OP_SUCCESS138(
+    kOpSuccess138, "OP_SUCCESS138");
+const ScriptOperator ScriptOperator::OP_SUCCESS141(
+    kOpSuccess141, "OP_SUCCESS141");
+const ScriptOperator ScriptOperator::OP_SUCCESS142(
+    kOpSuccess142, "OP_SUCCESS142");
+const ScriptOperator ScriptOperator::OP_SUCCESS149(
+    kOpSuccess149, "OP_SUCCESS149");
+const ScriptOperator ScriptOperator::OP_SUCCESS150(
+    kOpSuccess150, "OP_SUCCESS150");
+const ScriptOperator ScriptOperator::OP_SUCCESS151(
+    kOpSuccess151, "OP_SUCCESS151");
+const ScriptOperator ScriptOperator::OP_SUCCESS152(
+    kOpSuccess152, "OP_SUCCESS152");
+const ScriptOperator ScriptOperator::OP_SUCCESS153(
+    kOpSuccess153, "OP_SUCCESS153");
+const ScriptOperator ScriptOperator::OP_SUCCESS187(
+    kOpSuccess187, "OP_SUCCESS187");
+const ScriptOperator ScriptOperator::OP_SUCCESS188(
+    kOpSuccess188, "OP_SUCCESS188");
+const ScriptOperator ScriptOperator::OP_SUCCESS189(
+    kOpSuccess189, "OP_SUCCESS189");
+const ScriptOperator ScriptOperator::OP_SUCCESS190(
+    kOpSuccess190, "OP_SUCCESS190");
+const ScriptOperator ScriptOperator::OP_SUCCESS191(
+    kOpSuccess191, "OP_SUCCESS191");
+const ScriptOperator ScriptOperator::OP_SUCCESS192(
+    kOpSuccess192, "OP_SUCCESS192");
+const ScriptOperator ScriptOperator::OP_SUCCESS193(
+    kOpSuccess193, "OP_SUCCESS193");
+const ScriptOperator ScriptOperator::OP_SUCCESS194(
+    kOpSuccess194, "OP_SUCCESS194");
+const ScriptOperator ScriptOperator::OP_SUCCESS195(
+    kOpSuccess195, "OP_SUCCESS195");
+const ScriptOperator ScriptOperator::OP_SUCCESS196(
+    kOpSuccess196, "OP_SUCCESS196");
+const ScriptOperator ScriptOperator::OP_SUCCESS197(
+    kOpSuccess197, "OP_SUCCESS197");
+const ScriptOperator ScriptOperator::OP_SUCCESS198(
+    kOpSuccess198, "OP_SUCCESS198");
+const ScriptOperator ScriptOperator::OP_SUCCESS199(
+    kOpSuccess199, "OP_SUCCESS199");
+const ScriptOperator ScriptOperator::OP_SUCCESS200(
+    kOpSuccess200, "OP_SUCCESS200");
+const ScriptOperator ScriptOperator::OP_SUCCESS201(
+    kOpSuccess201, "OP_SUCCESS201");
+const ScriptOperator ScriptOperator::OP_SUCCESS202(
+    kOpSuccess202, "OP_SUCCESS202");
+const ScriptOperator ScriptOperator::OP_SUCCESS203(
+    kOpSuccess203, "OP_SUCCESS203");
+const ScriptOperator ScriptOperator::OP_SUCCESS204(
+    kOpSuccess204, "OP_SUCCESS204");
+const ScriptOperator ScriptOperator::OP_SUCCESS205(
+    kOpSuccess205, "OP_SUCCESS205");
+const ScriptOperator ScriptOperator::OP_SUCCESS206(
+    kOpSuccess206, "OP_SUCCESS206");
+const ScriptOperator ScriptOperator::OP_SUCCESS207(
+    kOpSuccess207, "OP_SUCCESS207");
+const ScriptOperator ScriptOperator::OP_SUCCESS208(
+    kOpSuccess208, "OP_SUCCESS208");
+const ScriptOperator ScriptOperator::OP_SUCCESS209(
+    kOpSuccess209, "OP_SUCCESS209");
+const ScriptOperator ScriptOperator::OP_SUCCESS210(
+    kOpSuccess210, "OP_SUCCESS210");
+const ScriptOperator ScriptOperator::OP_SUCCESS211(
+    kOpSuccess211, "OP_SUCCESS211");
+const ScriptOperator ScriptOperator::OP_SUCCESS212(
+    kOpSuccess212, "OP_SUCCESS212");
+const ScriptOperator ScriptOperator::OP_SUCCESS213(
+    kOpSuccess213, "OP_SUCCESS213");
+const ScriptOperator ScriptOperator::OP_SUCCESS214(
+    kOpSuccess214, "OP_SUCCESS214");
+const ScriptOperator ScriptOperator::OP_SUCCESS215(
+    kOpSuccess215, "OP_SUCCESS215");
+const ScriptOperator ScriptOperator::OP_SUCCESS216(
+    kOpSuccess216, "OP_SUCCESS216");
+const ScriptOperator ScriptOperator::OP_SUCCESS217(
+    kOpSuccess217, "OP_SUCCESS217");
+const ScriptOperator ScriptOperator::OP_SUCCESS218(
+    kOpSuccess218, "OP_SUCCESS218");
+const ScriptOperator ScriptOperator::OP_SUCCESS219(
+    kOpSuccess219, "OP_SUCCESS219");
+const ScriptOperator ScriptOperator::OP_SUCCESS220(
+    kOpSuccess220, "OP_SUCCESS220");
+const ScriptOperator ScriptOperator::OP_SUCCESS221(
+    kOpSuccess221, "OP_SUCCESS221");
+const ScriptOperator ScriptOperator::OP_SUCCESS222(
+    kOpSuccess222, "OP_SUCCESS222");
+const ScriptOperator ScriptOperator::OP_SUCCESS223(
+    kOpSuccess223, "OP_SUCCESS223");
+const ScriptOperator ScriptOperator::OP_SUCCESS224(
+    kOpSuccess224, "OP_SUCCESS224");
+const ScriptOperator ScriptOperator::OP_SUCCESS225(
+    kOpSuccess225, "OP_SUCCESS225");
+const ScriptOperator ScriptOperator::OP_SUCCESS226(
+    kOpSuccess226, "OP_SUCCESS226");
+const ScriptOperator ScriptOperator::OP_SUCCESS227(
+    kOpSuccess227, "OP_SUCCESS227");
+const ScriptOperator ScriptOperator::OP_SUCCESS228(
+    kOpSuccess228, "OP_SUCCESS228");
+const ScriptOperator ScriptOperator::OP_SUCCESS229(
+    kOpSuccess229, "OP_SUCCESS229");
+const ScriptOperator ScriptOperator::OP_SUCCESS230(
+    kOpSuccess230, "OP_SUCCESS230");
+const ScriptOperator ScriptOperator::OP_SUCCESS231(
+    kOpSuccess231, "OP_SUCCESS231");
+const ScriptOperator ScriptOperator::OP_SUCCESS232(
+    kOpSuccess232, "OP_SUCCESS232");
+const ScriptOperator ScriptOperator::OP_SUCCESS233(
+    kOpSuccess233, "OP_SUCCESS233");
+const ScriptOperator ScriptOperator::OP_SUCCESS234(
+    kOpSuccess234, "OP_SUCCESS234");
+const ScriptOperator ScriptOperator::OP_SUCCESS235(
+    kOpSuccess235, "OP_SUCCESS235");
+const ScriptOperator ScriptOperator::OP_SUCCESS236(
+    kOpSuccess236, "OP_SUCCESS236");
+const ScriptOperator ScriptOperator::OP_SUCCESS237(
+    kOpSuccess237, "OP_SUCCESS237");
+const ScriptOperator ScriptOperator::OP_SUCCESS238(
+    kOpSuccess238, "OP_SUCCESS238");
+const ScriptOperator ScriptOperator::OP_SUCCESS239(
+    kOpSuccess239, "OP_SUCCESS239");
+const ScriptOperator ScriptOperator::OP_SUCCESS240(
+    kOpSuccess240, "OP_SUCCESS240");
+const ScriptOperator ScriptOperator::OP_SUCCESS241(
+    kOpSuccess241, "OP_SUCCESS241");
+const ScriptOperator ScriptOperator::OP_SUCCESS242(
+    kOpSuccess242, "OP_SUCCESS242");
+const ScriptOperator ScriptOperator::OP_SUCCESS243(
+    kOpSuccess243, "OP_SUCCESS243");
+const ScriptOperator ScriptOperator::OP_SUCCESS244(
+    kOpSuccess244, "OP_SUCCESS244");
+const ScriptOperator ScriptOperator::OP_SUCCESS245(
+    kOpSuccess245, "OP_SUCCESS245");
+const ScriptOperator ScriptOperator::OP_SUCCESS246(
+    kOpSuccess246, "OP_SUCCESS246");
+const ScriptOperator ScriptOperator::OP_SUCCESS247(
+    kOpSuccess247, "OP_SUCCESS247");
+const ScriptOperator ScriptOperator::OP_SUCCESS248(
+    kOpSuccess248, "OP_SUCCESS248");
+const ScriptOperator ScriptOperator::OP_SUCCESS249(
+    kOpSuccess249, "OP_SUCCESS249");
+const ScriptOperator ScriptOperator::OP_SUCCESS250(
+    kOpSuccess250, "OP_SUCCESS250");
+const ScriptOperator ScriptOperator::OP_SUCCESS251(
+    kOpSuccess251, "OP_SUCCESS251");
+const ScriptOperator ScriptOperator::OP_SUCCESS252(
+    kOpSuccess252, "OP_SUCCESS252");
+const ScriptOperator ScriptOperator::OP_SUCCESS253(
+    kOpSuccess253, "OP_SUCCESS253");
+const ScriptOperator ScriptOperator::OP_SUCCESS254(
+    kOpSuccess254, "OP_SUCCESS254");
 
 ScriptOperator::ScriptOperator(ScriptType data_type)
     : ScriptOperator(data_type, "") {
@@ -295,14 +470,29 @@ ScriptOperator ScriptOperator::Get(const std::string& message) {
   return ite->second;
 }
 
+bool ScriptOperator::IsOpSuccess(ScriptType op_code) {
+  if ((op_code == kOpSuccess80) || (op_code == kOpSuccess98) ||
+      ((op_code >= kOpSuccess126) && (op_code <= kOpSuccess129)) ||
+      ((op_code >= kOpSuccess131) && (op_code <= kOpSuccess134)) ||
+      ((op_code >= kOpSuccess137) && (op_code <= kOpSuccess138)) ||
+      ((op_code >= kOpSuccess141) && (op_code <= kOpSuccess142)) ||
+      ((op_code >= kOpSuccess149) && (op_code <= kOpSuccess153)) ||
+      ((op_code >= kOpSuccess187) && (op_code <= kOpSuccess254))) {
+    return true;
+  }
+  return false;
+}
+
 ScriptOperator::ScriptOperator(const ScriptOperator& object)
     : data_type_(object.data_type_), text_data_(object.text_data_) {
   // do nothing
 }
 
 ScriptOperator& ScriptOperator::operator=(const ScriptOperator& object) {
-  data_type_ = object.data_type_;
-  text_data_ = object.text_data_;
+  if (this != &object) {
+    data_type_ = object.data_type_;
+    text_data_ = object.text_data_;
+  }
   return *this;
 }
 
@@ -410,11 +600,21 @@ ScriptElement::ScriptElement(int64_t value)
   }
 }
 
+ScriptElement::ScriptElement(int64_t value, bool is_binary)
+    : ScriptElement(value) {
+  if (is_binary && type_ == kElementOpCode) {
+    type_ = kElementNumber;
+    binary_data_ = ByteData(SerializeScriptNum(value_));
+  }
+}
+
 ScriptElement& ScriptElement::operator=(const ScriptElement& element) {
-  type_ = element.type_;
-  op_code_ = element.op_code_;
-  binary_data_ = element.binary_data_;
-  value_ = element.value_;
+  if (this != &element) {
+    type_ = element.type_;
+    op_code_ = element.op_code_;
+    binary_data_ = element.binary_data_;
+    value_ = element.value_;
+  }
   return *this;
 }
 
@@ -583,6 +783,19 @@ Script::Script(const ByteData& bytedata)
   SetStackData(bytedata);
 }
 
+Script::Script(const Script& object) {
+  script_data_ = object.script_data_;
+  script_stack_ = object.script_stack_;
+}
+
+Script& Script::operator=(const Script& object) & {
+  if (this != &object) {
+    script_data_ = object.script_data_;
+    script_stack_ = object.script_stack_;
+  }
+  return *this;
+}
+
 void Script::SetStackData(const ByteData& bytedata) {
   std::vector<uint8_t> buffer = bytedata.GetBytes();
   static const std::set<ScriptType> kUseScriptNum1{
@@ -610,6 +823,7 @@ void Script::SetStackData(const ByteData& bytedata) {
       kOpMin,
       kOpMax,
       kOpGreaterThanOrEqual};
+  static const std::set<ScriptType> kUseScriptNum3{kOpWithIn, kOpCheckSigAdd};
 
   // create stack
   bool is_collect_buffer = false;
@@ -668,7 +882,7 @@ void Script::SetStackData(const ByteData& bytedata) {
     } else {
       // if ((bytedata == OP_0) || ((byteadata >= OP_PUSHDATA1)
       //     && (byteadata <= OP_NOP10)))
-      // TODO(k-matsuzawa): script拡張を考慮しOP値の厳格なチェックには行わない。
+      // TODO(k-matsuzawa): Considering script extension, do not perform strict check of OP value.  // NOLINT
 
       // Setting for ScriptOperator
       ScriptType type = (ScriptType)view_data;
@@ -693,7 +907,7 @@ void Script::SetStackData(const ByteData& bytedata) {
             if (script_stack_.size() > 2) {
               convert_count = 2;
             }
-          } else if (type == kOpWithIn) {  // 3個
+          } else if (kUseScriptNum3.count(type) > 0) {
             if (script_stack_.size() > 3) {
               convert_count = 3;
             }
@@ -738,7 +952,7 @@ void Script::SetStackData(const ByteData& bytedata) {
 
       if (collect_buffer_size <= kMaxScriptNumSize) {
         ScriptElement script_element =
-            ScriptElement(ConvertToNumber(collect_buffer));
+            ScriptElement(ConvertToNumber(collect_buffer), true);
         script_stack_.push_back(script_element);
       } else {
         ByteData byte_array = ByteData(collect_buffer);
@@ -789,6 +1003,10 @@ const ByteData Script::GetData() const { return script_data_; }
 const std::string Script::GetHex() const { return script_data_.GetHex(); }
 
 bool Script::IsEmpty() const { return script_data_.GetBytes().empty(); }
+
+bool Script::Equals(const Script& object) const {
+  return script_data_.Equals(object.script_data_);
+}
 
 std::vector<ScriptElement> Script::GetElementList() const {
   return script_stack_;
@@ -861,6 +1079,19 @@ bool Script::IsMultisigScript() const {
           ScriptOperator::OP_CHECKMULTISIG) {
     return false;
   }
+  int64_t req_num = script_stack_[0].GetNumber();
+  int64_t num = script_stack_[(script_stack_.size() - 2)].GetNumber();
+  if (req_num <= 16 && !script_stack_[0].IsOpCode()) {
+    return false;
+  }
+  if (num <= 16 && !script_stack_[(script_stack_.size() - 2)].IsOpCode()) {
+    return false;
+  }
+
+  if (req_num > num || req_num == 0 ||
+      num != static_cast<int64_t>(script_stack_.size() - 3)) {
+    return false;
+  }
 
   for (size_t i = 1; i < (script_stack_.size() - 2); ++i) {
     if (!script_stack_[i].IsBinary() ||
@@ -868,21 +1099,43 @@ bool Script::IsMultisigScript() const {
       return false;
     }
   }
-
-  if (script_stack_[0].GetNumber() >
-      script_stack_[(script_stack_.size() - 2)].GetNumber()) {
-    return false;
-  }
-
   return true;
 }
 
 bool Script::IsWitnessProgram() const {
-  return (
-      (kMinWitnessProgramLength <= script_data_.GetDataSize() ||
-       script_data_.GetDataSize() <= kMaxWitnessProgramLength) &&
-      script_stack_[0].GetOpCode() == ScriptOperator::OP_0 &&
-      script_stack_[1].IsBinary());
+  if ((script_data_.GetDataSize() < kMinWitnessProgramLength) ||
+      (kMaxWitnessProgramLength < script_data_.GetDataSize()) ||
+      (script_stack_.size() != 2) || (!script_stack_[0].IsOpCode()) ||
+      (!script_stack_[1].IsBinary())) {
+    return false;
+  }
+  auto op_code = script_stack_[0].GetOpCode().GetDataType();
+  if ((op_code != ScriptType::kOp_0) &&
+      ((op_code < ScriptType::kOp_1) || (op_code > ScriptType::kOp_16))) {
+    return false;
+  }
+
+  auto hash_size = script_stack_[1].GetBinaryData().GetDataSize();
+  if (op_code == ScriptType::kOp_0) {
+    if ((hash_size != 0x14) && (hash_size != 0x20)) return false;
+  } else if (op_code == ScriptType::kOp_1) {
+    if (hash_size != 0x20) return false;
+  }
+  return true;
+}
+
+WitnessVersion Script::GetWitnessVersion() const {
+  if (IsWitnessProgram()) {
+    auto val = script_stack_[0].GetOpCode().GetDataType();
+    if (kOp_0 == val) {
+      return WitnessVersion::kVersion0;
+    } else if ((kOp_1 <= val) && (val <= kOp_16)) {
+      auto num = val - kOp_1;
+      auto version = WitnessVersion::kVersion1 + num;
+      return static_cast<WitnessVersion>(version);
+    }
+  }
+  return WitnessVersion::kVersionNone;
 }
 
 bool Script::IsP2wpkhScript() const {
@@ -899,6 +1152,15 @@ bool Script::IsP2wshScript() const {
       script_data_.GetDataSize() == kScriptHashP2wshLength &&
       script_stack_.size() == 2 &&
       script_stack_[0].GetOpCode() == ScriptOperator::OP_0 &&
+      script_stack_[1].IsBinary() &&
+      script_stack_[1].GetBinaryData().GetDataSize() == kByteData256Length);
+}
+
+bool Script::IsTaprootScript() const {
+  return (
+      script_data_.GetDataSize() == kScriptHashTaprootLength &&
+      script_stack_.size() == 2 &&
+      script_stack_[0].GetOpCode() == ScriptOperator::OP_1 &&
       script_stack_[1].IsBinary() &&
       script_stack_[1].GetBinaryData().GetDataSize() == kByteData256Length);
 }
@@ -1036,6 +1298,47 @@ ScriptBuilder& ScriptBuilder::AppendElement(const ScriptElement& element) {
   return *this;
 }
 
+ScriptBuilder& ScriptBuilder::operator<<(const std::string& message) {
+  return AppendString(message);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(ScriptType type) {
+  return AppendOperator(type);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(
+    const ScriptOperator& operate_object) {
+  return AppendOperator(operate_object);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(const ByteData& data) {
+  return AppendData(data);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(const ByteData160& data) {
+  return AppendData(data);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(const ByteData256& data) {
+  return AppendData(data);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(const Pubkey& pubkey) {
+  return AppendData(pubkey);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(const Script& script) {
+  return AppendData(script);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(const int64_t& data) {
+  return AppendData(data);
+}
+
+ScriptBuilder& ScriptBuilder::operator<<(const ScriptElement& element) {
+  return AppendElement(element);
+}
+
 Script ScriptBuilder::Build() {
   ByteData data(script_byte_array_);
   if (data.GetDataSize() > Script::kMaxScriptSize) {
@@ -1137,6 +1440,13 @@ Script ScriptUtil::CreateP2wshLockingScript(const Script& redeem_script) {
   return CreateP2wshLockingScript(script_hash);
 }
 
+Script ScriptUtil::CreateTaprootLockingScript(const ByteData256& data) {
+  ScriptBuilder builder;
+  builder.AppendOperator(ScriptOperator::OP_1);
+  builder.AppendData(data);
+  return builder.Build();
+}
+
 bool ScriptUtil::IsValidRedeemScript(const Script& redeem_script) {
   size_t script_buf_size = redeem_script.GetData().GetDataSize();
   if (script_buf_size > Script::kMaxRedeemScriptSize) {
@@ -1150,7 +1460,8 @@ bool ScriptUtil::IsValidRedeemScript(const Script& redeem_script) {
 
 // OP_n <pubkey> ... OP_<requireSigNum> OP_CHECKMULTISIG
 Script ScriptUtil::CreateMultisigRedeemScript(
-    uint32_t require_signature_num, const std::vector<Pubkey>& pubkeys) {
+    uint32_t require_signature_num, const std::vector<Pubkey>& pubkeys,
+    bool has_witness) {
   if (require_signature_num == 0) {
     warn(CFD_LOG_SOURCE, "Invalid require_sig_num. require_sig_num = 0");
     throw CfdException(
@@ -1172,7 +1483,8 @@ Script ScriptUtil::CreateMultisigRedeemScript(
         CfdError::kCfdIllegalArgumentError,
         "CreateMultisigScript require_num is over.");
   }
-  if (pubkeys.size() > 15) {
+  size_t max_num = (has_witness) ? Script::kMaxMultisigPubkeyNum : 15;
+  if (pubkeys.size() > max_num) {
     warn(CFD_LOG_SOURCE, "pubkey array size is over.");
     throw CfdException(
         CfdError::kCfdIllegalArgumentError,
@@ -1184,15 +1496,12 @@ Script ScriptUtil::CreateMultisigRedeemScript(
 
   // create script
   ScriptBuilder builder;
-  builder.AppendOperator(op_require_num.GetOpCode());
-  for (const Pubkey& pubkey : pubkeys) {
-    builder.AppendData(pubkey);
-  }
-  builder.AppendOperator(op_pubkey_num.GetOpCode());
-  builder.AppendOperator(ScriptOperator::OP_CHECKMULTISIG);
+  builder << op_require_num;
+  for (const Pubkey& pubkey : pubkeys) builder << pubkey;
+  builder << op_pubkey_num << ScriptOperator::OP_CHECKMULTISIG;
   Script redeem_script = builder.Build();
 
-  if (!IsValidRedeemScript(redeem_script)) {
+  if ((!has_witness) && (!IsValidRedeemScript(redeem_script))) {
     warn(CFD_LOG_SOURCE, "Multisig script size is over.");
     throw CfdException(
         CfdError::kCfdIllegalArgumentError,

@@ -10,6 +10,7 @@ using cfd::core::CfdException;
 using cfd::core::ByteData;
 using cfd::core::ByteData256;
 using cfd::core::ExtPubkey;
+using cfd::core::KeyData;
 using cfd::core::Privkey;
 using cfd::core::Pubkey;
 using cfd::core::NetType;
@@ -164,6 +165,15 @@ TEST(ExtPubkey, DerivePubkeyTest) {
   EXPECT_NO_THROW((child2 = extkey.DerivePubkey("/1/1")));  // start slash
 
   EXPECT_THROW((child2 = extkey.DerivePubkey("1/2//3")), CfdException);  // empty number
+
+  // KeyData
+  KeyData data1 = extkey.DerivePubkeyData("0/44");
+  EXPECT_STREQ("[b7665978/0/44]tpubDF7yNiHQHdfns9Mc3XM7PYcS2dqrPqcit3FLkebvHxS4atZxifANou2KTvpQQQP82ANDCkPc5MPQZ28pjYGgmDXGy1iyzaiX6MTBv8i4cua", data1.ToString(false).c_str());
+  EXPECT_STREQ("tpubDF7yNiHQHdfns9Mc3XM7PYcS2dqrPqcit3FLkebvHxS4atZxifANou2KTvpQQQP82ANDCkPc5MPQZ28pjYGgmDXGy1iyzaiX6MTBv8i4cua", data1.GetExtPubkey().ToString().c_str());
+
+  KeyData data2 = extkey.DerivePubkeyData(path);
+  EXPECT_STREQ("[b7665978/0/44]tpubDF7yNiHQHdfns9Mc3XM7PYcS2dqrPqcit3FLkebvHxS4atZxifANou2KTvpQQQP82ANDCkPc5MPQZ28pjYGgmDXGy1iyzaiX6MTBv8i4cua", data2.ToString(false).c_str());
+  EXPECT_STREQ("tpubDF7yNiHQHdfns9Mc3XM7PYcS2dqrPqcit3FLkebvHxS4atZxifANou2KTvpQQQP82ANDCkPc5MPQZ28pjYGgmDXGy1iyzaiX6MTBv8i4cua", data2.GetExtPubkey().ToString().c_str());
 }
 
 TEST(ExtPubkey, DerivePubTweakTest) {

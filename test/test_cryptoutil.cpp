@@ -38,6 +38,16 @@ TEST(CryptoUtil, EncryptAes256String19) {
       "752fe203af4a4d427997e5d2c8b246530e0546b66d2982a49e333e77295dccea");
 }
 
+TEST(CryptoUtil, EncryptAes256ByteData) {
+  ByteData key(
+      "616975656F616975656F616975656F616975656F616975656F616975656F6169");
+  ByteData data("74657374207465737420746573742074657374");
+  ByteData byte_data = CryptoUtil::EncryptAes256(key, data);
+  EXPECT_STREQ(
+      byte_data.GetHex().c_str(),
+      "752fe203af4a4d427997e5d2c8b246530e0546b66d2982a49e333e77295dccea");
+}
+
 TEST(CryptoUtil, EncryptAes256KeyEmpty) {
   try {
     std::vector<uint8_t> key;
@@ -92,6 +102,17 @@ TEST(CryptoUtil, DecryptAes256ToString2) {
   std::string result = CryptoUtil::DecryptAes256ToString(key.GetBytes(), data);
 
   EXPECT_STREQ(result.c_str(), "test test test test");
+}
+
+TEST(CryptoUtil, DecryptAes256ByteData) {
+  ByteData key(
+      "616975656F616975656F616975656F616975656F616975656F616975656F6169");
+  ByteData data(
+      "752fe203af4a4d427997e5d2c8b246530e0546b66d2982a49e333e77295dccea");
+  ByteData result = CryptoUtil::DecryptAes256(key, data);
+
+  EXPECT_STREQ(result.GetHex().c_str(),
+      "7465737420746573742074657374207465737400000000000000000000000000");
 }
 
 TEST(CryptoUtil, DecryptAes256ToStringKeyEmpty) {

@@ -15,6 +15,8 @@ TEST_CFDCORE_SOURCES= \
     test_bytedata.cpp \
     test_bytedata160.cpp \
     test_bytedata256.cpp \
+    test_serializer.cpp \
+    test_deserializer.cpp \
     test_hashutil.cpp \
     test_hdwallet.cpp \
     test_cryptoutil.cpp \
@@ -28,6 +30,8 @@ TEST_CFDCORE_SOURCES= \
     test_privkey.cpp \
     test_extpubkey.cpp \
     test_extprivkey.cpp \
+    test_keydata.cpp \
+    test_psbt.cpp \
     test_descriptor.cpp \
     test_address.cpp \
     test_outpoint.cpp \
@@ -45,6 +49,8 @@ TEST_CFDCORE_SOURCES= \
     test_sighashtype.cpp \
     test_schnorrsig.cpp \
     test_ecdsa_adaptor.cpp \
+    test_taproot_merkletree.cpp \
+    test_taproot_util.cpp \
     ${TEST_CFDCORE_ELEMENTS_SOURCES}
 
 TEST_CFDCORE_STATIC_SOURCES= \

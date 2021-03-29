@@ -1,8 +1,8 @@
-// Copyright 2019 CryptoGarage
+// Copyright 2020 CryptoGarage
 /**
  * @file cfdcore_key.h
  *
- * @brief Pubkey/Privkey関連クラス定義
+ * @brief definition for Pubkey/Privkey class
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_KEY_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_KEY_H_
@@ -18,7 +18,7 @@ namespace core {
 
 /**
  * @typedef NetType
- * @brief Bitcoin networkの定義
+ * @brief definition for Bitcoin/Liquid network.
  */
 typedef enum {
   kMainnet = 0,               //!< MAINNET
@@ -31,7 +31,7 @@ typedef enum {
 } NetType;
 
 /**
- * @brief PublicKeyを表現するデータクラス
+ * @brief Data class representing PublicKey
  */
 class CFD_CORE_EXPORT Pubkey {
  public:
@@ -45,37 +45,38 @@ class CFD_CORE_EXPORT Pubkey {
   static constexpr uint32_t kCompressedPubkeySize = 33;
 
   /**
-   * @brief デフォルトコンストラクタ
+   * @brief constructor
    */
   Pubkey();
 
   /**
-   * @brief コンストラクタ
-   * @param[in] byte_data   公開鍵のByteDataインスタンス
+   * @brief constructor
+   * @param[in] byte_data   Public key ByteData instance
    */
   explicit Pubkey(ByteData byte_data);
 
   /**
-   * @brief HEX文字列からPublicKeyモデルを復元するコンストラクタ.
-   * @param[in] hex_string PublicKeyのHEX文字列
+   * @brief constructor
+   * @param[in] hex_string Public Key HEX string
    */
   explicit Pubkey(const std::string &hex_string);
 
   /**
-   * @brief 自身のByteDataからHEX文字列を取得する.
-   * @return 公開鍵のHEX文字列
+   * @brief Get HEX string.
+   * @return HEX string.
    */
   std::string GetHex() const;
 
   /**
-   * @brief 自身のByteDataを取得する.
-   * @return 公開鍵のByteData
+   * @brief Get ByteData instance.
+   * @return ByteData
    */
   ByteData GetData() const;
 
   /**
-   * @brief 公開鍵がCompress形式であるかを返却する.
-   * @return Compressであればtrue, Uncompressであればfalse
+   * @brief Returns whether the public key is in Compress format.
+   * @retval true  compressed key.
+   * @retval false uncompressed key.
    */
   bool IsCompress() const;
 
@@ -87,32 +88,39 @@ class CFD_CORE_EXPORT Pubkey {
   bool IsParity() const;
 
   /**
-   * @brief 公開鍵として正しい形式であるかを検証する.
-   * @retval true   正常フォーマット
-   * @retval false  不正フォーマット
+   * @brief Verify that the public key is in the correct format.
+   * @retval true   valid format
+   * @retval false  invalid format
    */
   bool IsValid() const;
 
   /**
-   * @brief 公開鍵が一致するかチェックする.
-   * @param[in] pubkey 比較対象Pubkey
-   * @retval true   一致
-   * @retval false  不一致
+   * @brief Check if the public keys match.
+   * @param[in] pubkey check target Pubkey
+   * @retval true   equal
+   * @retval false  not equal
    */
   bool Equals(const Pubkey &pubkey) const;
 
   /**
-   * @brief 合成Pubkeyを生成する.
-   * @param[in] pubkeys 合成元Pubkey list
-   * @return 合成したPubkeyインスタンス
+   * @brief Get fingerprint.
+   * @param[in] get_size    get fingerprint size.
+   * @return fingerprint
+   */
+  ByteData GetFingerprint(uint32_t get_size = 4) const;
+
+  /**
+   * @brief Combine pubkeys.
+   * @param[in] pubkeys Pubkey list
+   * @return Combined pubkey
    */
   static Pubkey CombinePubkey(const std::vector<Pubkey> &pubkeys);
 
   /**
-   * @brief 合成Pubkeyを生成する.
-   * @param[in] pubkey 合成元Pubkey
-   * @param[in] message_key 合成するmessage Pubkey
-   * @return 合成したPubkeyインスタンス
+   * @brief Combine pubkey.
+   * @param[in] pubkey base pubkey
+   * @param[in] message_key combine pubkey
+   * @return Combined pubkey
    */
   static Pubkey CombinePubkey(const Pubkey &pubkey, const Pubkey &message_key);
 
@@ -164,19 +172,19 @@ class CFD_CORE_EXPORT Pubkey {
       const ByteData256 &signature_hash, const ByteData &signature) const;
 
   /**
-   * @brief 公開鍵として正しい形式であるかを検証する.
-   * @param[in] byte_data 公開鍵のByteData
-   * @retval true   正常フォーマット
-   * @retval false  不正フォーマット
+   * @brief Verify that the public key is in the correct format.
+   * @param[in] byte_data pubkey bytedata
+   * @retval true   valid format
+   * @retval false  invalid format
    */
   static bool IsValid(const ByteData &byte_data);
 
   /**
-   * @brief 指定された2つの公開鍵のHEX値を比較する.
+   * @brief Compare the HEX values ​​of the two specified public keys.
    * @param[in] source        source target
    * @param[in] destination   destination target
-   * @retval true   大きい
-   * @retval false  小さい
+   * @retval true   Large
+   * @retval false  Small
    */
   static bool IsLarge(const Pubkey &source, const Pubkey &destination);
 
@@ -213,7 +221,7 @@ class CFD_CORE_EXPORT Pubkey {
 };
 
 /**
- * @brief Private Keyを表現するデータクラス
+ * @brief Data class representing Private Key
  */
 class CFD_CORE_EXPORT Privkey {
  public:
@@ -222,52 +230,69 @@ class CFD_CORE_EXPORT Privkey {
    */
   static constexpr uint32_t kPrivkeySize = 32;  // EC_PRIVATE_KEY_LEN
   /**
-   * @brief デフォルトコンストラクタ
+   * @brief default constructor.
    */
   Privkey();
 
   /**
-   * @brief コンストラクタ
-   * @param[in] byte_data 秘密鍵のByteDataインスタンス
+   * @brief constructor.
+   * @param[in] byte_data ByteData object.
+   * @param[in] net_type Mainnet or Testnet
+   * @param[in] is_compressed pubkey compressed flag.
    */
-  explicit Privkey(const ByteData &byte_data);
+  explicit Privkey(
+      const ByteData &byte_data, NetType net_type = NetType::kMainnet,
+      bool is_compressed = true);
 
   /**
-   * @brief コンストラクタ
-   * @param[in] byte_data 秘密鍵のByteDataインスタンス
+   * @brief constructor.
+   * @param[in] byte_data ByteData object.
+   * @param[in] net_type Mainnet or Testnet
+   * @param[in] is_compressed pubkey compressed flag.
    */
-  explicit Privkey(const ByteData256 &byte_data);
+  explicit Privkey(
+      const ByteData256 &byte_data, NetType net_type = NetType::kMainnet,
+      bool is_compressed = true);
 
   /**
-   * @brief 文字列からPrivateKeyモデルを復元するコンストラクタ.
-   * @param[in] hex_str PrivateKeyのHEX文字列
+   * @brief constructor.
+   * @param[in] hex_str PrivateKey HEX string
+   * @param[in] net_type Mainnet or Testnet
+   * @param[in] is_compressed pubkey compressed flag.
    */
-  explicit Privkey(const std::string &hex_str);
+  explicit Privkey(
+      const std::string &hex_str, NetType net_type = NetType::kMainnet,
+      bool is_compressed = true);
 
   /**
-   * @brief 自身のByteDataからHEX文字列を取得する.
-   * @return 秘密鍵のHEX文字列
+   * @brief Get HEX string.
+   * @return HEX string
    */
   std::string GetHex() const;
 
   /**
-   * @brief 自身のByteDataを取得する.
-   * @return 秘密鍵のByteData
+   * @brief Get ByteData instance.
+   * @return ByteData
    */
   ByteData GetData() const;
 
   /**
-   * @brief WIFに変換する.
+   * @brief Convert to WIF.
    * @param[in] net_type Mainnet or Testnet
-   * @param[in] is_compressed privatekeyから導出するpubkeyのcompress有無
-   * @return WIF文字列
+   * @param[in] is_compressed   pubkey compressed flag.
+   * @return WIF
    */
   std::string ConvertWif(NetType net_type, bool is_compressed = true) const;
+  /**
+   * @brief Get Wallet Import Format from member value.
+   * @return WIF
+   */
+  std::string GetWif() const;
 
   /**
-   * @brief Private keyからPubkeyインスタンスを生成する.
-   * @param[in] is_compressed privatekeyから導出するpubkeyのcompress有無
-   * @return Pubkeyインスタンス
+   * @brief Generate pubkey to privkey.
+   * @param[in] is_compressed   pubkey compressed flag.
+   * @return Pubkey
    */
   Pubkey GeneratePubkey(bool is_compressed = true) const;
 
@@ -320,17 +345,17 @@ class CFD_CORE_EXPORT Privkey {
   Privkey CreateNegate() const;
 
   /**
-   * @brief PrivateKeyの設定状態が不正であるかを返却する.
-   * @retval true 状態が不正
-   * @retval false 状態は正常
-   * @deprecated API整理時に削除予定
+   * @brief Returns whether the private key setting status is invalid.
+   * @retval true invalid
+   * @retval false valid
+   * @deprecated Scheduled to be deleted when organizing API
    */
   bool IsInvalid() const;
 
   /**
-   * @brief PrivateKeyの設定状態が正常であるかを返却する.
-   * @retval true 状態は正常
-   * @retval false 状態が不正
+   * @brief Returns whether the Private Key setting status is normal.
+   * @retval true  valid
+   * @retval false invalid
    */
   bool IsValid() const;
 
@@ -356,22 +381,28 @@ class CFD_CORE_EXPORT Privkey {
    * @param[in] is_compressed  pubkey compressed.
    */
   void SetPubkeyCompressed(bool is_compressed);
+  /**
+   * @brief set network type.
+   * @param[in] net_type  network type.
+   */
+  void SetNetType(NetType net_type);
 
   /**
-   * @brief WIFからPrivKeyインスタンスを生成する.
-   * @param[in] wif WIF文字列
+   * @brief Generate privkey from WIF.
+   * @param[in] wif WIF
    * @param[in] net_type Mainnet or Testnet
-   * @param[in] is_compressed privatekeyから導出するpubkeyのcompress有無
-   * @return Privkeyインスタンス
+   * @param[in] is_compressed  pubkey compress flag.
+   * @return Privkey
    */
   static Privkey FromWif(
-      const std::string &wif, NetType net_type, bool is_compressed = true);
+      const std::string &wif, NetType net_type = NetType::kCustomChain,
+      bool is_compressed = true);
 
   /**
-   * @brief 乱数からPrivkeyインスタンスを生成する.
+   * @brief Generate Privkey from random numbers.
    *
-   * 生成できるまで繰り返すため、時間がかかる場合がある.
-   * @return Privkeyインスタンス
+   * It may take some time because it repeats until it can be generated.
+   * @return Privkey
    */
   static Privkey GenerageRandomKey();
 
@@ -433,12 +464,16 @@ class CFD_CORE_EXPORT Privkey {
    * @brief pubkey compressed.
    */
   bool is_compressed_ = true;
+  /**
+   * @brief network type. 
+   */
+  NetType net_type_ = NetType::kMainnet;
 
   /**
-   * @brief 秘密鍵として正しい形式であるかを検証する.
-   * @param[in] buffer 秘密鍵のByteData
-   * @retval true   正常フォーマット
-   * @retval false  不正フォーマット
+   * @brief Verify that it is in the correct format as a private key.
+   * @param[in] buffer  ByteData of privkey.
+   * @retval true   valid
+   * @retval false  invalid
    */
   static bool IsValid(const std::vector<uint8_t> &buffer);
 };

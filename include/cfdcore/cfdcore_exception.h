@@ -1,7 +1,7 @@
 // Copyright 2019 CryptoGarage
 /**
  * @file cfdcore_exception.h
- * @brief cfdの例外クラス定義ファイルです。
+ * @brief The cfd exception class definition file.
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_EXCEPTION_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_EXCEPTION_H_
@@ -14,11 +14,11 @@
 #include "cfdcore/cfdcore_common.h"
 
 #ifndef _GLIBCXX_TXN_SAFE_DYN
-/// インクルードガード(_GLIBCXX_TXN_SAFE_DYN)
+/// Include guard (_GLIBCXX_TXN_SAFE_DYN)
 #define _GLIBCXX_TXN_SAFE_DYN
 #endif
 #ifndef _GLIBCXX_USE_NOEXCEPT
-/// インクルードガード(_GLIBCXX_USE_NOEXCEPT)
+/// Include guard (_GLIBCXX_USE_NOEXCEPT)
 #define _GLIBCXX_USE_NOEXCEPT noexcept
 #endif
 
@@ -26,78 +26,78 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief エラーコード定義
+ * @brief Error code definition.
  */
 typedef enum {
-  kCfdSuccess = 0,               //!< 正常終了
-  kCfdUnknownError = -1,         //!< 不明なエラー
-  kCfdInternalError = -2,        //!< 内部エラー
-  kCfdMemoryFullError = -3,      //!< メモリ確保エラー
-  kCfdIllegalArgumentError = 1,  //!< 引数不正
-  kCfdIllegalStateError = 2,     //!< 状態不正
-  kCfdOutOfRangeError = 3,       //!< 範囲外の値
-  kCfdInvalidSettingError = 4,   //!< 設定不正
-  kCfdConnectionError = 5,       //!< 接続エラー
-  kCfdDiskAccessError = 6        //!< ディスクアクセスエラー
+  kCfdSuccess = 0,               //!< Successful completion
+  kCfdUnknownError = -1,         //!< Unknown error
+  kCfdInternalError = -2,        //!< Internal error
+  kCfdMemoryFullError = -3,      //!< Memory allocation error
+  kCfdIllegalArgumentError = 1,  //!< Invalid argument
+  kCfdIllegalStateError = 2,     //!< Illegal state
+  kCfdOutOfRangeError = 3,       //!< Out of range value
+  kCfdInvalidSettingError = 4,   //!< Improper settings
+  kCfdConnectionError = 5,       //!< Connection error
+  kCfdDiskAccessError = 6        //!< Disk access error
 } CfdError;
 
-/// @brief エラーメッセージ：不明なエラー
+/// @brief Error message: Unknown error
 const char kCfdUnknownErrorMessage[] = "Unknown error occurred.";
 
 /**
- * @brief CFD例外クラス
+ * @brief CFD exception class.
  */
 class CfdException : public std::exception {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief Constructor.
    */
   CfdException()
       : error_code_(kCfdUnknownError), message_(kCfdUnknownErrorMessage) {}
   /**
-   * @brief コンストラクタ
-   * @param[in] message   エラーメッセージ
+   * @brief Constructor.
+   * @param[in] message   Error message.
    */
   explicit CfdException(const std::string& message)
       : error_code_(kCfdUnknownError), message_(message) {}
   /**
-   * @brief コンストラクタ
-   * @param[in] error_code    エラーコード
+   * @brief Constructor.
+   * @param[in] error_code    Error code.
    */
   explicit CfdException(CfdError error_code)
       : error_code_(error_code), message_(kCfdUnknownErrorMessage) {}
   /**
-   * @brief コンストラクタ
-   * @param[in] error_code    エラーコード
-   * @param[in] message       エラーメッセージ
+   * @brief Constructor.
+   * @param[in] error_code    Error code.
+   * @param[in] message       Error message.
    */
   CfdException(CfdError error_code, const std::string& message)
       : error_code_(error_code), message_(message) {}
   /**
-   * @brief デストラクタ
+   * @brief Destructor.
    */
   virtual ~CfdException(void) _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_USE_NOEXCEPT {
     // do nothing
   }
   /**
-   * @brief エラーメッセージを取得する.
-   * @return エラーメッセージ
+   * @brief Get an error message.
+   * @return Error message.
    */
   virtual const char* what() const _GLIBCXX_TXN_SAFE_DYN
       _GLIBCXX_USE_NOEXCEPT {
     return message_.c_str();
   }
   /**
-   * @brief エラーコードを取得する.
-   * @return エラーコード
+   * @brief Get an error code.
+   * @return Error code.
    */
   virtual CfdError GetErrorCode() const _GLIBCXX_TXN_SAFE_DYN
       _GLIBCXX_USE_NOEXCEPT {
     return error_code_;
   }
   /**
-   * @brief エラーコードに即したエラータイプを取得する.
-   * @return エラータイプ文字列
+   * @brief Get the error type according to the error code.
+   * @return Error type string.
    */
   virtual std::string GetErrorType() const _GLIBCXX_TXN_SAFE_DYN
       _GLIBCXX_USE_NOEXCEPT {
@@ -116,38 +116,38 @@ class CfdException : public std::exception {
   }
 
  protected:
-  CfdError error_code_;  ///< エラーコード
-  std::string message_;  ///< エラーメッセージ
+  CfdError error_code_;  ///< error code
+  std::string message_;  ///< error message
 };
 
 // -----------------------------------------------------------------------------
 // InvalidScriptException
 // -----------------------------------------------------------------------------
-/// @brief スクリプト例外メッセージ
+/// @brief Script exception message
 const char kCfdInvalidScriptMessage[] = "invalid script error.";
 
 /**
- * @brief スクリプト例外クラス.
+ * @brief Script exception class.
  */
 class InvalidScriptException : public CfdException {
  public:
   /**
-   * @brief コンストラクタ.
+   * @brief Constructor.
    */
   InvalidScriptException()
       : CfdException(kCfdIllegalArgumentError, kCfdInvalidScriptMessage) {
     // do nothing
   }
   /**
-   * @brief コンストラクタ.
-   * @param[in] message   エラーメッセージ
+   * @brief Constructor.
+   * @param[in] message   error message
    */
   explicit InvalidScriptException(const std::string& message)
       : CfdException(kCfdIllegalArgumentError, message) {
     // do nothing
   }
   /**
-   * @brief デストラクタ.
+   * @brief Destructor.
    */
   virtual ~InvalidScriptException(void)
       _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_USE_NOEXCEPT {

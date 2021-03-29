@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_json_writer.h
  *
- * @brief JSON文字列の生成時に使用にするクラスを定義する。
+ * @brief Define the class to be used when generating the JSON string.
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_JSON_WRITER_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_JSON_WRITER_H_
@@ -16,75 +16,76 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief Json生成時に利用するクラス。
+ * @brief Class used when generating Json.
  */
 class JsonElement {
  public:
   /**
-   * @brief コンストラクタ
-   * @param[in] key キー値
+   * @brief Constructor.
+   * @param[in] key   key
    */
   explicit JsonElement(std::string key) : key_(key), value_() {}
   /**
-   * @brief コンストラクタ
-   * @param[in] key     キー値
-   * @param[in] object  エレメントオブジェクト
+   * @brief Constructor.
+   * @param[in] key     key
+   * @param[in] object  element object
    */
   JsonElement(std::string key, const JsonElement& object)
       : key_(key), value_(UniValue::VOBJ) {
     value_.push_back(object.GetUnivalue());
   }
   /**
-   * @brief コンストラクタ
-   * @param[in] value   UniValueオブジェクト
+   * @brief Constructor.
+   * @param[in] value   UniValue object
    */
   explicit JsonElement(const UniValue& value) : key_(), value_(value) {}
   /**
-   * @brief コンストラクタ
-   * @param[in] key     キー値
-   * @param[in] value   UniValueオブジェクト
+   * @brief Constructor.
+   * @param[in] key     key
+   * @param[in] value   UniValue object
    */
   JsonElement(std::string key, const UniValue& value)
       : key_(key), value_(value) {}
   /**
-   * @brief コンストラクタ
-   * @param[in] key     キー値
-   * @param[in] value   設定値
+   * @brief Constructor.
+   * @param[in] key     key
+   * @param[in] value   value
    */
   template <typename TYPE>
   JsonElement(std::string key, TYPE value) : key_(key), value_(value) {}
   /**
-   * @brief デストラクタ
+   * @brief destructor.
    */
   virtual ~JsonElement() {}
 
   /**
-   * @brief キー値を設定する。
-   * @param[in] key     キー値
+   * @brief Set the key.
+   * @param[in] key     key
    */
   void SetKey(const std::string& key) { key_ = key; }
   /**
-   * @brief キー値を取得する。
-   * @return キー値
+   * @brief Get the key.
+   * @return key
    */
   const std::string& GetKey() const { return key_; }
   /**
-   * @brief UniValue値を取得する。
-   * @return UniValueオブジェクト
+   * @brief Get the UniValue object.
+   * @return UniValue object
    */
   const UniValue& GetUnivalue() const { return value_; }
 
  protected:
-  std::string key_;  ///< キー値
-  UniValue value_;   ///< UniValueオブジェクト
+  std::string key_;  ///< key
+  UniValue value_;   ///< UniValue object
 };
 
 /**
- * @brief Json生成用クラス。
+ * @brief Json generation class.
  *
- * Json生成のみ対応。Json文字列からの変換には対応せず。
+ * Only Json generation is supported.
+ * Does not support conversion from Json strings.
  *
- * イメージ（テスト実装）
+ * Image (test implementation):
  * @code
  * JsonBuilder jb;
  * jb.Set(
@@ -110,24 +111,24 @@ class JsonElement {
  */
 class JsonBuilder {
   /**
-   * @brief JsonElementの初期化子リスト
+   * @brief JsonElement initializer list
    */
   using JsonElementInitialize = std::initializer_list<JsonElement>;
 
  public:
   /**
-   * @brief コンストラクタ
+   * @brief Constructor.
    */
   JsonBuilder() : root_() {}
   /**
-   * @brief デストラクタ
+   * @brief Destructor.
    */
   virtual ~JsonBuilder() {}
 
   /**
-   * @brief ルートに指定されたエレメントを設定する。
-   * @param[in] value     JsonElementオブジェクト
-   * @param[in] args    可変引数（JsonElementオブジェクト）
+   * @brief Set the element specified in the root.
+   * @param[in] value   JsonElement object
+   * @param[in] args    Variadic argument (JsonElement object)
    */
   template <class... Args>
   void Set(const JsonElement& value, Args&&... args) {
@@ -148,49 +149,53 @@ class JsonBuilder {
   }
 
   /**
-   * @brief JSON文字列を生成する。
-   * @param[in] indent    Indent値。0は整形なし（１行出力）。1以上は整形＋指定値分Indentする。
-   * @return JSON文字列
+   * @brief Generate a JSON string.
+   * @param[in] indent    Indent value. \
+   *    0 is no formatting (1 line output). \
+   *    1 or more is shaped + indented by the specified value.
+   * @return JSON string
    */
   std::string Build(int indent = 0) {
-    // IndentLevel(writeの第二引数)はどうも((indent-1)*IndentLevel)分だけ2行目以降のIndentに加算するので、変えない方がいい。
-    // 固定値加算ならともかく、なぜに乗算。
+    // IndentLevel (second argument of write function) is added to \
+    // Indent on the second and subsequent lines by \
+    // ((indent-1) * IndentLevel), so it is better not to change it.
+    // Why is it multiplying rather than adding at a fixed value.
     return root_.write(indent);
   }
 
   /**
-   * @brief 文字列型を生成する。
-   * @param[in] key     キー値
-   * @param[in] value     JsonElementオブジェクト
-   * @return 文字列型を設定したJsonElement
+   * @brief Generate a string type.
+   * @param[in] key     key
+   * @param[in] value     JsonElement object
+   * @return JsonElement with string type set
    */
   JsonElement Str(std::string key, const JsonElement& value) {
     return JsonElement(key, value.GetUnivalue());
   }
   /**
-   * @brief 文字列型を生成する。
-   * @param[in] key     キー値
-   * @param[in] value     stringオブジェクト
-   * @return 文字列型を設定したJsonElement
+   * @brief Generate a string type.
+   * @param[in] key     key
+   * @param[in] value     string object
+   * @return JsonElement with string type set
    */
   JsonElement Str(std::string key, const std::string& value) {
     return JsonElement(key, value);
   }
 
   /**
-   * @brief 数値型を生成する。
-   * @param[in] key     キー値
-   * @param[in] value     JsonElementオブジェクト
-   * @return 数値型を設定したJsonElement
+   * @brief Generate a numeric type.
+   * @param[in] key     key
+   * @param[in] value     JsonElement object
+   * @return JsonElement with numeric type
    */
   JsonElement Num(std::string key, const JsonElement& value) {
     return JsonElement(key, value.GetUnivalue());
   }
   /**
-   * @brief 数値列型を生成する。
-   * @param[in] key     キー値
-   * @param[in] value     数値型の値
-   * @return 数値型を設定したJsonElement
+   * @brief Generate a numeric type.
+   * @param[in] key     key
+   * @param[in] value     Numeric value
+   * @return JsonElement with numeric type
    */
   template <typename TYPE>
   JsonElement Num(std::string key, TYPE value) {
@@ -198,29 +203,29 @@ class JsonBuilder {
   }
 
   /**
-   * @brief bool型を生成する。
-   * @param[in] key     キー値
-   * @param[in] value     JsonElementオブジェクト
-   * @return bool型を設定したJsonElement
+   * @brief Generate a bool type.
+   * @param[in] key     key
+   * @param[in] value     JsonElement object
+   * @return JsonElement with bool type
    */
   JsonElement Bool(std::string key, const JsonElement& value) {
     return JsonElement(key, value.GetUnivalue());
   }
   /**
-   * @brief bool型を生成する。
-   * @param[in] key       キー値
-   * @param[in] is_true   bool値
-   * @return bool型を設定したJsonElement
+   * @brief Generate a bool type.
+   * @param[in] key       key
+   * @param[in] is_true   bool value
+   * @return JsonElement with bool type
    */
   JsonElement Bool(std::string key, bool is_true) {
     return JsonElement(key, is_true);
   }
 
   /**
-   * @brief オブジェクト型を生成する。
-   * @param[in] key     キー値
-   * @param[in] args    オブジェクト型に設定するJsonElementオブジェクト
-   * @return オブジェクト型を設定したJsonElement
+   * @brief Generate an object type.
+   * @param[in] key     key
+   * @param[in] args    JsonElement object to set to object type
+   * @return JsonElement with object type set
    */
   template <class... Args>
   JsonElement Object(std::string key, Args&&... args) {
@@ -231,10 +236,10 @@ class JsonBuilder {
   }
 
   /**
-   * @brief Array型を生成する。
-   * @param[in] key     キー値
-   * @param[in] args    Array型に設定するJsonElementオブジェクト
-   * @return Array型を設定したJsonElement
+   * @brief Generate Array type.
+   * @param[in] key     key
+   * @param[in] args    JsonElement object set to Array type
+   * @return JsonElement with Array type set
    */
   template <class... Args>
   JsonElement Array(std::string key, Args&&... args) {
@@ -245,28 +250,28 @@ class JsonBuilder {
   }
 
   /**
-   * @brief 文字列型を生成する。
-   * @param[in] value     JsonElementオブジェクト
-   * @return 文字列型を設定したJsonElement
+   * @brief Generate a string type.
+   * @param[in] value     JsonElement object
+   * @return JsonElement with string type set
    */
   JsonElement StrV(const JsonElement& value) { return Str("", value); }
   /**
-   * @brief 文字列型を生成する。
-   * @param[in] value     stringオブジェクト
-   * @return 文字列型を設定したJsonElement
+   * @brief Generate a string type.
+   * @param[in] value     string object
+   * @return JsonElement with string type set
    */
   JsonElement StrV(const std::string& value) { return Str("", value); }
 
   /**
-   * @brief 数値型を生成する。
-   * @param[in] value     JsonElementオブジェクト
-   * @return 数値型を設定したJsonElement
+   * @brief Generate a numeric type.
+   * @param[in] value     JsonElement object
+   * @return JsonElement with numeric type
    */
   JsonElement NumV(const JsonElement& value) { return Num("", value); }
   /**
-   * @brief 数値列型を生成する。
-   * @param[in] value     数値型の値
-   * @return 数値型を設定したJsonElement
+   * @brief Generate a numeric type.
+   * @param[in] value     Numeric value
+   * @return JsonElement with numeric type
    */
   template <typename TYPE>
   JsonElement NumV(TYPE value) {
@@ -274,22 +279,22 @@ class JsonBuilder {
   }
 
   /**
-   * @brief bool型を生成する。
-   * @param[in] value     JsonElementオブジェクト
-   * @return bool型を設定したJsonElement
+   * @brief Generate a bool type.
+   * @param[in] value     JsonElement object
+   * @return JsonElement with bool type
    */
   JsonElement BoolV(const JsonElement& value) { return Bool("", value); }
   /**
-   * @brief bool型を生成する。
-   * @param[in] is_true   bool値
-   * @return bool型を設定したJsonElement
+   * @brief Generate a bool type.
+   * @param[in] is_true   bool value
+   * @return JsonElement with bool type
    */
   JsonElement BoolV(bool is_true) { return Bool("", is_true); }
 
   /**
-   * @brief オブジェクト型を生成する。
-   * @param[in] args    オブジェクト型に設定するJsonElementオブジェクト
-   * @return オブジェクト型を設定したJsonElement
+   * @brief Generate an object type.
+   * @param[in] args    JsonElement object set to object type
+   * @return JsonElement with object type set
    */
   template <class... Args>
   JsonElement ObjectV(Args&&... args) {
@@ -300,9 +305,9 @@ class JsonBuilder {
   }
 
   /**
-   * @brief Array型を生成する。
-   * @param[in] args    Array型に設定するJsonElementオブジェクト
-   * @return Array型を設定したJsonElement
+   * @brief Generate Array type.
+   * @param[in] args    JsonElement object set to Array type
+   * @return JsonElement with Array type set
    */
   template <class... Args>
   JsonElement ArrayV(Args&&... args) {
@@ -313,7 +318,7 @@ class JsonBuilder {
   }
 
  private:
-  UniValue root_;  ///< UniValueオブジェクト
+  UniValue root_;  ///< UniValue object
 };
 
 }  // namespace core

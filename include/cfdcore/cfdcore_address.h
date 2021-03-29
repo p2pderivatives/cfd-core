@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_address.h
  *
- * @brief Addressクラス定義
+ * @brief Bitcoin address definition file.
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ADDRESS_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ADDRESS_H_
@@ -13,7 +13,9 @@
 
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_key.h"
+#include "cfdcore/cfdcore_schnorrsig.h"
 #include "cfdcore/cfdcore_script.h"
+#include "cfdcore/cfdcore_taproot.h"
 
 namespace cfd {
 namespace core {
@@ -45,69 +47,68 @@ constexpr const char* const kPrefixBlindBech32Hrp = "blech32";
 
 /**
  * @class AddressFormatData
- * @brief \~japanese Address format dataクラス
- *   \~english class for showing format data of address
+ * @brief class for showing format data of address
  */
 class CFD_CORE_EXPORT AddressFormatData {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief constructor.
    */
   AddressFormatData();
   /**
-   * @brief コンストラクタ
+   * @brief constructor.
    * @param[in] default_format_name     default format name
    */
   explicit AddressFormatData(const std::string& default_format_name);
   /**
-   * @brief コンストラクタ
+   * @brief constructor.
    * @param[in] map_data     prefix setting map
    */
   explicit AddressFormatData(
       const std::map<std::string, std::string>& map_data);
 
   /**
-   * @brief 文字列情報を取得する.
+   * @brief Get string value.
    * @param[in] key   mapping key
    * @return value
    */
   std::string GetString(const std::string& key) const;
   /**
-   * @brief 文字列情報を数値型に変換して取得する.
+   * @brief Get numeric value from string.
    * @param[in] key   mapping key
    * @return uint32_t value
    */
   uint32_t GetValue(const std::string& key) const;
 
   /**
-   * @brief P2pkhのprefix値を取得する.
+   * @brief Get P2pkh prefix.
    * @return P2pkh prefix
    */
   uint8_t GetP2pkhPrefix() const;
   /**
-   * @brief P2shのprefix値を取得する.
+   * @brief Get P2sh prefix.
    * @return P2sh prefix
    */
   uint8_t GetP2shPrefix() const;
   /**
-   * @brief bech32のhrpを取得する.
+   * @brief Get hrp on bech32.
    * @return Bech32 hrp
    */
   std::string GetBech32Hrp() const;
   /**
-   * @brief netTypeを取得する.
+   * @brief Get network type.
    * @return network type
    */
   NetType GetNetType() const;
 
   /**
-   * @brief json文字列情報からAddress format dataを取得する.
+   * @brief Get Address format data from json string.
    * @param[in] json_data       json string
    * @return Address format data
    */
   static AddressFormatData ConvertFromJson(const std::string& json_data);
   /**
-   * @brief json文字列情報からAddress format data一覧を取得する.
+   * @brief Get Address format data list from json string.
    * @param[in] json_data       json string
    * @return Address format data list
    */
@@ -119,76 +120,64 @@ class CFD_CORE_EXPORT AddressFormatData {
 };
 
 /**
- * @brief Bitcoin のデフォルトのアドレスフォーマットリストを取得する.
- * @return Bitcoinデフォルトのアドレスフォーマットリスト
+ * @brief Get address format list by Bitcoin default.
+ * @return Address format list by Bitcoin default.
  */
 CFD_CORE_API std::vector<AddressFormatData> GetBitcoinAddressFormatList();
 
 /**
  * @typedef AddressType
- * @brief Address種別の定義
+ * @brief Address type.
  */
 enum AddressType {
-  kP2shAddress = 1,   //!< Legacy address (Script Hash)
-  kP2pkhAddress,      //!< Legacy address (PublicKey Hash)
-  kP2wshAddress,      //!< Native segwit address (Script Hash)
-  kP2wpkhAddress,     //!< Native segwit address (PublicKey Hash)
-  kP2shP2wshAddress,  //!< P2sh wrapped address (Script Hash)
-  kP2shP2wpkhAddress  //!< P2sh wrapped address (Pubkey Hash)
-};
-
-/**
- * @typedef WitnessVersion
- * @brief Witnessバージョンの定義
- */
-enum WitnessVersion {
-  kVersionNone = -1,  //!< Missing WitnessVersion
-  kVersion0 = 0,      //!< version 0
-  kVersion1,          //!< version 1 (for future use)
-  kVersion2,          //!< version 2 (for future use)
-  kVersion3,          //!< version 3 (for future use)
-  kVersion4,          //!< version 4 (for future use)
-  kVersion5,          //!< version 5 (for future use)
-  kVersion6,          //!< version 6 (for future use)
-  kVersion7,          //!< version 7 (for future use)
-  kVersion8,          //!< version 8 (for future use)
-  kVersion9,          //!< version 9 (for future use)
-  kVersion10,         //!< version 10 (for future use)
-  kVersion11,         //!< version 11 (for future use)
-  kVersion12,         //!< version 12 (for future use)
-  kVersion13,         //!< version 13 (for future use)
-  kVersion14,         //!< version 14 (for future use)
-  kVersion15,         //!< version 15 (for future use)
-  kVersion16          //!< version 16 (for future use)
+  kP2shAddress = 1,    //!< Legacy address (Script Hash)
+  kP2pkhAddress,       //!< Legacy address (PublicKey Hash)
+  kP2wshAddress,       //!< Native segwit address (Script Hash)
+  kP2wpkhAddress,      //!< Native segwit address (PublicKey Hash)
+  kP2shP2wshAddress,   //!< P2sh wrapped address (Script Hash)
+  kP2shP2wpkhAddress,  //!< P2sh wrapped address (Pubkey Hash)
+  kTaprootAddress,     //!< Taproot (segwit v1) address
+  kWitnessUnknown      //!< witness unknown address
 };
 
 /**
  * @class Address
- * @brief アドレスの生成クラス
+ * @brief address class.
  */
 class CFD_CORE_EXPORT Address {
  public:
   /**
-   * @brief デフォルトコンストラクタ
+   * @brief default constructor.
    */
   Address();
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  Address(const Address& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  Address& operator=(const Address& object);
 
   /**
-   * @brief コンストラクタ(hex文字列からの復元)
-   * @param[in] address_string   アドレス文字列
+   * @brief Constructor. (for string)
+   * @param[in] address_string      address string
    */
   explicit Address(const std::string& address_string);
   /**
-   * @brief コンストラクタ(hex文字列からの復元)
-   * @param[in] address_string      アドレス文字列
+   * @brief Constructor. (for string)
+   * @param[in] address_string      address string
    * @param[in] network_parameters  network parameter list
    */
   explicit Address(
       const std::string& address_string,
       const std::vector<AddressFormatData>& network_parameters);
   /**
-   * @brief コンストラクタ(hex文字列からの復元)
-   * @param[in] address_string      アドレス文字列
+   * @brief Constructor. (for string)
+   * @param[in] address_string      address string
    * @param[in] network_parameter   network parameter
    */
   explicit Address(
@@ -196,20 +185,20 @@ class CFD_CORE_EXPORT Address {
       const AddressFormatData& network_parameter);
 
   /**
-   * @brief コンストラクタ(P2PKH用)
+   * @brief Constructor. (for P2PKH)
    * @param[in] type      NetType
    * @param[in] pubkey    PublicKey
    */
   Address(NetType type, const Pubkey& pubkey);
   /**
-   * @brief コンストラクタ(P2PKH用)
+   * @brief Constructor. (for P2PKH)
    * @param[in] type      NetType
    * @param[in] pubkey    PublicKey
    * @param[in] prefix    p2pkh prefix
    */
   Address(NetType type, const Pubkey& pubkey, uint8_t prefix);
   /**
-   * @brief コンストラクタ(P2PKH用)
+   * @brief Constructor. (for P2PKH)
    * @param[in] type      NetType
    * @param[in] pubkey    PublicKey
    * @param[in] network_parameter   network parameter
@@ -218,7 +207,7 @@ class CFD_CORE_EXPORT Address {
       NetType type, const Pubkey& pubkey,
       const AddressFormatData& network_parameter);
   /**
-   * @brief コンストラクタ(P2PKH用)
+   * @brief Constructor. (for P2PKH)
    * @param[in] type      NetType
    * @param[in] pubkey    PublicKey
    * @param[in] network_parameters   network parameter list
@@ -228,16 +217,16 @@ class CFD_CORE_EXPORT Address {
       const std::vector<AddressFormatData>& network_parameters);
 
   /**
-   * @brief コンストラクタ(P2WPKH用)
+   * @brief Constructor. (for P2WPKH)
    * @param[in] type        NetType
-   * @param[in] witness_ver Witnessバージョン
+   * @param[in] witness_ver Witness version
    * @param[in] pubkey      PublicKey
    */
   Address(NetType type, WitnessVersion witness_ver, const Pubkey& pubkey);
   /**
-   * @brief コンストラクタ(P2WPKH用)
+   * @brief Constructor. (for P2WPKH)
    * @param[in] type        NetType
-   * @param[in] witness_ver Witnessバージョン
+   * @param[in] witness_ver Witness version
    * @param[in] pubkey      PublicKey
    * @param[in] bech32_hrp  bech32 hrp
    */
@@ -245,9 +234,9 @@ class CFD_CORE_EXPORT Address {
       NetType type, WitnessVersion witness_ver, const Pubkey& pubkey,
       const std::string& bech32_hrp);
   /**
-   * @brief コンストラクタ(P2WPKH用)
+   * @brief Constructor. (for P2WPKH)
    * @param[in] type        NetType
-   * @param[in] witness_ver Witnessバージョン
+   * @param[in] witness_ver Witness version
    * @param[in] pubkey      PublicKey
    * @param[in] network_parameter   network parameter
    */
@@ -255,9 +244,9 @@ class CFD_CORE_EXPORT Address {
       NetType type, WitnessVersion witness_ver, const Pubkey& pubkey,
       const AddressFormatData& network_parameter);
   /**
-   * @brief コンストラクタ(P2WPKH用)
+   * @brief Constructor. (for P2WPKH)
    * @param[in] type        NetType
-   * @param[in] witness_ver Witnessバージョン
+   * @param[in] witness_ver Witness version
    * @param[in] pubkey      PublicKey
    * @param[in] network_parameters   network parameter list
    */
@@ -266,20 +255,20 @@ class CFD_CORE_EXPORT Address {
       const std::vector<AddressFormatData>& network_parameters);
 
   /**
-   * @brief コンストラクタ(P2SH用)
+   * @brief Constructor. (for P2SH)
    * @param[in] type          NetType
    * @param[in] redeem_script Redeem Script
    */
   Address(NetType type, const Script& redeem_script);
   /**
-   * @brief コンストラクタ(P2SH用)
+   * @brief Constructor. (for P2SH)
    * @param[in] type          NetType
    * @param[in] redeem_script Redeem Script
    * @param[in] prefix        p2sh prefix
    */
   Address(NetType type, const Script& redeem_script, uint8_t prefix);
   /**
-   * @brief コンストラクタ(P2SH用)
+   * @brief Constructor. (for P2SH)
    * @param[in] type          NetType
    * @param[in] redeem_script Redeem Script
    * @param[in] network_parameter   network parameter
@@ -288,7 +277,7 @@ class CFD_CORE_EXPORT Address {
       NetType type, const Script& redeem_script,
       const AddressFormatData& network_parameter);
   /**
-   * @brief コンストラクタ(P2SH用)
+   * @brief Constructor. (for P2SH)
    * @param[in] type          NetType
    * @param[in] redeem_script Redeem Script
    * @param[in] network_parameters   network parameter list
@@ -298,17 +287,17 @@ class CFD_CORE_EXPORT Address {
       const std::vector<AddressFormatData>& network_parameters);
 
   /**
-   * @brief コンストラクタ(P2WSH用)
+   * @brief Constructor. (for P2WSH)
    * @param[in] type          NetType
-   * @param[in] witness_ver   Witnessバージョン
+   * @param[in] witness_ver   Witness version
    * @param[in] redeem_script Redeem Script
    */
   Address(
       NetType type, WitnessVersion witness_ver, const Script& redeem_script);
   /**
-   * @brief コンストラクタ(P2WSH用)
+   * @brief Constructor. (for P2WSH)
    * @param[in] type          NetType
-   * @param[in] witness_ver   Witnessバージョン
+   * @param[in] witness_ver   Witness version
    * @param[in] redeem_script Redeem Script
    * @param[in] bech32_hrp    bech32 hrp
    */
@@ -316,9 +305,9 @@ class CFD_CORE_EXPORT Address {
       NetType type, WitnessVersion witness_ver, const Script& redeem_script,
       const std::string& bech32_hrp);
   /**
-   * @brief コンストラクタ(P2WSH用)
+   * @brief Constructor. (for P2WSH)
    * @param[in] type          NetType
-   * @param[in] witness_ver   Witnessバージョン
+   * @param[in] witness_ver   Witness version
    * @param[in] redeem_script Redeem Script
    * @param[in] network_parameter   network parameter
    */
@@ -326,9 +315,9 @@ class CFD_CORE_EXPORT Address {
       NetType type, WitnessVersion witness_ver, const Script& redeem_script,
       const AddressFormatData& network_parameter);
   /**
-   * @brief コンストラクタ(P2WSH用)
+   * @brief Constructor. (for P2WSH)
    * @param[in] type          NetType
-   * @param[in] witness_ver   Witnessバージョン
+   * @param[in] witness_ver   Witness version
    * @param[in] redeem_script Redeem Script
    * @param[in] network_parameters   network parameter list
    */
@@ -337,27 +326,112 @@ class CFD_CORE_EXPORT Address {
       const std::vector<AddressFormatData>& network_parameters);
 
   /**
-   * @brief コンストラクタ(P2PKH/P2SH用。AddressType明示)
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] pubkey      PublicKey
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const SchnorrPubkey& pubkey);
+  /**
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] pubkey      PublicKey
+   * @param[in] bech32_hrp  bech32 hrp
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const SchnorrPubkey& pubkey,
+      const std::string& bech32_hrp);
+  /**
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] pubkey      PublicKey
+   * @param[in] network_parameter   network parameter
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const SchnorrPubkey& pubkey,
+      const AddressFormatData& network_parameter);
+  /**
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] pubkey      PublicKey
+   * @param[in] network_parameters   network parameter list
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const SchnorrPubkey& pubkey,
+      const std::vector<AddressFormatData>& network_parameters);
+
+  /**
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] tree                tapscript tree
+   * @param[in] internal_pubkey     internal PublicKey
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const TaprootScriptTree& tree,
+      const SchnorrPubkey& internal_pubkey);
+  /**
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] tree                tapscript tree
+   * @param[in] internal_pubkey     internal PublicKey
+   * @param[in] bech32_hrp  bech32 hrp
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const TaprootScriptTree& tree,
+      const SchnorrPubkey& internal_pubkey, const std::string& bech32_hrp);
+  /**
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] tree                tapscript tree
+   * @param[in] internal_pubkey     internal PublicKey
+   * @param[in] network_parameter   network parameter
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const TaprootScriptTree& tree,
+      const SchnorrPubkey& internal_pubkey,
+      const AddressFormatData& network_parameter);
+  /**
+   * @brief Constructor. (for Taproot)
+   * @param[in] type        NetType
+   * @param[in] witness_ver Witness version
+   * @param[in] tree                tapscript tree
+   * @param[in] internal_pubkey     internal PublicKey
+   * @param[in] network_parameters  network parameter list
+   */
+  Address(
+      NetType type, WitnessVersion witness_ver, const TaprootScriptTree& tree,
+      const SchnorrPubkey& internal_pubkey,
+      const std::vector<AddressFormatData>& network_parameters);
+
+  /**
+   * @brief Constructor. (for P2PKH/P2SH)
    * @param[in] type          NetType
-   * @param[in] addr_type     種別
-   * @param[in] hash          ハッシュ化済みの値
+   * @param[in] addr_type     Address type
+   * @param[in] hash          hashed data
    */
   Address(NetType type, AddressType addr_type, const ByteData160& hash);
   /**
-   * @brief コンストラクタ(P2PKH/P2SH用。AddressType明示)
+   * @brief Constructor. (for P2PKH/P2SH)
    * @param[in] type          NetType
-   * @param[in] addr_type     種別
-   * @param[in] hash          ハッシュ化済みの値
+   * @param[in] addr_type     Address type
+   * @param[in] hash          hashed data
    * @param[in] network_parameter   network parameter
    */
   Address(
       NetType type, AddressType addr_type, const ByteData160& hash,
       const AddressFormatData& network_parameter);
   /**
-   * @brief コンストラクタ(P2PKH/P2SH用。AddressType明示)
+   * @brief Constructor. (for P2PKH/P2SH)
    * @param[in] type          NetType
-   * @param[in] addr_type     種別
-   * @param[in] hash          ハッシュ化済みの値
+   * @param[in] addr_type     Address type
+   * @param[in] hash          hashed data
    * @param[in] network_parameters  network parameter list
    */
   Address(
@@ -365,27 +439,27 @@ class CFD_CORE_EXPORT Address {
       const std::vector<AddressFormatData>& network_parameters);
 
   /**
-   * @brief コンストラクタ(ハッシュ化済みの値用)
+   * @brief Constructor. (for hashed data)
    * @param[in] type          NetType
-   * @param[in] witness_ver   Witnessバージョン
-   * @param[in] hash          ハッシュ化済みの値
+   * @param[in] witness_ver   Witness version
+   * @param[in] hash          hashed data
    */
   Address(NetType type, WitnessVersion witness_ver, const ByteData& hash);
   /**
-   * @brief コンストラクタ(ハッシュ化済みの値用)
+   * @brief Constructor. (for hashed data)
    * @param[in] type          NetType
-   * @param[in] witness_ver   Witnessバージョン
-   * @param[in] hash          ハッシュ化済みの値
+   * @param[in] witness_ver   Witness version
+   * @param[in] hash          hashed data
    * @param[in] network_parameter   network parameter
    */
   Address(
       NetType type, WitnessVersion witness_ver, const ByteData& hash,
       const AddressFormatData& network_parameter);
   /**
-   * @brief コンストラクタ(ハッシュ化済みの値用)
+   * @brief Constructor. (for hashed data)
    * @param[in] type          NetType
-   * @param[in] witness_ver   Witnessバージョン
-   * @param[in] hash          ハッシュ化済みの値
+   * @param[in] witness_ver   Witness version
+   * @param[in] hash          hashed data
    * @param[in] network_parameters  network parameter list
    */
   Address(
@@ -393,92 +467,103 @@ class CFD_CORE_EXPORT Address {
       const std::vector<AddressFormatData>& network_parameters);
 
   /**
-   * @brief アドレスのhex文字列を取得する.
-   * @return アドレス文字列
+   * @brief Get address string.
+   * @return address string
    */
   std::string GetAddress() const;
 
   /**
-   * @brief AddressのNetTypeを取得する.
+   * @brief Get network type.
    * @return NetType
    */
   NetType GetNetType() const { return type_; }
 
   /**
-   * @brief Address種別を取得する.
-   * @return Address種別
+   * @brief Get address type.
+   * @return Address type
    */
   AddressType GetAddressType() const { return addr_type_; }
 
   /**
-   * @brief Witnessバージョンを取得する.
-   * @return Witnessバージョン
+   * @brief Get witness version.
+   * @return Witness version
    */
   WitnessVersion GetWitnessVersion() const { return witness_ver_; }
 
   /**
-   * @brief アドレスHashを取得する.
-   * @return アドレスHashのByteDataインスタンス
+   * @brief Get address Hash.
+   * @return address hash
    */
   ByteData GetHash() const { return hash_; }
 
   /**
-   * @brief PublicKeyを取得する.
-   * @return Pubkeyオブジェクト
+   * @brief Get PublicKey.
+   * @return Pubkey
    */
   Pubkey GetPubkey() const { return pubkey_; }
 
   /**
-   * @brief Redeem Scriptを取得する.
-   * @return Scriptオブジェクト
+   * @brief Get Schnorr PublicKey.
+   * @return Schnorr Pubkey
+   */
+  SchnorrPubkey GetSchnorrPubkey() const { return schnorr_pubkey_; }
+  /**
+   * @brief Get taproot script tree.
+   * @return taproot script tree
+   */
+  TaprootScriptTree GetScriptTree() const { return script_tree_; }
+
+  /**
+   * @brief Get Redeem Script.
+   * @return Script
    */
   Script GetScript() const { return redeem_script_; }
 
   /**
-   * @brief AddressFormatDataを取得する.
-   * @return AddressFormatDataオブジェクト
+   * @brief Get AddressFormatData.
+   * @return AddressFormatData
    */
   AddressFormatData GetAddressFormatData() const { return format_data_; }
 
   /**
-   * @brief LockingScriptを取得する
+   * @brief Get LockingScript
    * @return locking script
    */
   Script GetLockingScript() const;
 
  private:
   /**
-   * @brief P2SH Addressの情報を算出する.
+   * @brief calculate P2SH Address
    * @param[in] prefix      p2sh prefix
    */
   void CalculateP2SH(uint8_t prefix = 0);
   /**
-   * @brief P2SH Addressの情報を算出する.
-   * @param[in] hash_data   ハッシュ化済みRedeem script
+   * @brief calculate P2SH Address.
+   * @param[in] hash_data   RedeemScript hash
    * @param[in] prefix      p2sh prefix
    */
   void CalculateP2SH(const ByteData160& hash_data, uint8_t prefix = 0);
 
   /**
-   * @brief P2PKH Addressの情報を算出する.
+   * @brief calculate P2PKH Address
    * @param[in] prefix      p2pkh prefix
    */
   void CalculateP2PKH(uint8_t prefix = 0);
   /**
-   * @brief P2PKH Addressの情報を算出する.
-   * @param[in] hash_data   ハッシュ化済みPubkey
+   * @brief calculate P2PKH Address
+   * @param[in] hash_data   Pubkey hash
    * @param[in] prefix      p2pkh prefix
    */
   void CalculateP2PKH(const ByteData160& hash_data, uint8_t prefix = 0);
 
   /**
-   * @brief P2WSH Addressの情報を算出する.
+   * @brief calculate P2WSH Address
    * @param[in] bech32_hrp    bech32 hrp
    */
   void CalculateP2WSH(const std::string& bech32_hrp = "");
   /**
-   * @brief P2WSH Addressの情報を算出する.
-   * @param[in] hash_data   ハッシュ化済みRedeemScript
+   * @brief calculate P2WSH Address
+   * @param[in] hash_data   RedeemScript hash
    * @param[in] bech32_hrp  bech32 hrp
    */
   void CalculateP2WSH(
@@ -486,93 +571,88 @@ class CFD_CORE_EXPORT Address {
       const std::string& bech32_hrp = "");
 
   /**
-   * @brief P2WPKH Address算出()
+   * @brief calculate P2WPKH Address
    * @param[in] bech32_hrp    bech32 hrp
    */
   void CalculateP2WPKH(const std::string& bech32_hrp = "");
   /**
-   * @brief P2WPKH Addressの情報を算出する.
-   * @param[in] hash_data   ハッシュ化済みPubkey
+   * @brief calculate P2WPKH Address
+   * @param[in] hash_data   pubkey hash
    * @param[in] bech32_hrp  bech32 hrp
    */
   void CalculateP2WPKH(
       const ByteData160& hash_data,  // pubkey hash
       const std::string& bech32_hrp = "");
 
-  /* Segwit Address Format
-   *
-   * 例：bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
-   *
-   *    "bc"or"tb"
-   *        ：Human-readable part(bc=mainnet/tb=testnet)
-   *    "1" ：Separator 1固定
-   *    "v8f3t4"
-   *        ：checksum
-   *
-   *    "qw508d6qejxtdg4y5r3zarvary0c5xw7k"をbase32Decode
-   *    -> "0014751e76e8199196d454941c45d1b3a323f1433bd6"
-   *    "00" ：witness version
-   *    "14" ：data長(P2WPKHは20byte/P2WSHは32byte)
-   *    "751e76e8199196d454941c45d1b3a323f1433bd6"
-   *         ：witness program(PubkeyHash or ScriptHash)
-   */
   /**
-   * @brief Hex文字列をdecodeする.
-   * @param[in] bs58                デコードするアドレスのbase58文字列
+   * @brief calculate Taproot Address
+   * @param[in] bech32_hrp    bech32 hrp
+   */
+  void CalculateTaproot(const std::string& bech32_hrp = "");
+  /**
+   * @brief calculate Bech32m Address
+   * @param[in] hash_data   hash data
+   * @param[in] bech32_hrp  bech32 hrp
+   */
+  void CalculateBech32m(
+      const ByteData& hash_data,  // hash data
+      const std::string& bech32_hrp = "");
+
+  /**
+   * @brief decode address from address string.
+   * @param[in] address_string      address string
    * @param[in] network_parameters  network parameter list
    */
   void DecodeAddress(
-      std::string bs58,  // LF
+      std::string address_string,  // LF
       const std::vector<AddressFormatData>* network_parameters);
 
   /**
-   * @brief NetType設定用のWrapper関数.
+   * @brief set network type.
    * @param[in] format_data   Address format data
    */
   void SetNetType(const AddressFormatData& format_data);
 
   /**
-   * @brief AddressType設定用のWrapper関数.
+   * @brief set address type.
    * @param[in] addr_type   Address type
    */
   void SetAddressType(AddressType addr_type);
 
   /**
-   * \~english
    * @brief Get AddressFormatData with NetType from format list.
    * @param[in] network_parameters  Address format data list
-   * \~japanese
-   * @brief Address format data一覧から指定NetTypeの情報を取得する.
-   * @param[in] network_parameters  AddressFormatData一覧
-   * \~
    * @param[in] type                NetType
    * @return Address format data
    */
   static AddressFormatData GetTargetFormatData(
       const std::vector<AddressFormatData>& network_parameters, NetType type);
 
-  //! アドレスのNetType
+  //! address's NetType
   NetType type_;
 
-  //! アドレス種別
+  //! address type
   AddressType addr_type_;
 
-  //! Witnessバージョン
+  //! Witness version
   WitnessVersion witness_ver_;
 
-  //! アドレス文字列
+  //! address string
   std::string address_;
 
-  //! アドレスHash
+  //! address Hash
   ByteData hash_;
 
   //! PublicKey
   Pubkey pubkey_;
 
+  SchnorrPubkey schnorr_pubkey_;   //!< Schnorr PublicKey
+  TaprootScriptTree script_tree_;  //!< Taproot ScriptTree
+
   //! Redeem Script
   Script redeem_script_;
 
-  //! チェックサム
+  //! checksum
   uint8_t checksum_[4];
 
   //! address prefix format data

@@ -169,6 +169,7 @@ struct MultisigTestVector {
   std::vector<Pubkey> input_pubkeys;
   Script expect_multisig_script;
   std::string expect_message;
+  bool is_witness;
 };
 
 TEST(ScriptUtil, CreateMultisigRedeemScriptTest) {
@@ -180,7 +181,8 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptTest) {
         Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
       },
       Script("512102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a051ae"),
-      ""
+      "",
+      false
     },
     // 1-of-2 Multisig
     {
@@ -190,7 +192,8 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptTest) {
         Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
       },
       Script("512102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c52ae"),
-      ""
+      "",
+      false
     },
     // 2-of-3 Multisig
     {
@@ -201,7 +204,8 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptTest) {
         Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82"),
       },
       Script("522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae"),
-      ""
+      "",
+      false
     },
     // 12-of-15 Multisig
     {
@@ -224,7 +228,8 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptTest) {
         Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db"),
       },
       Script("5c2102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b822103ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb3821020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1210289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147210210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c21020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9210289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37210254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e2103a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b2102ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd210289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d210396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd221025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db5fae"),
-      ""
+      "",
+      false
     },
     // 15-of-15 Multisig
     {
@@ -247,14 +252,51 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptTest) {
         Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db"),
       },
       Script("5f2102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b822103ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb3821020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1210289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147210210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c21020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9210289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37210254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e2103a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b2102ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd210289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d210396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd221025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db5fae"),
-      ""
+      "",
+      false
+    },
+    // 20-of-20 Multisig on witness
+    {
+      20,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+        Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82"),
+        Pubkey("03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38"),
+        Pubkey("020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1"),
+        Pubkey("0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147"),
+        Pubkey("0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c"),
+        Pubkey("020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9"),
+        Pubkey("0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37"),
+        Pubkey("0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e"),
+        Pubkey("03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b"),
+        Pubkey("02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd"),
+        Pubkey("0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d"),
+        Pubkey("0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2"),
+        Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db"),
+        Pubkey("030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55"),
+        Pubkey("0267a49281bd9d6d366c39c62f2e95a2aab37638f2a4718891c542d0961962644e"),
+        Pubkey("02f48e8e2bcaeb16a6d781bb7a72f6250607bf21e32f08c48e37a9e4706e6d48b8"),
+        Pubkey("03968ac57888ddaa3b57caa39efd5d5382c24f3deed602775cd4895f7c7adb5950"),
+        Pubkey("024b64115bff6cc3718867114f7594fad535344f27ebe17ffa0e66288eb7bd2561"),
+      },
+      Script("01142102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b822103ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb3821020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1210289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147210210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c21020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9210289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37210254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e2103a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b2102ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd210289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d210396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd221025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db21030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55210267a49281bd9d6d366c39c62f2e95a2aab37638f2a4718891c542d0961962644e2102f48e8e2bcaeb16a6d781bb7a72f6250607bf21e32f08c48e37a9e4706e6d48b82103968ac57888ddaa3b57caa39efd5d5382c24f3deed602775cd4895f7c7adb595021024b64115bff6cc3718867114f7594fad535344f27ebe17ffa0e66288eb7bd25610114ae"),
+      "",
+      true
     },
   };
 
   Script actual;
   for (MultisigTestVector test_vector : test_vectors) {
-    EXPECT_NO_THROW((actual = ScriptUtil::CreateMultisigRedeemScript(test_vector.req_sig, test_vector.input_pubkeys)));
-    EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_multisig_script.GetHex().c_str());
+    try {
+      actual = ScriptUtil::CreateMultisigRedeemScript(
+          test_vector.req_sig, test_vector.input_pubkeys,
+          test_vector.is_witness);
+      EXPECT_STREQ(actual.GetHex().c_str(), test_vector.expect_multisig_script.GetHex().c_str());
+    } catch (const CfdException& except) {
+      EXPECT_STREQ(except.what(), "");
+      EXPECT_EQ(test_vector.req_sig, 0);
+    }
   }
 }
 
@@ -267,7 +309,8 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptErrorTest) {
         Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
       },
       Script(),
-      "CreateMultisigScript require_num is 0."
+      "CreateMultisigScript require_num is 0.",
+      false
     },
     // 1-of-0 Multisig
     {
@@ -275,7 +318,8 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptErrorTest) {
       {
       },
       Script(),
-      "CreateMultisigScript empty pubkey array."
+      "CreateMultisigScript empty pubkey array.",
+      false
     },
     // 3-of-2 Multisig
     {
@@ -285,7 +329,8 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptErrorTest) {
         Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
       },
       Script(),
-      "CreateMultisigScript require_num is over."
+      "CreateMultisigScript require_num is over.",
+      false
     },
     // 1-of-16 Multisig
     {
@@ -309,14 +354,47 @@ TEST(ScriptUtil, CreateMultisigRedeemScriptErrorTest) {
         Pubkey("030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55"),
       },
       Script(),
-      "CreateMultisigScript pubkeys array size is over."
+      "CreateMultisigScript pubkeys array size is over.",
+      false
+    },
+    // 1-of-21 Multisig on witness
+    {
+      1,
+      {
+        Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0"),
+        Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c"),
+        Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82"),
+        Pubkey("03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38"),
+        Pubkey("020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1"),
+        Pubkey("0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147"),
+        Pubkey("0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c"),
+        Pubkey("020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9"),
+        Pubkey("0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37"),
+        Pubkey("0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e"),
+        Pubkey("03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b"),
+        Pubkey("02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd"),
+        Pubkey("0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d"),
+        Pubkey("0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2"),
+        Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db"),
+        Pubkey("030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55"),
+        Pubkey("0267a49281bd9d6d366c39c62f2e95a2aab37638f2a4718891c542d0961962644e"),
+        Pubkey("02f48e8e2bcaeb16a6d781bb7a72f6250607bf21e32f08c48e37a9e4706e6d48b8"),
+        Pubkey("03968ac57888ddaa3b57caa39efd5d5382c24f3deed602775cd4895f7c7adb5950"),
+        Pubkey("024b64115bff6cc3718867114f7594fad535344f27ebe17ffa0e66288eb7bd2561"),
+        Pubkey("03f3aba2366b71f8473dd8dd4186005a9e3c6f9a32f76fc45493fd2a78b78c0d8d"),
+      },
+      Script(),
+      "CreateMultisigScript pubkeys array size is over.",
+      true
     },
   };
 
   Script actual;
   for (MultisigTestVector test_vector : test_vectors) {
     try{
-      EXPECT_THROW((actual = ScriptUtil::CreateMultisigRedeemScript(test_vector.req_sig, test_vector.input_pubkeys)), CfdException);
+      EXPECT_THROW((actual = ScriptUtil::CreateMultisigRedeemScript(
+          test_vector.req_sig, test_vector.input_pubkeys,
+          test_vector.is_witness)), CfdException);
     } catch (CfdException &e) {
       EXPECT_STREQ(e.what(), test_vector.expect_message.c_str());
     }

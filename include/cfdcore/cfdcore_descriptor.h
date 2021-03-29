@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_descriptor.h
  *
- * @brief Output Descriptor関連クラス定義
+ * @brief The Output Descriptor related class definition.
  *
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_DESCRIPTOR_H_
@@ -28,7 +28,7 @@ namespace core {
 constexpr const char* const kArgumentBaseExtkey = "base";
 
 /**
- * @brief DescriptorNode の種別定義.
+ * @brief DescriptorNode type definition.
  */
 enum DescriptorNodeType {
   kDescriptorTypeNull,    //!< null
@@ -38,7 +38,7 @@ enum DescriptorNodeType {
 };
 
 /**
- * @brief DescriptorNode のScript種別定義.
+ * @brief Script type definition of DescriptorNode.
  */
 enum DescriptorScriptType {
   kDescriptorScriptNull,         //!< null
@@ -56,7 +56,7 @@ enum DescriptorScriptType {
 };
 
 /**
- * @brief DescriptorNode のKey種別定義.
+ * @brief Key type definition of DescriptorNode.
  */
 enum DescriptorKeyType {
   kDescriptorKeyNull,       //!< null
@@ -66,7 +66,7 @@ enum DescriptorKeyType {
 };
 
 /**
- * @brief key型descriptorの情報クラスです.
+ * @brief Information class of key type descriptor.
  */
 class CFD_CORE_EXPORT DescriptorKeyInfo {
  public:
@@ -216,7 +216,7 @@ class CFD_CORE_EXPORT DescriptorKeyInfo {
 };
 
 /**
- * @brief key型descriptorの参照クラスです.
+ * @brief It is a reference class of key type descriptor.
  */
 class CFD_CORE_EXPORT DescriptorKeyReference {
  public:
@@ -243,6 +243,13 @@ class CFD_CORE_EXPORT DescriptorKeyReference {
    */
   explicit DescriptorKeyReference(
       const ExtPubkey& ext_pubkey, const std::string* arg = nullptr);
+  /**
+   * @brief constructor.
+   * @param[in] key      key data
+   * @param[in] arg      argument
+   */
+  explicit DescriptorKeyReference(
+      const KeyData& key, const std::string* arg = nullptr);
   /**
    * @brief copy constructor.
    * @param[in] object    DescriptorKeyReference object
@@ -290,6 +297,11 @@ class CFD_CORE_EXPORT DescriptorKeyReference {
    */
   ExtPubkey GetExtPubkey() const;
   /**
+   * @brief getting key data.
+   * @return key data
+   */
+  KeyData GetKeyData() const;
+  /**
    * @brief getting key type.
    * @return key type
    */
@@ -300,11 +312,12 @@ class CFD_CORE_EXPORT DescriptorKeyReference {
   Pubkey pubkey_;               //!< pubkey
   ExtPrivkey extprivkey_;       //!< ext privkey
   ExtPubkey extpubkey_;         //!< ext pubkey
+  KeyData key_data_;            //!< key data
   std::string argument_;        //!< argument
 };
 
 /**
- * @brief Script型descriptorの参照クラスです.
+ * @brief Script type descriptor is a reference class.
  */
 class CFD_CORE_EXPORT DescriptorScriptReference {
  public:
@@ -474,7 +487,7 @@ class CFD_CORE_EXPORT DescriptorScriptReference {
 };
 
 /**
- * @brief Descriptor用Node定義クラス
+ * @brief Node definition class for Descriptor.
  */
 class CFD_CORE_EXPORT DescriptorNode {
  public:
@@ -520,21 +533,25 @@ class CFD_CORE_EXPORT DescriptorNode {
   /**
    * @brief get reference object.
    * @param[in] array_argument  argument
+   * @param[in] parent          parent object
    * @return reference object
    */
   DescriptorScriptReference GetReference(
-      std::vector<std::string>* array_argument) const;
+      std::vector<std::string>* array_argument,
+      const DescriptorNode* parent = nullptr) const;
 
   /**
    * @brief get reference object list.
    * @param[in] array_argument  argument
+   * @param[in] parent          parent object
    * @return reference object list
    */
   std::vector<DescriptorScriptReference> GetReferences(
-      std::vector<std::string>* array_argument) const;
+      std::vector<std::string>* array_argument,
+      const DescriptorNode* parent = nullptr) const;
 
   /**
-   * @brief argumentに必要な数を取得する。
+   * @brief Get the number required for argument.
    * @return argument number.
    */
   uint32_t GetNeedArgumentNum() const;
@@ -547,12 +564,12 @@ class CFD_CORE_EXPORT DescriptorNode {
   std::string ToString(bool append_checksum = true) const;
 
   /**
-   * @brief DescriptorNodeの種別を取得する。
+   * @brief Get the type of DescriptorNode.
    * @return DescriptorNodeType
    */
   DescriptorNodeType GetNodeType() const { return node_type_; }
   /**
-   * @brief DescriptorNodeのScript種別を取得する。
+   * @brief Get the Script type of DescriptorNode.
    * @return DescriptorScriptType
    */
   DescriptorScriptType GetScriptType() const { return script_type_; }
@@ -739,6 +756,31 @@ class CFD_CORE_EXPORT Descriptor {
    * @return descriptor reference list
    */
   std::vector<DescriptorScriptReference> GetReferenceAll(
+      const std::vector<std::string>* array_argument = nullptr) const;
+
+  /**
+   * @brief getting key data.
+   * @return key data
+   */
+  KeyData GetKeyData() const;
+  /**
+   * @brief getting key data.
+   * @param[in] argument        argument
+   * @return key data
+   */
+  KeyData GetKeyData(const std::string& argument) const;
+  /**
+   * @brief getting key data.
+   * @param[in] array_argument  argument
+   * @return key data
+   */
+  KeyData GetKeyData(const std::vector<std::string>& array_argument) const;
+  /**
+   * @brief getting key data list.
+   * @param[in] array_argument  argument
+   * @return key data
+   */
+  std::vector<KeyData> GetKeyDataAll(
       const std::vector<std::string>* array_argument = nullptr) const;
 
   /**

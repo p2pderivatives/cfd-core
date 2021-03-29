@@ -7,12 +7,6 @@
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_exception.h"
 
-// https://qiita.com/yohm/items/477bac065f4b772127c7
-
-// The main function are using gtest's main().
-
-// TEST(test_suite_name, test_name)
-
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
 using cfd::core::ByteData256;
@@ -23,6 +17,66 @@ using cfd::core::Script;
 // Hash tool
 // https://bc-2.jp/tools/txeditor2.html
 // https://hogehoge.tk/tool/
+
+// Ripemd160 -----------------------------------------------------------------
+TEST(HashUtil, Ripemd160String) {
+  ByteData160 byte_data = HashUtil::Ripemd160("The quick brown fox jumps over the lazy dog");
+  EXPECT_STREQ(byte_data.GetHex().c_str(),
+               "37f332f68db77bd9d7edd4969571ad671cf9dd3b");
+
+  byte_data = HashUtil::Ripemd160("The quick brown fox jumps over the lazy cog");
+  EXPECT_STREQ(byte_data.GetHex().c_str(),
+               "132072df690933835eb8b6ad0b77e7b6f14acad7");
+
+  byte_data = HashUtil::Ripemd160("");
+  EXPECT_STREQ(byte_data.GetHex().c_str(),
+               "9c1185a5c5e9fc54612808977ee8f548b2258d31");
+}
+
+TEST(HashUtil, Ripemd160) {
+  ByteData160 byte_data;
+  byte_data = HashUtil::Ripemd160(ByteData("0123456789abcdef"));
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "cea1b21f1a739fba68d1d4290437d2c5609be1d3");
+
+  byte_data = HashUtil::Ripemd160(ByteData160("0123456789abcdef0123456789abcdef01234567"));
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "49ec9207a365f6f330d529ca2a79e23a7ea2b526");
+
+  byte_data = HashUtil::Ripemd160(ByteData256("1234567890123456789012345678901234567890123456789012345678901234"));
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "a5b1c86f10c81c3c543304e9891815d8de036296");
+
+  byte_data = HashUtil::Ripemd160(Pubkey("032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db"));
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "1c8eae98d10ae2eb0ce0a99d446f0156c6f596ca");
+
+  byte_data = HashUtil::Ripemd160(Script("21026dccc749adc2a9d0d89497ac511f760f45c47dc5ed9cf352a58ac706453880aeadab210255a9626aebf5e29c0e6538428ba0d1dcf6ca98ffdf086aa8ced5e0d0215ea465ac"));
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "6be854f95bade5490a020c3841c50d08339a5c89");
+}
+
+TEST(HashUtil, Ripemd160ByOperator) {
+  ByteData byte_data = (HashUtil(HashUtil::kRipemd160)
+      << "The quick brown fox jumps over the lazy dog").Output();
+  EXPECT_STREQ(byte_data.GetHex().c_str(),
+               "37f332f68db77bd9d7edd4969571ad671cf9dd3b");
+
+  byte_data = (HashUtil(HashUtil::kRipemd160)
+      << ByteData("0123456789abcdef")).Output();
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "cea1b21f1a739fba68d1d4290437d2c5609be1d3");
+
+  byte_data = (HashUtil(HashUtil::kRipemd160)
+      << ByteData160("0123456789abcdef0123456789abcdef01234567")).Output();
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "49ec9207a365f6f330d529ca2a79e23a7ea2b526");
+
+  byte_data = (HashUtil(HashUtil::kRipemd160)
+      << ByteData256("1234567890123456789012345678901234567890123456789012345678901234")).Output();
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "a5b1c86f10c81c3c543304e9891815d8de036296");
+
+  byte_data = (HashUtil(HashUtil::kRipemd160)
+      << Pubkey("032f061438c62aa9a1685d7451a4bf1af8d0b8c132b0db4614147df19b687c01db")).Output();
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "1c8eae98d10ae2eb0ce0a99d446f0156c6f596ca");
+
+  byte_data = (HashUtil(HashUtil::kRipemd160)
+      << Script("21026dccc749adc2a9d0d89497ac511f760f45c47dc5ed9cf352a58ac706453880aeadab210255a9626aebf5e29c0e6538428ba0d1dcf6ca98ffdf086aa8ced5e0d0215ea465ac")).Output();
+  EXPECT_STREQ(byte_data.GetHex().c_str(), "6be854f95bade5490a020c3841c50d08339a5c89");
+}
 
 // Hash160 -----------------------------------------------------------------
 TEST(HashUtil, Hash160String) {
@@ -88,6 +142,11 @@ TEST(HashUtil, Sha256String) {
   EXPECT_STREQ(
       byte_data.GetHex().c_str(),
       "98478d92e5005d232ad06c805eccf5381f47f6f51ee7803e5206dc04e2639a62");
+
+  ByteData byte_data2 = (HashUtil("Sha256") << "test Sha256 OK").Output();
+  EXPECT_STREQ(
+      byte_data2.GetHex().c_str(),
+      "98478d92e5005d232ad06c805eccf5381f47f6f51ee7803e5206dc04e2639a62");
 }
 
 TEST(HashUtil, Sha256Bytes) {
@@ -123,6 +182,11 @@ TEST(HashUtil, Sha256ByteData256) {
   ByteData256 byte_data = HashUtil::Sha256(target);
   EXPECT_STREQ(
       byte_data.GetHex().c_str(),
+      "ca1194a558362b5fa6e7887da7b41ec6faeb01c9477a0afd46dfc0692be33482");
+
+  ByteData byte_data2 = (HashUtil("Sha256") << target).Output();
+  EXPECT_STREQ(
+      byte_data2.GetHex().c_str(),
       "ca1194a558362b5fa6e7887da7b41ec6faeb01c9477a0afd46dfc0692be33482");
 }
 

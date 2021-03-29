@@ -20,6 +20,7 @@ using cfd::core::ByteData;
 using cfd::core::Privkey;
 using cfd::core::Pubkey;
 using cfd::core::NetType;
+using cfd::core::WitnessVersion;
 
 TEST(Script, Script) {
   size_t size = 0;
@@ -38,6 +39,7 @@ TEST(Script, Script_hex) {
                "76a91498e977b2259a85278aa51188bd863a3df0ad31ba88ac");
   EXPECT_EQ(script.IsEmpty(), false);
   EXPECT_EQ(script.GetElementList().size(), size);
+  EXPECT_EQ(script.GetWitnessVersion(), WitnessVersion::kVersionNone);
 }
 
 TEST(Script, Script_hex_exception) {
@@ -79,6 +81,7 @@ TEST(Script, SetStackData_OP0) {
   EXPECT_STREQ(
       script.ToString().c_str(),
       "0 96376230fbeec4d1e703c3a2d1efe975ccf650a40f6ca2ec2d6cce44fc6bb2b3");
+  EXPECT_EQ(script.GetWitnessVersion(), WitnessVersion::kVersion0);
 }
 
 TEST(Script, SetStackData_kUseScriptNum1) {
@@ -412,6 +415,73 @@ TEST(Script, IsMultisigScriptTest) {
   EXPECT_FALSE(script.IsP2wpkhScript());
   EXPECT_FALSE(script.IsP2wshScript());
   EXPECT_FALSE(script.IsPegoutScript());
+
+  // 17-of-20
+  builder = ScriptBuilder();
+  builder << 17;
+  builder << Pubkey("02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0");
+  builder << Pubkey("0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c");
+  builder << Pubkey("024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82");
+  builder << Pubkey("03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38");
+  builder << Pubkey("020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1");
+  builder << Pubkey("0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147");
+  builder << Pubkey("0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c");
+  builder << Pubkey("020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9");
+  builder << Pubkey("0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37");
+  builder << Pubkey("0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e");
+  builder << Pubkey("03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b");
+  builder << Pubkey("02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd");
+  builder << Pubkey("0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d");
+  builder << Pubkey("0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2");
+  builder << Pubkey("025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db");
+  builder << Pubkey("030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55");
+  builder << Pubkey("0267a49281bd9d6d366c39c62f2e95a2aab37638f2a4718891c542d0961962644e");
+  builder << Pubkey("02f48e8e2bcaeb16a6d781bb7a72f6250607bf21e32f08c48e37a9e4706e6d48b8");
+  builder << Pubkey("03968ac57888ddaa3b57caa39efd5d5382c24f3deed602775cd4895f7c7adb5950");
+  builder << Pubkey("024b64115bff6cc3718867114f7594fad535344f27ebe17ffa0e66288eb7bd2561");
+  builder << 20;
+  builder << ScriptOperator::OP_CHECKMULTISIG;
+  script = builder.Build();
+  EXPECT_TRUE(script.IsMultisigScript());
+
+  // invalid multisig1
+  builder = ScriptBuilder();
+  builder.AppendData(ByteData("02"));  // binary value
+  builder.AppendData(Pubkey("0288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b81"));
+  builder.AppendData(Pubkey("03af2df16372b687457c4e522141ca5a600d64c61f3d7a19a465c051d060bdd727"));
+  builder.AppendData(Pubkey("02582b60250c5f99ab33faaec09c047f68e81bc267e4da7f136dc7b72afdaf0183"));
+  builder.AppendData(ByteData("03"));  // binary value
+  builder.AppendOperator(ScriptOperator::OP_CHECKMULTISIG);
+  script = builder.Build();
+  EXPECT_EQ("0102210288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b812103af2df16372b687457c4e522141ca5a600d64c61f3d7a19a465c051d060bdd7272102582b60250c5f99ab33faaec09c047f68e81bc267e4da7f136dc7b72afdaf01830103ae", script.GetHex());
+  EXPECT_FALSE(script.IsMultisigScript());
+
+  // invalid multisig2
+  builder = ScriptBuilder();
+  builder << 2;
+  builder << Pubkey("0288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b81");
+  builder << 1 << ScriptOperator::OP_CHECKMULTISIG;
+  script = builder.Build();
+  EXPECT_EQ("52210288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b8151ae", script.GetHex());
+  EXPECT_FALSE(script.IsMultisigScript());
+
+  // invalid multisig3
+  builder = ScriptBuilder();
+  builder << 0;
+  builder << Pubkey("0288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b81");
+  builder << 1 << ScriptOperator::OP_CHECKMULTISIG;
+  script = builder.Build();
+  EXPECT_EQ("00210288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b8151ae", script.GetHex());
+  EXPECT_FALSE(script.IsMultisigScript());
+
+  // invalid multisig4
+  builder = ScriptBuilder();
+  builder << 1;
+  builder << Pubkey("0288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b81");
+  builder << 2 << ScriptOperator::OP_CHECKMULTISIG;
+  script = builder.Build();
+  EXPECT_EQ("51210288b03ce954e6eccfd9bdfd8cea71f80957e20d37d020b1b99973ea9f897f2b8152ae", script.GetHex());
+  EXPECT_FALSE(script.IsMultisigScript());
 }
 
 TEST(Script, IsP2wpkhScriptTest) {

@@ -13,11 +13,13 @@ TEST(SigHashType, Constructor_GetSigHashFlag) {
   SigHashType type2;
   EXPECT_NO_THROW(type = SigHashType());
   EXPECT_EQ(type.GetSigHashFlag(), 1);
+  EXPECT_STREQ(type.ToString().c_str(), "ALL");
 
   EXPECT_NO_THROW(type2 = SigHashType(SigHashAlgorithm::kSigHashNone, true, false));
   EXPECT_EQ(type2.GetSigHashFlag(), 0x82);
   EXPECT_TRUE(type2.IsAnyoneCanPay());
   EXPECT_FALSE(type2.IsForkId());
+  EXPECT_STREQ(type2.ToString().c_str(), "NONE|ANYONECANPAY");
 
   EXPECT_NO_THROW(type = type2);
   EXPECT_EQ(type.GetSigHashFlag(), 0x82);

@@ -207,6 +207,13 @@ TEST(Pubkey, CompressUncompressTest) {
   EXPECT_STREQ(uncomp_pubkey.GetHex().c_str(), ext_key_uncompressed.c_str());
 }
 
+TEST(Pubkey, FingerprintTest) {
+  std::string key = "036468efc14b8512007bb720d6e7d4217a6686095a79b57e50dd48355110422955";
+  Pubkey pubkey = Pubkey(key);
+  auto fingerprint = pubkey.GetFingerprint();
+  EXPECT_STREQ("aa0ccb72", fingerprint.GetHex().c_str());
+}
+
 TEST(Pubkey, VerifyEcSignature) {
   Pubkey pubkey(
       "031777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb");

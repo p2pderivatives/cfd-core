@@ -1,12 +1,14 @@
 // Copyright 2020 CryptoGarage
+#ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_SCHNORRSIG_H_
+#define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_SCHNORRSIG_H_
+
 #include <string>
+#include <vector>
 
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_common.h"
 #include "cfdcore/cfdcore_key.h"
-
-#ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_SCHNORRSIG_H_
-#define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_SCHNORRSIG_H_
+#include "cfdcore/cfdcore_util.h"
 
 namespace cfd {
 namespace core {
@@ -15,6 +17,7 @@ using cfd::core::ByteData;
 using cfd::core::ByteData256;
 using cfd::core::Privkey;
 using cfd::core::Pubkey;
+using cfd::core::SigHashType;
 
 class SchnorrSignature;
 
@@ -60,6 +63,12 @@ class CFD_CORE_EXPORT SchnorrPubkey {
    * @return ByteData
    */
   ByteData GetData() const;
+  /**
+   * @brief Get the underlying ByteData256 object
+   *
+   * @return ByteData256
+   */
+  ByteData256 GetByteData256() const;
   /**
    * @brief Get the hex string.
    *
@@ -128,7 +137,7 @@ class CFD_CORE_EXPORT SchnorrPubkey {
    * @param[in] parity  the parity of the pubkey.
    * @return pubkey
    */
-  Pubkey CreatePubkey(bool parity) const;
+  Pubkey CreatePubkey(bool parity = false) const;
 
   /**
    * @brief get schnorr public key from private key.
@@ -211,19 +220,39 @@ class CFD_CORE_EXPORT SchnorrSignature {
    * @param data the data representing the adaptor signature
    */
   explicit SchnorrSignature(const std::string &data);
+  /**
+   * @brief Construct a new Schnorr Signature object from a Signature object.
+   *
+   * @param[in] object the data representing the adaptor signature
+   */
+  SchnorrSignature(const SchnorrSignature &object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object the data representing the adaptor signature
+   * @return object
+   */
+  SchnorrSignature &operator=(const SchnorrSignature &object);
 
   /**
    * @brief Get the underlying ByteData object
-   *
+   * 
+   * @param[in] append_sighash_type     add sighash type.
    * @return ByteData
    */
-  ByteData GetData() const;
+  ByteData GetData(bool append_sighash_type = false) const;
   /**
    * @brief Get the hex string.
    *
+   * @param[in] append_sighash_type     add sighash type.
    * @return hex string.
    */
-  std::string GetHex() const;
+  std::string GetHex(bool append_sighash_type = false) const;
+  /**
+   * @brief Get the sighash type.
+   *
+   * @return sighash type.
+   */
+  SigHashType GetSigHashType() const;
 
   /**
    * @brief Return the nonce part of the signature.
@@ -239,12 +268,31 @@ class CFD_CORE_EXPORT SchnorrSignature {
    */
   Privkey GetPrivkey() const;
 
+  /**
+   * @brief Get the sighash type.
+   * @param[in] sighash_type    sighash type
+   */
+  void SetSigHashType(const SigHashType &sighash_type);
+
+  /**
+   * @brief check valid sighash type.
+   * @param[in] sighash_type_value      sighash type
+   * @retval true   valid
+   * @retval false  invalid
+   */
+  static bool IsValidSigHashType(uint8_t sighash_type_value);
+
  private:
   /**
    * @brief The underlying data
    *
    */
   ByteData data_;
+  /**
+   * @brief The sighash type
+   *
+   */
+  SigHashType sighash_type_;
 };
 
 /**
@@ -252,6 +300,16 @@ class CFD_CORE_EXPORT SchnorrSignature {
  */
 class CFD_CORE_EXPORT SchnorrUtil {
  public:
+  /**
+   * @brief Create a schnorr signature over the given message using the given
+   * private key and auxiliary random data.
+   *
+   * @param msg the message to create the signature for.
+   * @param sk the secret key to create the signature with.
+   * @return SchnorrSignature
+   */
+  static SchnorrSignature Sign(const ByteData256 &msg, const Privkey &sk);
+
   /**
    * @brief Create a schnorr signature over the given message using the given
    * private key and auxiliary random data.
@@ -287,6 +345,23 @@ class CFD_CORE_EXPORT SchnorrUtil {
   static Pubkey ComputeSigPoint(
       const ByteData256 &msg, const SchnorrPubkey &nonce,
       const SchnorrPubkey &pubkey);
+
+  /**
+   * @brief Compute the sum of signature points for a set of Schnorr signature.
+   * This enable reducing the number of EC multiplications done when computing the
+   * addition of multiple signature points. So instead of computing:
+   * S = (R_0 + X * H(X || R_0 || m_0)) + ... + (R_n + X * H(X || R_n || m_n))
+   * This function computes:
+   * S = (R_0 + ... + R_n) + X * (H(X || R_0 || m_0) + ... + H(X || R_n || m_n))
+   *
+   * @param msgs the set of messages that will be signed.
+   * @param nonces the public component of the nonces that will be used.
+   * @param pubkey the public key for which the signatures will be valid.
+   * @return Pubkey the signature point.
+   */
+  static Pubkey ComputeSigPointBatch(
+      const std::vector<ByteData256> &msgs,
+      const std::vector<SchnorrPubkey> &nonces, const SchnorrPubkey &pubkey);
 
   /**
    * @brief Verify a Schnorr signature.

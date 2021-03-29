@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_secp256k1.cpp
  *
- * @brief \~english definition for secp256k1 related classes
- *   \~japanese secp256k1関連クラス定義
+ * @brief definition for secp256k1 related classes
  */
 
 #include "cfdcore_secp256k1.h"  // NOLINT

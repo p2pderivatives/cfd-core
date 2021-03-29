@@ -16,6 +16,7 @@ using cfd::core::HDWallet;
 using cfd::core::ByteData256;
 using cfd::core::ExtPubkey;
 using cfd::core::ExtPrivkey;
+using cfd::core::KeyData;
 using cfd::core::NetType;
 
 TEST(HDWallet, GetMnemonicWordlistTest) {
@@ -323,6 +324,16 @@ TEST(HDWallet, GeneratePrivkeyTest) {
   ExtPrivkey privkeyh;
   EXPECT_NO_THROW((privkeyh = wallet.GeneratePrivkey(NetType::kMainnet, "m/0h/44h")));
   EXPECT_STREQ(privkeyh.ToString().c_str(), "xprv9xcgxExFiq8qWLdxFHXpEZF8VH7Qr9YDZb8c7vMsqygWk2YGTBgSnDtm1LESskfAJqGMWkWWGagNCSbHdVgA8EFxSbfAQTKSD1z4iJ8qHtq");
+
+  KeyData keypath1;
+  EXPECT_NO_THROW((keypath1 = wallet.GeneratePrivkeyData(NetType::kMainnet, "m/0h/44h")));
+  EXPECT_STREQ(keypath1.ToString().c_str(), "[b4e3f5ed/0'/44']035d3d3ee3ce7044686e0eb4697d92478658ac9f854c3c2bccd7a5a8aa74d3fc7a");
+  EXPECT_STREQ(keypath1.ToString(false).c_str(), "[b4e3f5ed/0'/44']xprv9xcgxExFiq8qWLdxFHXpEZF8VH7Qr9YDZb8c7vMsqygWk2YGTBgSnDtm1LESskfAJqGMWkWWGagNCSbHdVgA8EFxSbfAQTKSD1z4iJ8qHtq");
+  
+  std::vector<uint32_t> path2 = {0x80000000, 0x80000000 + 44};
+  KeyData keypath2;
+  EXPECT_NO_THROW((keypath2 = wallet.GeneratePrivkeyData(NetType::kMainnet, path2)));
+  EXPECT_STREQ(keypath2.ToString(false).c_str(), "[b4e3f5ed/0'/44']xprv9xcgxExFiq8qWLdxFHXpEZF8VH7Qr9YDZb8c7vMsqygWk2YGTBgSnDtm1LESskfAJqGMWkWWGagNCSbHdVgA8EFxSbfAQTKSD1z4iJ8qHtq");
 }
 
 TEST(HDWallet, GeneratePubkeyTest) {
@@ -353,4 +364,14 @@ TEST(HDWallet, GeneratePubkeyTest) {
   ExtPubkey pubkeyh;
   EXPECT_NO_THROW((pubkeyh = wallet.GeneratePubkey(NetType::kMainnet, "m/0H/44H")));
   EXPECT_STREQ(pubkeyh.ToString().c_str(), "xpub6Bc3MkV9ZCh8ipiRMK4pbhBs3JwuFcG4vp4CvJmVQKDVcpsQzizhL2DErc5DHMQuKwBxTg1jLP6PCqriLmLsJzjB2kD9TE9hvqxQ4yLKtcV");
+  
+  KeyData keypath1;
+  EXPECT_NO_THROW((keypath1 = wallet.GeneratePubkeyData(NetType::kMainnet, "m/0H/44H")));
+  EXPECT_STREQ(keypath1.ToString().c_str(), "[b4e3f5ed/0'/44']035d3d3ee3ce7044686e0eb4697d92478658ac9f854c3c2bccd7a5a8aa74d3fc7a");
+  EXPECT_STREQ(keypath1.ToString(false).c_str(), "[b4e3f5ed/0'/44']xpub6Bc3MkV9ZCh8ipiRMK4pbhBs3JwuFcG4vp4CvJmVQKDVcpsQzizhL2DErc5DHMQuKwBxTg1jLP6PCqriLmLsJzjB2kD9TE9hvqxQ4yLKtcV");
+
+  std::vector<uint32_t> path2 = {0x80000000, 0x80000000 + 44};
+  KeyData keypath2;
+  EXPECT_NO_THROW((keypath2 = wallet.GeneratePubkeyData(NetType::kMainnet, path2)));
+  EXPECT_STREQ(keypath2.ToString(false).c_str(), "[b4e3f5ed/0'/44']xpub6Bc3MkV9ZCh8ipiRMK4pbhBs3JwuFcG4vp4CvJmVQKDVcpsQzizhL2DErc5DHMQuKwBxTg1jLP6PCqriLmLsJzjB2kD9TE9hvqxQ4yLKtcV");
 }

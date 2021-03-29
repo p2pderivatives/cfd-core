@@ -7,7 +7,6 @@
 using cfd::core::ByteData;
 using cfd::core::CfdException;
 using cfd::core::Script;
-using cfd::core::ScriptBuilder;
 using cfd::core::ScriptElement;
 using cfd::core::ScriptHash;
 using cfd::core::ScriptType;

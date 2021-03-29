@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_coin.cpp
  *
- * @brief \~japanese Coin(UTXO)関連クラス
- *   \~english Classes related to Coin(UTXO)
+ * @brief Classes related to Coin(UTXO)
  */
 #include "cfdcore/cfdcore_coin.h"
 
@@ -39,6 +38,15 @@ Txid::Txid(const std::string& hex) : data_() {
 
 Txid::Txid(const ByteData256& data) : data_(ByteData(data.GetBytes())) {
   // do nothing
+}
+
+Txid::Txid(const Txid& object) { data_ = object.data_; }
+
+Txid& Txid::operator=(const Txid& object) {
+  if (this != &object) {
+    data_ = object.data_;
+  }
+  return *this;
 }
 
 const std::string Txid::GetHex() const {
@@ -79,6 +87,15 @@ BlockHash::BlockHash(const std::string& hex) : data_() {
 BlockHash::BlockHash(const ByteData256& data)
     : data_(ByteData(data.GetBytes())) {
   // do nothing
+}
+
+BlockHash::BlockHash(const BlockHash& object) { data_ = object.data_; }
+
+BlockHash& BlockHash::operator=(const BlockHash& object) {
+  if (this != &object) {
+    data_ = object.data_;
+  }
+  return *this;
 }
 
 const std::string BlockHash::GetHex() const {

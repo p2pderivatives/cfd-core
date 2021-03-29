@@ -133,6 +133,7 @@ TEST(Privkey, FromWif_mainnet_compressed) {
   EXPECT_STREQ(
       privkey.GetPubkey().GetHex().c_str(),
       "031777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb");
+  EXPECT_STREQ(privkey.GetWif().c_str(), wif.c_str());
 }
 
 TEST(Privkey, FromWif_testnet_compressed) {
@@ -144,6 +145,8 @@ TEST(Privkey, FromWif_testnet_compressed) {
 
   Privkey from_hex("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
   EXPECT_TRUE(privkey.Equals(from_hex));
+
+  EXPECT_STREQ(privkey.GetWif().c_str(), wif.c_str());
 }
 
 TEST(Privkey, FromWif_mainnet_uncompressed) {

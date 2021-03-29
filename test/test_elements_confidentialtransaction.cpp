@@ -218,6 +218,32 @@ TEST(ConfidentialTransaction, TxInTest) {
   EXPECT_EQ(tx.GetTxInCount(), 1);
 }
 
+TEST(ConfidentialTransaction, SizeTest) {
+  ConfidentialTransaction empty_tx(2, 0);
+  ConfidentialTransaction tx;
+  tx = empty_tx;
+  EXPECT_STREQ("0200000000000000000000", tx.GetHex().c_str());
+  EXPECT_EQ(11, tx.GetTotalSize());
+  EXPECT_EQ(11, tx.GetVsize());
+  EXPECT_EQ(44, tx.GetWeight());
+
+  tx.AddTxIn(exp_txid, exp_index, exp_sequence);
+  EXPECT_STREQ("020000000001319bff5f4311e6255ecf4dd472650a6ef85fde7d11cd10d3e6ba5974174aeb560200000000feffffff0000000000", tx.GetHex().c_str());
+  EXPECT_EQ(52, tx.GetTotalSize());
+  EXPECT_EQ(52, tx.GetVsize());
+  EXPECT_EQ(208, tx.GetWeight());
+
+  tx = empty_tx;
+  int64_t exp_satoshi = 12345678;
+  Amount amt = Amount::CreateBySatoshiAmount(exp_satoshi);
+  ConfidentialAssetId asset(exp_assetid);
+  tx.AddTxOut(amt, asset, exp_locking_script);
+  EXPECT_STREQ("0200000000000101f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f010000000000bc614e001976a9146a98a3f2935718df72518c00768ec67c589e0b2888ac00000000", tx.GetHex().c_str());
+  EXPECT_EQ(80, tx.GetTotalSize());
+  EXPECT_EQ(80, tx.GetVsize());
+  EXPECT_EQ(320, tx.GetWeight());
+}
+
 // coinbase tx
 
 TEST(ConfidentialTransaction, SetIssuance) {
@@ -955,6 +981,50 @@ TEST(ConfidentialTransaction, BlindTransactionTest1) {
   }
 
   EXPECT_STREQ(tx.GetHex().c_str(), tx_hex.c_str());
+}
+
+TEST(ConfidentialTransaction, BlindUnmatchInOutTest) {
+  std::string tx_hex = "020000000001e6162f9bbac022e67327e717a3885b316a54e50c34ba266b58f1999854c596810100000000ffffffff030125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a0100000000000138800017a914a3949e9a8b0b813db67c8fc5ad14194a297979cd870125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a0100000000000027100017a9145227b0820cf08f489873888672a5d97face863b2870125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a010000000000002710000000000000";
+  ConfidentialTransaction tx(tx_hex);
+  double inputamount = 0.003;
+  std::string inputblinder =
+      "55bf185ddc2d1c747da2a82b8c9954179edec0af886daaf98d8a7b862e78bcee";
+  std::string inputasset =
+      "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225";
+  std::string inputassetblinder =
+      "95e6e0912047f088394be103f3a1761adcbd92466abfe41f0964a3aa2fc201e5";
+  std::string pubkey1_hex =
+      "0213c4451645063e1edd5fe76e5194864c2246d4c4e6c8df5a305224046e1ea2c4";
+  std::string privkey1_hex =
+      "66e4df5035a64acef16b4aa52ddc8bebd22b22c9eca150774e355abc72909d83";
+  std::string pubkey2_hex =
+      "0222722d38de0463756bdfc460de0547a89e17159150d07b6cf69029ba33adf967";
+  std::string privkey2_hex =
+      "715b3d80726388b7daff92388f82c8ddf5ee7248900552a0bcd16d7d46b439c0";
+  Pubkey pubkey1(pubkey1_hex);
+  Privkey privkey1(privkey1_hex);
+  Pubkey pubkey2(pubkey2_hex);
+  Privkey privkey2(privkey2_hex);
+
+  std::vector<BlindParameter> blind_list;
+  BlindParameter param;
+  param.asset = ConfidentialAssetId(inputasset);
+  param.abf = BlindFactor(inputassetblinder);
+  param.vbf = BlindFactor(inputblinder);
+  param.value = ConfidentialValue(Amount::CreateByCoinAmount(inputamount));
+  blind_list.push_back(param);
+  std::vector<Pubkey> pubkeys;
+  pubkeys.push_back(pubkey1);
+  pubkeys.push_back(pubkey2);
+  pubkeys.push_back(Pubkey());
+
+  try {
+    tx.BlindTxOut(blind_list, pubkeys);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("unmatch input/output amount.", except.what());
+    return;
+  }
+  EXPECT_STREQ("", "Error Test Fail.");
 }
 
 TEST(ConfidentialTransaction, SignatureHashTest) {

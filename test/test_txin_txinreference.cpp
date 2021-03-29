@@ -48,12 +48,12 @@ TEST(TxIn, Constractor) {
 
 TEST(TxIn, EstimateTxInSize) {
   static const std::vector<TestEstimateTxInSizeVector> test_vector = {
-    {AddressType::kP2pkhAddress, 149, 0, Script()},
-    {AddressType::kP2shAddress, 207, 0, exp_script},
-    {AddressType::kP2shP2wpkhAddress, 171, 108, Script()},
-    {AddressType::kP2shP2wshAddress, 217, 142, Script("51")},
-    {AddressType::kP2wpkhAddress, 149, 108, Script()},
-    {AddressType::kP2wshAddress, 207, 166, exp_script},
+    {AddressType::kP2pkhAddress, 150, 0, Script()},
+    {AddressType::kP2shAddress, 208, 0, exp_script},
+    {AddressType::kP2shP2wpkhAddress, 173, 109, Script()},
+    {AddressType::kP2shP2wshAddress, 219, 143, Script("51")},
+    {AddressType::kP2wpkhAddress, 150, 109, Script()},
+    {AddressType::kP2wshAddress, 208, 167, exp_script},
   };
 
   for (const auto& test_data : test_vector) {
@@ -68,11 +68,11 @@ TEST(TxIn, EstimateTxInSize) {
 
 TEST(TxIn, EstimateTxInVsize) {
   static const std::vector<TestEstimateTxInSizeVector> test_vector = {
-    {AddressType::kP2pkhAddress, 149, 0, Script()},
-    {AddressType::kP2shAddress, 207, 0, exp_script},
-    {AddressType::kP2shP2wpkhAddress, 90, 0, Script()},
-    {AddressType::kP2shP2wshAddress, 111, 0, Script("51")},
-    {AddressType::kP2wpkhAddress, 68, 0, Script()},
+    {AddressType::kP2pkhAddress, 150, 0, Script()},
+    {AddressType::kP2shAddress, 208, 0, exp_script},
+    {AddressType::kP2shP2wpkhAddress, 92, 0, Script()},
+    {AddressType::kP2shP2wshAddress, 112, 0, Script("51")},
+    {AddressType::kP2wpkhAddress, 69, 0, Script()},
     {AddressType::kP2wshAddress, 83, 0, exp_script},
   };
 

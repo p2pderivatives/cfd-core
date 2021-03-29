@@ -1,14 +1,15 @@
-// Copyright 2019 CryptoGarage
+// Copyright 2020 CryptoGarage
 /**
  * @file cfdcore_hdwallet.cpp
  *
- * @brief \~japanese BIP32/BIP39/BIP44関連クラスの実装
- *   \~english implementation of BIP32/BIP39/BIP44 classes
+ * @brief implementation of BIP32/BIP39/BIP44 classes
  */
 
 #include "cfdcore/cfdcore_hdwallet.h"
 
+#include <algorithm>
 #include <cstdlib>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -24,7 +25,7 @@ namespace core {
 using logger::warn;
 
 // ----------------------------------------------------------------------------
-// ファイル内定義
+// Definitions in the file
 // ----------------------------------------------------------------------------
 /// empty seed string (64byte)
 static constexpr const char* kEmptySeedStr =
@@ -32,7 +33,7 @@ static constexpr const char* kEmptySeedStr =
     "000000000000000000000000000000000000000000000000000000000";  // NOLINT
 
 /**
- * @brief Bip32鍵情報の解析を行う。
+ * @brief Bip32 Analyze key information.
  * @param[in] extkey              extkey
  * @param[in] base58              base58 data
  * @param[in,out] serialize_data  serialize data
@@ -124,7 +125,7 @@ static void AnalyzeBip32KeyData(
 }
 
 /**
- * @brief Base58変換を行う。
+ * @brief Perform Base58 conversion.
  * @param[in] serialize_data    serialize data
  * @param[in] caller_name       caller class name
  * @return base58 string
@@ -155,7 +156,7 @@ static std::string ToBase58String(
 }
 
 /**
- * @brief 文字列パスから配列を取得する。
+ * @brief Get an array from a string path.
  * @param[in] string_path       child number string path
  * @param[in] caller_name       caller class name
  * @param[in] depth             current key depth
@@ -201,7 +202,7 @@ static std::vector<uint32_t> ToArrayFromString(
       }
     }
 
-    // strtol関数による変換
+    // Conversion by strtol function
     char* p_str_end = nullptr;
     uint32_t value;
     if ((str.size() > 2) && (str[0] == '0') && (str[1] == 'x')) {
@@ -282,6 +283,22 @@ ExtPrivkey HDWallet::GeneratePrivkey(
   return privkey.DerivePrivkey(string_path);
 }
 
+KeyData HDWallet::GeneratePrivkeyData(
+    NetType network_type, const std::vector<uint32_t>& path) const {
+  ExtPrivkey privkey(seed_, network_type);
+  ExtPrivkey key = privkey.DerivePrivkey(path);
+  auto fingerprint = privkey.GetPrivkey().GeneratePubkey().GetFingerprint();
+  return KeyData(key, path, fingerprint);
+}
+
+KeyData HDWallet::GeneratePrivkeyData(
+    NetType network_type, const std::string& string_path) const {
+  ExtPrivkey privkey(seed_, network_type);
+  ExtPrivkey key = privkey.DerivePrivkey(string_path);
+  auto fingerprint = privkey.GetPrivkey().GeneratePubkey().GetFingerprint();
+  return KeyData(key, string_path, fingerprint);
+}
+
 ExtPubkey HDWallet::GeneratePubkey(NetType network_type) const {
   ExtPrivkey privkey(seed_, network_type);
   return privkey.GetExtPubkey();
@@ -303,6 +320,22 @@ ExtPubkey HDWallet::GeneratePubkey(
     NetType network_type, const std::string& string_path) const {
   ExtPrivkey privkey(seed_, network_type);
   return privkey.DerivePubkey(string_path);
+}
+
+KeyData HDWallet::GeneratePubkeyData(
+    NetType network_type, const std::vector<uint32_t>& path) const {
+  ExtPrivkey privkey(seed_, network_type);
+  ExtPrivkey key = privkey.DerivePrivkey(path);
+  auto fingerprint = privkey.GetPrivkey().GeneratePubkey().GetFingerprint();
+  return KeyData(key.GetExtPubkey(), path, fingerprint);
+}
+
+KeyData HDWallet::GeneratePubkeyData(
+    NetType network_type, const std::string& string_path) const {
+  ExtPrivkey privkey(seed_, network_type);
+  ExtPrivkey key = privkey.DerivePrivkey(string_path);
+  auto fingerprint = privkey.GetPrivkey().GeneratePubkey().GetFingerprint();
+  return KeyData(key.GetExtPubkey(), string_path, fingerprint);
 }
 
 std::vector<std::string> HDWallet::GetMnemonicWordlist(
@@ -636,6 +669,19 @@ ExtPrivkey ExtPrivkey::DerivePrivkey(const std::string& string_path) const {
   return DerivePrivkey(path);
 }
 
+KeyData ExtPrivkey::DerivePrivkeyData(
+    const std::vector<uint32_t>& path) const {
+  ExtPrivkey key = DerivePrivkey(path);
+  auto fingerprint = privkey_.GeneratePubkey().GetFingerprint();
+  return KeyData(key, path, fingerprint);
+}
+
+KeyData ExtPrivkey::DerivePrivkeyData(const std::string& string_path) const {
+  ExtPrivkey key = DerivePrivkey(string_path);
+  auto fingerprint = privkey_.GeneratePubkey().GetFingerprint();
+  return KeyData(key, string_path, fingerprint);
+}
+
 ExtPubkey ExtPrivkey::GetExtPubkey() const {
   struct ext_key extkey;
 
@@ -679,6 +725,18 @@ ExtPubkey ExtPrivkey::DerivePubkey(const std::vector<uint32_t>& path) const {
 ExtPubkey ExtPrivkey::DerivePubkey(const std::string& string_path) const {
   ExtPrivkey privkey = DerivePrivkey(string_path);
   return privkey.GetExtPubkey();
+}
+
+KeyData ExtPrivkey::DerivePubkeyData(const std::vector<uint32_t>& path) const {
+  ExtPubkey key = DerivePubkey(path);
+  auto fingerprint = privkey_.GeneratePubkey().GetFingerprint();
+  return KeyData(key, path, fingerprint);
+}
+
+KeyData ExtPrivkey::DerivePubkeyData(const std::string& string_path) const {
+  ExtPubkey key = DerivePubkey(string_path);
+  auto fingerprint = privkey_.GeneratePubkey().GetFingerprint();
+  return KeyData(key, string_path, fingerprint);
 }
 
 bool ExtPrivkey::IsValid() const { return privkey_.IsValid(); }
@@ -967,6 +1025,18 @@ ExtPubkey ExtPubkey::DerivePubkey(const std::string& string_path) const {
   return DerivePubkey(path);
 }
 
+KeyData ExtPubkey::DerivePubkeyData(const std::vector<uint32_t>& path) const {
+  ExtPubkey key = DerivePubkey(path);
+  auto fingerprint = pubkey_.GetFingerprint();
+  return KeyData(key, path, fingerprint);
+}
+
+KeyData ExtPubkey::DerivePubkeyData(const std::string& string_path) const {
+  ExtPubkey key = DerivePubkey(string_path);
+  auto fingerprint = pubkey_.GetFingerprint();
+  return KeyData(key, string_path, fingerprint);
+}
+
 ByteData256 ExtPubkey::DerivePubTweak(
     const std::vector<uint32_t>& path) const {
   ExtPubkey key = DerivePubkey(path);
@@ -1010,6 +1080,339 @@ NetType ExtPubkey::GetNetworkType() const {
     return NetType::kMainnet;
   }
   return NetType::kTestnet;
+}
+
+// ----------------------------------------------------------------------------
+// KeyData
+// ----------------------------------------------------------------------------
+
+KeyData::KeyData() {
+  // do nothing
+}
+
+KeyData::KeyData(
+    const ExtPrivkey& ext_privkey, const std::string& child_path,
+    const ByteData& finterprint)
+    : extprivkey_(ext_privkey), fingerprint_(finterprint) {
+  if (!child_path.empty()) {
+    path_ = ToArrayFromString(child_path, "KeyData", 0);
+  }
+  extpubkey_ = ext_privkey.GetExtPubkey();
+  privkey_ = ext_privkey.GetPrivkey();
+  pubkey_ = privkey_.GetPubkey();
+}
+
+KeyData::KeyData(
+    const ExtPubkey& ext_pubkey, const std::string& child_path,
+    const ByteData& finterprint)
+    : extpubkey_(ext_pubkey), fingerprint_(finterprint) {
+  if (!child_path.empty()) {
+    path_ = ToArrayFromString(child_path, "KeyData", 0);
+  }
+  pubkey_ = ext_pubkey.GetPubkey();
+}
+
+KeyData::KeyData(
+    const Privkey& privkey, const std::string& child_path,
+    const ByteData& finterprint)
+    : privkey_(privkey), fingerprint_(finterprint) {
+  if (!child_path.empty()) {
+    path_ = ToArrayFromString(child_path, "KeyData", 0);
+  }
+  pubkey_ = privkey.GetPubkey();
+}
+
+KeyData::KeyData(
+    const Pubkey& pubkey, const std::string& child_path,
+    const ByteData& finterprint)
+    : pubkey_(pubkey), fingerprint_(finterprint) {
+  if (!child_path.empty()) {
+    path_ = ToArrayFromString(child_path, "KeyData", 0);
+  }
+}
+
+KeyData::KeyData(
+    const ExtPrivkey& ext_privkey, const std::vector<uint32_t>& child_num_list,
+    const ByteData& finterprint)
+    : extprivkey_(ext_privkey),
+      path_(child_num_list),
+      fingerprint_(finterprint) {
+  extpubkey_ = ext_privkey.GetExtPubkey();
+  privkey_ = ext_privkey.GetPrivkey();
+  pubkey_ = privkey_.GetPubkey();
+}
+
+KeyData::KeyData(
+    const ExtPubkey& ext_pubkey, const std::vector<uint32_t>& child_num_list,
+    const ByteData& finterprint)
+    : extpubkey_(ext_pubkey),
+      path_(child_num_list),
+      fingerprint_(finterprint) {
+  pubkey_ = ext_pubkey.GetPubkey();
+}
+
+KeyData::KeyData(
+    const Privkey& privkey, const std::vector<uint32_t>& child_num_list,
+    const ByteData& finterprint)
+    : privkey_(privkey), path_(child_num_list), fingerprint_(finterprint) {
+  pubkey_ = privkey.GetPubkey();
+}
+
+KeyData::KeyData(
+    const Pubkey& pubkey, const std::vector<uint32_t>& child_num_list,
+    const ByteData& finterprint)
+    : pubkey_(pubkey), path_(child_num_list), fingerprint_(finterprint) {
+  // do nothing
+}
+
+KeyData::KeyData(const std::string& path_info, int32_t child_num) {
+  auto key_info = path_info;
+  if (path_info[0] == '[') {
+    // key origin information check. cut to ']'
+    auto pos = path_info.find("]");
+    if (pos != std::string::npos) {
+      key_info = path_info.substr(pos + 1);
+      auto path = path_info.substr(1, pos - 1);
+      pos = path.find("/");
+      if (pos != std::string::npos) {
+        if (pos != 0) {
+          auto fingerprint = path.substr(0, pos);
+          fingerprint_ = ByteData(fingerprint);
+        }
+        auto child_path = path.substr(pos + 1);
+        path_ = ToArrayFromString(child_path, "KeyData", 0);
+      }
+    }
+  }
+  // derive key check (xpub,etc)D
+  std::string hdkey_top;
+  if (key_info.size() > 4) hdkey_top = key_info.substr(1, 3);
+  if ((hdkey_top == "pub") || (hdkey_top == "prv")) {
+    std::string path;
+    std::string key;
+    bool has_end_any_hardened = false;
+    bool exist_hardened = false;
+    std::vector<std::string> list = StringUtil::Split(key_info, "/");
+    key = list[0];
+    if (list.size() > 1) {
+      size_t index;
+      for (index = 1; index < list.size(); ++index) {
+        if (index != 1) path += "/";
+        if (list[index] == "*") break;
+        if ((list[index] == "*'") || (list[index] == "*h") ||
+            (list[index] == "*H")) {
+          has_end_any_hardened = true;
+          exist_hardened = true;
+          break;
+        }
+        path += list[index];
+        if ((list[index].find("'") != std::string::npos) ||
+            (list[index].find("h") != std::string::npos) ||
+            (list[index].find("H") != std::string::npos)) {
+          exist_hardened = true;
+        } else {
+          auto value = strtoul(list[index].c_str(), nullptr, 0);
+          if (value >= 0x80000000) exist_hardened = true;
+        }
+      }
+      if ((index + 1) < list.size()) {
+        warn(
+            CFD_LOG_SOURCE,
+            "Failed to extkey path. "
+            "A '*' can only be specified at the end.");
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            "Failed to extkey path. "
+            "A '*' can only be specified at the end.");
+      }
+      if (list.back().find("*") != std::string::npos) {
+        if (child_num < 0) {
+          warn(
+              CFD_LOG_SOURCE,
+              "Failed to extkey path. "
+              "A '*' can not support.");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to extkey path. "
+              "A '*' can not support.");
+        }
+        path += std::to_string(child_num);
+        if (has_end_any_hardened) path += "h";
+      }
+    }
+    std::string base_extkey_;
+    if (hdkey_top == "prv") {
+      extprivkey_ = ExtPrivkey(key);
+      if (!path.empty()) extprivkey_ = extprivkey_.DerivePrivkey(path);
+      extpubkey_ = extprivkey_.GetExtPubkey();
+      privkey_ = extprivkey_.GetPrivkey();
+      pubkey_ = privkey_.GetPubkey();
+    } else if (exist_hardened) {
+      warn(
+          CFD_LOG_SOURCE, "Failed to extPubkey. hardened is extPrivkey only.");
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError,
+          "Failed to extPubkey. hardened is extPrivkey only.");
+    } else {
+      extpubkey_ = ExtPubkey(key);
+      if (!path.empty()) extpubkey_ = extpubkey_.DerivePubkey(path);
+      pubkey_ = extpubkey_.GetPubkey();
+    }
+    if (!path.empty()) {
+      auto path_list = ToArrayFromString(path, "KeyData", 0);
+      path_.reserve(path_.size() + path_list.size());
+      std::copy(path_list.begin(), path_list.end(), std::back_inserter(path_));
+    }
+  } else if (Privkey::HasWif(key_info)) {
+    privkey_ = Privkey::FromWif(key_info);
+    pubkey_ = privkey_.GetPubkey();
+  } else {
+    ByteData bytes(key_info);
+    if (Pubkey::IsValid(bytes)) {
+      pubkey_ = Pubkey(bytes);
+    } else {
+      privkey_ = Privkey(bytes);
+      pubkey_ = privkey_.GetPubkey();
+    }
+  }
+}
+
+bool KeyData::IsValid() const { return pubkey_.IsValid(); }
+
+bool KeyData::HasExtPrivkey() const { return extprivkey_.IsValid(); }
+
+bool KeyData::HasExtPubkey() const { return extpubkey_.IsValid(); }
+
+bool KeyData::HasPrivkey() const { return privkey_.IsValid(); }
+
+Pubkey KeyData::GetPubkey() const { return pubkey_; }
+
+Privkey KeyData::GetPrivkey() const { return privkey_; }
+
+ExtPrivkey KeyData::GetExtPrivkey() const { return extprivkey_; }
+
+ExtPubkey KeyData::GetExtPubkey() const { return extpubkey_; }
+
+ByteData KeyData::GetFingerprint() const { return fingerprint_; }
+
+std::vector<uint32_t> KeyData::GetChildNumArray() const { return path_; }
+
+KeyData KeyData::DerivePrivkey(
+    std::vector<uint32_t> path, bool has_rebase_path) const {
+  if (!extprivkey_.IsValid()) {
+    warn(CFD_LOG_SOURCE, "Failed to invalid extPrivkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalStateError, "Failed to invalid extPrivkey.");
+  }
+  ExtPrivkey key = extprivkey_.DerivePrivkey(path);
+  if (has_rebase_path) {
+    auto fp = extprivkey_.GetPrivkey().GeneratePubkey().GetFingerprint();
+    return KeyData(key, path, fp);
+  } else {
+    auto join_path = path_;
+    join_path.reserve(join_path.size() + path.size());
+    std::copy(path.begin(), path.end(), std::back_inserter(join_path));
+    return KeyData(key, join_path, fingerprint_);
+  }
+}
+
+KeyData KeyData::DerivePrivkey(std::string path, bool has_rebase_path) const {
+  auto arr = ToArrayFromString(path, "KeyData::DerivePrivkey", 0);
+  return DerivePrivkey(arr, has_rebase_path);
+}
+
+KeyData KeyData::DerivePubkey(
+    std::vector<uint32_t> path, bool has_rebase_path) const {
+  if (extprivkey_.IsValid()) {
+    auto key = extprivkey_.DerivePubkey(path);
+    if (has_rebase_path) {
+      auto fp = extprivkey_.GetPrivkey().GeneratePubkey().GetFingerprint();
+      return KeyData(key, path, fp);
+    } else {
+      auto join_path = path_;
+      join_path.reserve(join_path.size() + path.size());
+      std::copy(path.begin(), path.end(), std::back_inserter(join_path));
+      return KeyData(key, join_path, fingerprint_);
+    }
+  } else if (extpubkey_.IsValid()) {
+    auto key = extpubkey_.DerivePubkey(path);
+    if (has_rebase_path) {
+      auto fp = extpubkey_.GetPubkey().GetFingerprint();
+      return KeyData(key, path, fp);
+    } else {
+      auto join_path = path_;
+      join_path.reserve(join_path.size() + path.size());
+      std::copy(path.begin(), path.end(), std::back_inserter(join_path));
+      return KeyData(key, join_path, fingerprint_);
+    }
+  } else {
+    warn(CFD_LOG_SOURCE, "Failed to invalid extPubkey.");
+    throw CfdException(
+        CfdError::kCfdIllegalStateError, "Failed to invalid extPubkey.");
+  }
+}
+
+KeyData KeyData::DerivePubkey(std::string path, bool has_rebase_path) const {
+  auto arr = ToArrayFromString(path, "KeyData::DerivePubkey", 0);
+  return DerivePubkey(arr, has_rebase_path);
+}
+
+std::string KeyData::GetBip32Path(
+    HardenedType hardened_type, bool has_hex) const {
+  std::stringstream ss;
+  bool is_first = true;
+  for (auto child_num : path_) {
+    if (!is_first) ss << "/";
+    uint32_t num = (hardened_type == HardenedType::kNumber)
+                       ? child_num
+                       : (child_num & 0x7FFFFFFF);
+    if (has_hex) {
+      ss << "0x" << std::hex << num;
+    } else {
+      ss << num;
+    }
+
+    if (child_num & 0x80000000) {
+      switch (hardened_type) {
+        case kLargeH:
+          ss << "H";
+          break;
+        case kSmallH:
+          ss << "h";
+          break;
+        case kNumber:
+          // do nothing
+          break;
+        case kApostrophe:
+        default:
+          ss << "'";
+          break;
+      }
+    }
+    is_first = false;
+  }
+  return ss.str();
+}
+
+std::string KeyData::ToString(
+    bool has_pubkey, HardenedType hardened_type, bool has_hex) const {
+  auto path_str = GetBip32Path(hardened_type, has_hex);
+  std::stringstream ss;
+  if ((!path_str.empty()) && (!fingerprint_.IsEmpty())) {
+    ss << "[" << fingerprint_.GetHex() << "/" << path_str << "]";
+  }
+  if (has_pubkey) {
+    ss << pubkey_.GetHex();
+  } else if (extprivkey_.IsValid()) {
+    ss << extprivkey_.ToString();
+  } else if (extpubkey_.IsValid()) {
+    ss << extpubkey_.ToString();
+  } else if (privkey_.IsValid()) {
+    ss << privkey_.GetWif();
+  } else {
+    ss << pubkey_.GetHex();
+  }
+  return ss.str();
 }
 
 }  // namespace core

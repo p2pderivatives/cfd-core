@@ -231,6 +231,38 @@ TEST(Descriptor, Parse_sh_multi) {
   }
 }
 
+TEST(Descriptor, Parse_sh_multi_maximum) {
+  std::string descriptor = "sh(multi(15,02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0,0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c,024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82,03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38,020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1,0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147,0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c,020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9,0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37,0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e,03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b,02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd,0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d,0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2,025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db))";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  std::vector<DescriptorScriptReference> script_list;
+
+  EXPECT_NO_THROW(desc = Descriptor::Parse(descriptor));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll());
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "OP_HASH160 3b94abddb86c04958381b48c615a7766bcb3e98f OP_EQUAL");
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
+        "15 02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0 0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c 024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82 03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38 020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1 0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147 0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c 020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9 0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37 0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e 03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b 02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd 0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d 0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2 025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db 15 OP_CHECKMULTISIG");
+    EXPECT_TRUE(script_list[0].GetChild().HasReqNum());
+    EXPECT_EQ(script_list[0].GetChild().GetReqNum(), 15);
+  }
+  
+  std::string descriptor_err = "sh(multi(15,02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0,0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c,024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82,03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38,020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1,0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147,0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c,020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9,0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37,0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e,03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b,02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd,0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d,0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2,025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db,030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55))";
+  try {
+    Descriptor::Parse(descriptor_err);
+    EXPECT_TRUE(false);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("CreateMultisigScript pubkeys array size is over.",
+        except.what());
+  }
+}
+
 TEST(Descriptor, Parse_sortedmulti) {
   std::string descriptor = "sh(sortedmulti(2,03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01))";
   Descriptor desc;
@@ -274,6 +306,43 @@ TEST(Descriptor, Parse_wsh_multi) {
       "2 03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7 03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb 03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a 3 OP_CHECKMULTISIG");
     EXPECT_TRUE(script_list[0].GetChild().HasReqNum());
     EXPECT_EQ(script_list[0].GetChild().GetReqNum(), 2);
+  }
+}
+
+TEST(Descriptor, Parse_wsh_multi_maximum) {
+  std::string descriptor = "wsh(multi(15,02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0,0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c,024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82,03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38,020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1,0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147,0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c,020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9,0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37,0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e,03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b,02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd,0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d,0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2,025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db,030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55,0267a49281bd9d6d366c39c62f2e95a2aab37638f2a4718891c542d0961962644e,02f48e8e2bcaeb16a6d781bb7a72f6250607bf21e32f08c48e37a9e4706e6d48b8,03968ac57888ddaa3b57caa39efd5d5382c24f3deed602775cd4895f7c7adb5950,024b64115bff6cc3718867114f7594fad535344f27ebe17ffa0e66288eb7bd2561))";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  std::vector<DescriptorScriptReference> script_list;
+
+  try {
+    desc = Descriptor::Parse(descriptor);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("", except.what());
+  }
+  EXPECT_NO_THROW(desc = Descriptor::Parse(descriptor));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll());
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "0 5213817e55f6309979372ce754d259e0658ca56e68ce0bcee2b281c7af92fc5f");
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_STREQ(script_list[0].GetRedeemScript().ToString().c_str(),
+        "15 02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0 0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c 024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82 03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38 020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1 0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147 0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c 020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9 0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37 0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e 03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b 02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd 0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d 0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2 025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db 030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55 0267a49281bd9d6d366c39c62f2e95a2aab37638f2a4718891c542d0961962644e 02f48e8e2bcaeb16a6d781bb7a72f6250607bf21e32f08c48e37a9e4706e6d48b8 03968ac57888ddaa3b57caa39efd5d5382c24f3deed602775cd4895f7c7adb5950 024b64115bff6cc3718867114f7594fad535344f27ebe17ffa0e66288eb7bd2561 20 OP_CHECKMULTISIG");
+    EXPECT_TRUE(script_list[0].GetChild().HasReqNum());
+    EXPECT_EQ(script_list[0].GetChild().GetReqNum(), 15);
+  }
+  
+  std::string descriptor_err = "wsh(multi(15,02522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0,0340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c,024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b82,03ce982e13798960b7c23fd2c1676f64ff6df80f75324d0e566432e2a884dafb38,020bac40bcc23dd9b33a32b8183d2e9e79eb976bcfb2247141da1e58b2970bfde1,0289d8f0fb8cbd369a9aad28070edf2e99544384c122b8af825e50ea219193f147,0210fcaf81018c3f304ca792c9c1809ec00b159e23ebde669486c62787818f315c,020847e443a4d6b9ea577b776ca232c5dc9a3cbbd6c82dde0ef5100ac6c5a36cf9,0289e210d82121823dc5af09a0ab8c23d4a52273358295f4e4596b0f98e4973e37,0254de5471d6c8b36c26a62e0b54385fe0e88563e34127c18e97e705f83172326e,03a9c473d65af0420e600e085be058f98ac0634d13390e5d8d4962cbcfeb75422b,02ebcde0a7ece63e607287af1542efddeb008b0d1693da2ca06b622ebaf92051dd,0289b2b5852ffd7b89266338d746e05e7afe33e6005dab198b6a4b13065b93a89d,0396436fd20f3c5d3638c8ed4195cf63b4467701c5d4de660bd9bced68f4588cd2,025dffce0b5e131808a630d0d8769d22ead71fddf336836916c5906676e13394db,030023121bed4585fdfea023aee4c7f9731e3cfa6b2a8ec21a159615d2bad57e55,0267a49281bd9d6d366c39c62f2e95a2aab37638f2a4718891c542d0961962644e,02f48e8e2bcaeb16a6d781bb7a72f6250607bf21e32f08c48e37a9e4706e6d48b8,03968ac57888ddaa3b57caa39efd5d5382c24f3deed602775cd4895f7c7adb5950,024b64115bff6cc3718867114f7594fad535344f27ebe17ffa0e66288eb7bd2561,03f3aba2366b71f8473dd8dd4186005a9e3c6f9a32f76fc45493fd2a78b78c0d8d))";
+  try {
+    Descriptor::Parse(descriptor_err);
+    EXPECT_TRUE(false);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ("Failed to multisig pubkey num.",
+        except.what());
   }
 }
 
@@ -328,6 +397,37 @@ TEST(Descriptor, Parse_raw) {
   EXPECT_NO_THROW(desc_str = desc.ToString());
   EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
   EXPECT_STREQ(locking_script.ToString().c_str(), "OP_RETURN 54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e");
+
+  std::vector<DescriptorScriptReference> script_list;
+  std::vector<std::string> arg_list1;
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll(&arg_list1));
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_FALSE(script_list[0].HasAddress());
+  }
+}
+
+TEST(Descriptor, Parse_raw_wsh) {
+  std::string descriptor = "raw(0020ef8110fa7ddefb3e2d02b2c1b1480389b4bc93f606281570cfc20dba18066aee)#2xu4jtw0";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+
+  EXPECT_NO_THROW(desc = Descriptor::Parse(descriptor));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString());
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(), "0 ef8110fa7ddefb3e2d02b2c1b1480389b4bc93f606281570cfc20dba18066aee");
+
+  std::vector<DescriptorScriptReference> script_list;
+  std::vector<std::string> arg_list1;
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll(&arg_list1));
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_TRUE(script_list[0].HasAddress());
+    EXPECT_STREQ(script_list[0].GenerateAddress(NetType::kMainnet).GetAddress().c_str(),
+      "bc1qa7q3p7nammanutgzktqmzjqr3x6teylkqc5p2ux0cgxm5xqxdthq02yr5g");
+  }
 }
 
 TEST(Descriptor, Parse_pk_extkey) {
@@ -384,6 +484,14 @@ TEST(Descriptor, Parse_pkh_extkey_derive) {
     "OP_DUP OP_HASH160 2a05c214617c9b0434c92d0583200a85ef61818f OP_EQUALVERIFY OP_CHECKSIG");
   EXPECT_STREQ(gen_script.ToString().c_str(),
     "OP_DUP OP_HASH160 c463e6dedb2b780434e60fcee3f2d0a0fbcbbc90 OP_EQUALVERIFY OP_CHECKSIG");
+  try {
+    auto key = desc.GetKeyData("0");
+    EXPECT_TRUE(key.IsValid());
+    EXPECT_STREQ(key.ToString().c_str(),
+      "[d34db33f/44'/0'/0'/1/0]03095e95d8c50ae3f3fea93fa8e983f710489f60ff681a658c06eba64622c824b1");
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
 }
 
 TEST(Descriptor, Parse_wsh_extkey_derive) {
@@ -821,6 +929,16 @@ TEST(Descriptor, CheckChecksum) {
   EXPECT_NO_THROW(desc = Descriptor::Parse(base_descriptor));
   EXPECT_NO_THROW(desc_str = desc.ToString());
   EXPECT_STREQ(desc_str.c_str(), success_descriptor.c_str());
+  try {
+    auto key_list = desc.GetKeyDataAll();
+    EXPECT_FALSE(key_list.empty());
+    if (!key_list.empty()) {
+      EXPECT_STREQ(key_list[0].ToString().c_str(),
+        "[ef57314e/0'/0'/4']03d3f817091de0bbe51e19b53303b12e463f664894d49cb5bf5bb19c88fbc54d8d");
+    }
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
 }
 
 TEST(Descriptor, CreateDescriptor_wpkh) {
@@ -835,6 +953,14 @@ TEST(Descriptor, CreateDescriptor_wpkh) {
   EXPECT_NO_THROW(desc = Descriptor::CreateDescriptor(DescriptorScriptType::kDescriptorScriptWpkh, key_info));
   EXPECT_NO_THROW(desc_str = desc.ToString());
   EXPECT_STREQ(desc_str.c_str(), ext_descriptor.c_str());
+  try {
+    auto key = desc.GetKeyData();
+    EXPECT_TRUE(key.IsValid());
+    EXPECT_STREQ(key.ToString().c_str(),
+      "[1422fcb3/0'/0'/68']02bedf98a38247c1718fdff7e07561b4dc15f10323ebb0accab581778e72c2e995");
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
 }
 
 TEST(Descriptor, CreateDescriptor_sh_wsh_sortedmulti) {

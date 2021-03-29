@@ -16,8 +16,7 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief \~japanese secp256k1クラス.
- *   \~english secp256k1 class
+ * @brief secp256k1 class
  */
 class Secp256k1 {
  public:
@@ -28,24 +27,15 @@ class Secp256k1 {
   static uint32_t GetSurjectionproofInputLimit();
 
   /**
-   * \~english
    * @brief Construct
    * @param[in] context Secp256k1 Context
-   * \~japanese
-   * @brief コンストラクタ
-   * @param[in] context Secp256k1コンテキスト
    */
   explicit Secp256k1(void* context);
 
   /**
-   * \~english 
    * @brief function for join Pubkey
    * @param[in] pubkey_list input list for Pubkey to join
    * @return  data of combined Pubkey
-   * \~japanese
-   * @brief Pubkey合成処理
-   * @param[in] pubkey_list 合成するPubkeyリスト
-   * @return 合成したPubkeyデータ
    */
   ByteData CombinePubkeySecp256k1Ec(const std::vector<ByteData>& pubkey_list);
 
@@ -57,88 +47,53 @@ class Secp256k1 {
   ByteData CompressPubkeySecp256k1Ec(const ByteData& uncompressed_pubkey);
 
   /**
-   * \~english 
    * @brief Tweak a private key by adding tweak.
    * @param[in] privkey     private key.(must 32-byte)
    * @param[in] tweak       tweak value to be added.(32-byte)
    * @return ByteData instance shows private key
-   * \~japanese
-   * @brief 加算によって、PrivateKeyを調整する。
-   * @param[in] privkey     秘密鍵.(32-byte固定)
-   * @param[in] tweak       調整値.(32-byte)
-   * @return private key が格納された ByteDataインスタンス.
    */
   ByteData AddTweakPrivkeySecp256k1Ec(
       const ByteData& privkey, const ByteData& tweak);
 
   /**
-   * \~english 
    * @brief Tweak a private key by multiplying it by a tweak.
    * @param[in] privkey     private key.(must 32-byte)
    * @param[in] tweak       tweak value to be multiplied.(32-byte)
    * @return ByteData instance shows private key
-   * \~japanese
-   * @brief 乗算によって、PrivateKeyを調整する。
-   * @param[in] tweak       秘密鍵.(32-byte固定)
-   * @param[in] tweak       調整値.(32-byte)
-   * @return private key が格納された ByteDataインスタンス.
    */
   ByteData MulTweakPrivkeySecp256k1Ec(
       const ByteData& privkey, const ByteData& tweak);
 
   /**
-   * \~english
    * @brief function for adjusting Pubkey
    * @param[in] pubkey            Pubkey
    * @param[in] tweak             tweak value to be added.(32-byte)
    * @param[in] is_tweak_check    boolean check for pubkey adjustment
    * @return  data of adjusted Pubkey data
-   * \~japanese
-   * @brief 加算によって、PubKeyを調整する。
-   * @param[in] pubkey            Pubkey
-   * @param[in] tweak             調整値.(32-byte)
-   * @param[in] is_tweak_check    pubkey調整チェック実施有無
-   * @return 調整後のPubkeyデータ
    */
   ByteData AddTweakPubkeySecp256k1Ec(
       const ByteData& pubkey, const ByteData& tweak, bool is_tweak_check);
 
   /**
-   * \~english
    * @brief Tweak a public key by multiplying it by a tweak value.
    * @param[in] pubkey            Pubkey
    * @param[in] tweak             tweak value to be multiplied.(32-byte)
    * @return  data of adjusted Pubkey data
-   * \~japanese
-   * @brief 乗算によって、 PublicKey を調整する。
-   * @param[in] pubkey            Pubkey
-   * @param[in] tweak             調整値.(32-byte)
-   * @return 調整後のPubkeyデータ
    */
   ByteData MulTweakPubkeySecp256k1Ec(
       const ByteData& pubkey, const ByteData& tweak);
 
   /**
-   * \~english
    * @brief function for negate Privkey
    * @param[in] privkey         Privkey
    * @return data of negated Privkey
-   * \~japanese
-   * @brief Privkey negate処理
-   * @param[in] privkey         Privkey
-   * @return 加工後のPrivkeyデータ
    */
   ByteData NegatePrivkeySecp256k1Ec(const ByteData& privkey);
 
   /**
-   * \~english
    * @brief function for negate Pubkey
    * @param[in] pubkey            Pubkey
    * @return data of negated Pubkey
-   * \~japanese
-   * @brief Pubkey negate処理
-   * @param[in] pubkey            Pubkey
-   * @return 加工後のPubkeyデータ
    */
   ByteData NegatePubkeySecp256k1Ec(const ByteData& pubkey);
 
@@ -156,8 +111,7 @@ class Secp256k1 {
       uint64_t* min_value, uint64_t* max_value);
 
   /**
-   * @brief \~japanese Whitelist 証明情報生成処理
-   *   \~english Whitelist generation process for certificate info
+   * @brief Whitelist generation process for certificate info
    * \~
    * @param[in] offline_pubkey    offline pubkey
    * @param[in] online_privkey    online private key
@@ -174,8 +128,7 @@ class Secp256k1 {
 
  private:
   /**
-   * @brief \~japanese Secp256k1コンテキスト
-   *   \~english Secp256k1 Context
+   * @brief Secp256k1 Context
    */
   void* secp256k1_context_;
 };

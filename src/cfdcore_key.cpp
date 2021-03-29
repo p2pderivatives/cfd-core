@@ -1,9 +1,8 @@
-// Copyright 2019 CryptoGarage
+// Copyright 2020 CryptoGarage
 /**
  * @file cfdcore_key.cpp
  *
- * @brief \~japanese Pubkey/Privkey関連クラス定義
- *   \~english definition for Pubkey/Privkey class
+ * @brief definition for Pubkey/Privkey class
  */
 
 #include "cfdcore/cfdcore_key.h"
@@ -75,6 +74,24 @@ bool Pubkey::IsValid() const { return IsValid(data_); }
 
 bool Pubkey::Equals(const Pubkey &pubkey) const {
   return data_.Equals(pubkey.data_);
+}
+
+ByteData Pubkey::GetFingerprint(uint32_t get_size) const {
+  if ((get_size == 0) || (get_size > kByteData160Length)) {
+    warn(CFD_LOG_SOURCE, "Invalid fingerprint size: {}.", get_size);
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError, "Invalid fingerprint size.");
+  }
+
+  ByteData data;
+  if (IsCompress()) {
+    data = data_;
+  } else {
+    data = Compress().data_;
+  }
+  auto data160 = HashUtil::Hash160(data);
+  auto bytes = data160.GetBytes();
+  return ByteData(bytes.data(), get_size);
 }
 
 Pubkey Pubkey::CombinePubkey(const std::vector<Pubkey> &pubkeys) {
@@ -203,7 +220,9 @@ Privkey::Privkey() : data_() {
   // do nothing
 }
 
-Privkey::Privkey(const ByteData &byte_data) : data_(byte_data) {
+Privkey::Privkey(
+    const ByteData &byte_data, NetType net_type, bool is_compressed)
+    : data_(byte_data), is_compressed_(is_compressed), net_type_(net_type) {
   if (!IsValid(data_.GetBytes())) {
     warn(CFD_LOG_SOURCE, "Invalid Privkey data. hex={}.", data_.GetHex());
     throw CfdException(
@@ -211,8 +230,11 @@ Privkey::Privkey(const ByteData &byte_data) : data_(byte_data) {
   }
 }
 
-Privkey::Privkey(const ByteData256 &byte_data)
-    : data_(ByteData(byte_data.GetBytes())) {
+Privkey::Privkey(
+    const ByteData256 &byte_data, NetType net_type, bool is_compressed)
+    : data_(ByteData(byte_data.GetBytes())),
+      is_compressed_(is_compressed),
+      net_type_(net_type) {
   if (!IsValid(data_.GetBytes())) {
     warn(CFD_LOG_SOURCE, "Invalid Privkey data. hex={}.", data_.GetHex());
     throw CfdException(
@@ -220,7 +242,11 @@ Privkey::Privkey(const ByteData256 &byte_data)
   }
 }
 
-Privkey::Privkey(const std::string &hex_str) : data_(ByteData(hex_str)) {
+Privkey::Privkey(
+    const std::string &hex_str, NetType net_type, bool is_compressed)
+    : data_(ByteData(hex_str)),
+      is_compressed_(is_compressed),
+      net_type_(net_type) {
   if (!IsValid(data_.GetBytes())) {
     warn(CFD_LOG_SOURCE, "Invalid Privkey data. hex={}.", data_.GetHex());
     throw CfdException(
@@ -252,21 +278,61 @@ std::string Privkey::ConvertWif(NetType net_type, bool is_compressed) const {
   return wif;
 }
 
+std::string Privkey::GetWif() const {
+  return ConvertWif(net_type_, is_compressed_);
+}
+
 Privkey Privkey::FromWif(
     const std::string &wif, NetType net_type, bool is_compressed) {
   std::vector<uint8_t> privkey(kPrivkeySize);
-  uint32_t prefix = (net_type == kMainnet ? kPrefixMainnet : kPrefixTestnet);
-  uint32_t flags =
-      (is_compressed ? WALLY_WIF_FLAG_COMPRESSED
-                     : WALLY_WIF_FLAG_UNCOMPRESSED);
+  NetType temp_net_type = net_type;
+  bool is_temp_compressed = is_compressed;
+  if (net_type == NetType::kCustomChain) {
+    // auto analyze
+    size_t written = 0;
+    size_t uncompressed = 0;
+    std::vector<uint8_t> buf(2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN);
+    int ret = wally_base58_to_bytes(
+        wif.data(), BASE58_FLAG_CHECKSUM, buf.data(), buf.size(), &written);
+    if (ret != WALLY_OK) {
+      warn(
+          CFD_LOG_SOURCE, "wally_base58_to_bytes error. ret={} wif={}.", ret,
+          wif);
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError, "Error decode base58 WIF.");
+    }
+    ret = wally_wif_is_uncompressed(wif.data(), &uncompressed);
+    if (ret != WALLY_OK) {
+      warn(
+          CFD_LOG_SOURCE, "wally_wif_is_uncompressed error. ret={} wif={}.",
+          ret, wif);
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError, "Error WIF is uncompressed.");
+    }
 
-  int ret = wally_wif_to_bytes(
-      wif.data(), prefix, flags, privkey.data(), kPrivkeySize);
-  if (ret != WALLY_OK) {
-    warn(CFD_LOG_SOURCE, "wally_wif_to_bytes error. ret={} wif={}.", ret, wif);
-    throw CfdException(
-        CfdError::kCfdIllegalArgumentError, "Error WIF to Private key.");
+    uint32_t prefix = buf[0];
+    memcpy(privkey.data(), &buf[1], privkey.size());
+    temp_net_type = (prefix == kPrefixMainnet) ? kMainnet : kTestnet;
+    is_temp_compressed = (uncompressed == 0) ? true : false;
+  } else {
+    uint32_t prefix = (net_type == kMainnet ? kPrefixMainnet : kPrefixTestnet);
+    uint32_t flags =
+        (is_compressed ? WALLY_WIF_FLAG_COMPRESSED
+                       : WALLY_WIF_FLAG_UNCOMPRESSED);
+
+    int ret = wally_wif_to_bytes(
+        wif.data(), prefix, flags, privkey.data(), kPrivkeySize);
+    if (ret != WALLY_OK) {
+      warn(
+          CFD_LOG_SOURCE, "wally_wif_to_bytes error. ret={} wif={}.", ret,
+          wif);
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError, "Error WIF to Private key.");
+    }
+    temp_net_type = net_type;
+    is_temp_compressed = is_compressed;
   }
+
   if (!IsValid(privkey)) {
     warn(
         CFD_LOG_SOURCE, "Invalid Privkey data. data={}",
@@ -275,7 +341,8 @@ Privkey Privkey::FromWif(
         CfdError::kCfdIllegalArgumentError, "Invalid Privkey data");
   }
   Privkey key = Privkey(ByteData(privkey));
-  key.SetPubkeyCompressed(is_compressed);
+  key.SetPubkeyCompressed(is_temp_compressed);
+  key.SetNetType(temp_net_type);
   return key;
 }
 
@@ -400,7 +467,6 @@ bool Privkey::IsValid(const std::vector<uint8_t> &buffer) {
   if (buffer.size() > 0) {
     int ret = wally_ec_private_key_verify(buffer.data(), buffer.size());
     return ret == WALLY_OK;
-    // return buffer.size() == kPrivkeySize;
   }
   return false;
 }
@@ -414,6 +480,8 @@ ByteData Privkey::CalculateEcSignature(
 void Privkey::SetPubkeyCompressed(bool is_compressed) {
   is_compressed_ = is_compressed;
 }
+
+void Privkey::SetNetType(NetType net_type) { net_type_ = net_type; }
 
 Privkey Privkey::operator+=(const Privkey &right) {
   Privkey key = CreateTweakAdd(right);
