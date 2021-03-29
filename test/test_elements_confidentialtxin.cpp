@@ -243,26 +243,26 @@ TEST(ConfidentialTxIn, EstimateTxInSize) {
   static const std::string multisig_script = "522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae";
   static const std::string scriptsig_template = "00473044022047ac8e878352d3ebbde1c94ce3a10d057c24175747116f8288e5d794d12d482f0220217f36a485cae903c713331d877c1f64677e3622ad4010726870540656fe9dcb014752210205ffcdde75f262d66ada3dd877c7471f8f8ee9ee24d917c3e18d01cee458bafe2102be61f4350b4ae7544f99649a917f48ba16cf48c983ac1599774958d88ad17ec552ae";
   static const std::vector<TestEstimateConfidentialTxInSizeVector> test_vector = {
-    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2shAddress, 204, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2shP2wpkhAddress, 174, 111, Script(), 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2shP2wshAddress, 220, 145, Script("51"), 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2wpkhAddress, 152, 111, Script(), 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2wshAddress, 207, 166, exp_script, 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2wshAddress, 300, 259, Script(multisig_script), 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2wshAddress, 190, 149, exp_script, 0, Script(), false, false, false, scriptsig_template, 0, 0},
+    {AddressType::kP2pkhAddress, 150, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shAddress, 205, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wpkhAddress, 176, 112, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wshAddress, 222, 146, Script("51"), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wpkhAddress, 153, 112, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 208, 167, exp_script, 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 301, 260, Script(multisig_script), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2wshAddress, 191, 150, exp_script, 0, Script(), false, false, false, scriptsig_template, 0, 0},
     // pegin
-    {AddressType::kP2wpkhAddress, 610, 569, Script(), 226, Script("51"), false, false, false, "", 0, 0},
+    {AddressType::kP2wpkhAddress, 611, 570, Script(), 226, Script("51"), false, false, false, "", 0, 0},
     // issue
-    {AddressType::kP2wpkhAddress, 234, 111, Script(), 0, Script(), true, false, false, "", 0, 0},
-    {AddressType::kP2wpkhAddress, /*6064*/ 8498, /*5893*/ 8327, Script(), 0, Script(), true, true, false,
+    {AddressType::kP2wpkhAddress, 235, 112, Script(), 0, Script(), true, false, false, "", 0, 0},
+    {AddressType::kP2wpkhAddress, 8499, 8328, Script(), 0, Script(), true, true, false,
         "", 0, 36},
-    {AddressType::kP2wpkhAddress, 8626, 8455, Script(), 0, Script(), true, true, false,
+    {AddressType::kP2wpkhAddress, 8627, 8456, Script(), 0, Script(), true, true, false,
         "", 0, 52},
     // reissue
-    {AddressType::kP2wpkhAddress, /*3173*/ 4390, /*3002*/ 4219, Script(), 0, Script(), true, true, true,
+    {AddressType::kP2wpkhAddress, 4391, 4220, Script(), 0, Script(), true, true, true,
         "", 0, 36},
-    {AddressType::kP2wpkhAddress, 4454, 4283, Script(), 0, Script(), true, true, true,
+    {AddressType::kP2wpkhAddress, 4455, 4284, Script(), 0, Script(), true, true, true,
         "", 0, 52},
   };
 
@@ -294,10 +294,10 @@ TEST(ConfidentialTxIn, EstimateTxInSize) {
 TEST(ConfidentialTxIn, EstimateTxInVsize) {
   static const std::string multisig_script = "522102522952c3fc2a53a8651b08ce10988b7506a3b40a5c26f9648a911be33e73e1a0210340b52ae45bc1be5de083f1730fe537374e219c4836400623741d2a874e60590c21024a3477bc8b933a320eb5667ee72c35a81aa155c8e20cc51c65fb666de3a43b8253ae";
   static const std::vector<TestEstimateConfidentialTxInSizeVector> test_vector = {
-    {AddressType::kP2pkhAddress, 149, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2shAddress, 204, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2shP2wpkhAddress, 91, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
-    {AddressType::kP2shP2wshAddress, 112, 0, Script("51"), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2pkhAddress, 150, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shAddress, 205, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wpkhAddress, 92, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
+    {AddressType::kP2shP2wshAddress, 113, 0, Script("51"), 0, Script(), false, false, false, "", 0, 0},
     {AddressType::kP2wpkhAddress, 69, 0, Script(), 0, Script(), false, false, false, "", 0, 0},
     {AddressType::kP2wshAddress, 83, 0, exp_script, 0, Script(), false, false, false, "", 0, 0},
     {AddressType::kP2wshAddress, 106, 0, Script(multisig_script), 0, Script(), false, false, false, "", 0, 0},
@@ -431,25 +431,25 @@ TEST(ConfidentialTxInReference, EstimateTxInSize) {
   }
 
   const std::vector<TestEstimateConfidentialTxInRefVector> test_vector = {
-    {txin, AddressType::kP2pkhAddress, 149, 0, Script(), Script(), false, "", 0, 0},
-    {txin, AddressType::kP2shAddress, 204, 0, exp_script, Script(), false, "", 0, 0},
-    {txin, AddressType::kP2shP2wpkhAddress, 174, 111, Script(), Script(), false, "", 0, 0},
-    {txin, AddressType::kP2shP2wshAddress, 220, 145, Script("51"), Script(), false, "", 0, 0},
-    {txin, AddressType::kP2wpkhAddress, 152, 111, Script(), Script(), false, "", 0, 0},
-    {txin, AddressType::kP2wshAddress, 207, 166, exp_script,Script(), false, "", 0, 0},
-    {txin, AddressType::kP2wshAddress, 300, 259, Script(multisig_script), Script(), false,
+    {txin, AddressType::kP2pkhAddress, 150, 0, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shAddress, 205, 0, exp_script, Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wpkhAddress, 176, 112, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wshAddress, 222, 146, Script("51"), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wpkhAddress, 153, 112, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wshAddress, 208, 167, exp_script,Script(), false, "", 0, 0},
+    {txin, AddressType::kP2wshAddress, 301, 260, Script(multisig_script), Script(), false,
       "", 0, 0},
-    {txin, AddressType::kP2wshAddress, 190, 149, exp_script, Script(), false,
+    {txin, AddressType::kP2wshAddress, 191, 150, exp_script, Script(), false,
       scriptsig_template, 0, 0},
     // pegin
-    {pegin_txin, AddressType::kP2wpkhAddress, 608, 567, Script(), Script("51"), false, "", 0, 0},
+    {pegin_txin, AddressType::kP2wpkhAddress, 609, 568, Script(), Script("51"), false, "", 0, 0},
     // issue
-    {issue_txin, AddressType::kP2wpkhAddress, 4142, 3971, Script(), Script(), true, "", 0, 0},
-    {issue_txin, AddressType::kP2wpkhAddress, 6064, 5893, Script(), Script(), true, "", 0, 36},
-    {issue_txin, AddressType::kP2wpkhAddress, 8626, 8455, Script(), Script(), true, "", 0, 52},
+    {issue_txin, AddressType::kP2wpkhAddress, 4143, 3972, Script(), Script(), true, "", 0, 0},
+    {issue_txin, AddressType::kP2wpkhAddress, 6065, 5894, Script(), Script(), true, "", 0, 36},
+    {issue_txin, AddressType::kP2wpkhAddress, 8627, 8456, Script(), Script(), true, "", 0, 52},
     // reissue
-    {reissue_txin, AddressType::kP2wpkhAddress, 3173, 3002, Script(), Script(), true, "", 0, 36},
-    {reissue_txin, AddressType::kP2wpkhAddress, 4454, 4283, Script(),Script(), true, "", 0, 52},
+    {reissue_txin, AddressType::kP2wpkhAddress, 3174, 3003, Script(), Script(), true, "", 0, 36},
+    {reissue_txin, AddressType::kP2wpkhAddress, 4455, 4284, Script(),Script(), true, "", 0, 52},
   };
 
   for (const auto& test_data : test_vector) {
@@ -510,10 +510,10 @@ TEST(ConfidentialTxInReference, EstimateTxInVsize) {
   }
 
   const std::vector<TestEstimateConfidentialTxInRefVector> test_vector = {
-    {txin, AddressType::kP2pkhAddress, 149, 0, Script(), Script(), false, "", 0, 0},
-    {txin, AddressType::kP2shAddress, 204, 0, exp_script, Script(), false, "", 0, 0},
-    {txin, AddressType::kP2shP2wpkhAddress, 91, 0, Script(), Script(), false, "", 0, 0},
-    {txin, AddressType::kP2shP2wshAddress, 112, 0, Script("51"), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2pkhAddress, 150, 0, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shAddress, 205, 0, exp_script, Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wpkhAddress, 92, 0, Script(), Script(), false, "", 0, 0},
+    {txin, AddressType::kP2shP2wshAddress, 113, 0, Script("51"), Script(), false, "", 0, 0},
     {txin, AddressType::kP2wpkhAddress, 69, 0, Script(), Script(), false, "", 0, 0},
     {txin, AddressType::kP2wshAddress, 83, 0, exp_script, Script(), false, "", 0, 0},
     {txin, AddressType::kP2wshAddress, 106, 0, Script(multisig_script), Script(), false, "", 0, 0},

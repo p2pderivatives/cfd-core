@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_manager.cpp
  *
- * @brief \~japanese cfdcore管理クラスの実装ファイルです。
- *   \~english implementation for cfdcore manager class
+ * @brief implementation for cfdcore manager class
  */
 #include "cfdcore_manager.h"  // NOLINT
 

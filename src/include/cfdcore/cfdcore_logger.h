@@ -1,8 +1,7 @@
 // Copyright 2019 CryptoGarage
 /**
  * @file cfdcore_logger.h
- * @brief \~japanese ログ機能を定義するファイルです。
- *   \~english definition file for logger
+ * @brief definition file for logger
  */
 #ifndef CFD_CORE_SRC_INCLUDE_CFDCORE_CFDCORE_LOGGER_H_
 #define CFD_CORE_SRC_INCLUDE_CFDCORE_CFDCORE_LOGGER_H_

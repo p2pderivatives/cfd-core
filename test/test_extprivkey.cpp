@@ -12,6 +12,7 @@ using cfd::core::ByteData;
 using cfd::core::ByteData256;
 using cfd::core::ExtPubkey;
 using cfd::core::ExtPrivkey;
+using cfd::core::KeyData;
 using cfd::core::NetType;
 using cfd::core::Privkey;
 
@@ -189,6 +190,15 @@ TEST(ExtPrivkey, DerivePrivkeyTest) {
   EXPECT_EQ(child2.GetChildNum(), child.GetChildNum());
 
   EXPECT_THROW((child2 = extkey.DerivePrivkey("m/0/44")), CfdException);
+
+  // KeyData
+  KeyData data1 = extkey.DerivePrivkeyData("0/44");
+  EXPECT_STREQ("[ae05dbb7/0/44]xprvA5P4YtgFjzqM4QpXJZ8Zr7Wkhng7ugTybA3KWMAqDfAamqu5nqJ3zKRhB29cxuqCc8hPagZcN5BsuoXx4Xn7iYHnQvEdyMwZRFgoJXs8CDN", data1.ToString(false).c_str());
+  EXPECT_STREQ("xprvA5P4YtgFjzqM4QpXJZ8Zr7Wkhng7ugTybA3KWMAqDfAamqu5nqJ3zKRhB29cxuqCc8hPagZcN5BsuoXx4Xn7iYHnQvEdyMwZRFgoJXs8CDN", data1.GetExtPrivkey().ToString().c_str());
+
+  KeyData data2 = extkey.DerivePrivkeyData(path);
+  EXPECT_STREQ("[ae05dbb7/0/44]xprvA5P4YtgFjzqM4QpXJZ8Zr7Wkhng7ugTybA3KWMAqDfAamqu5nqJ3zKRhB29cxuqCc8hPagZcN5BsuoXx4Xn7iYHnQvEdyMwZRFgoJXs8CDN", data2.ToString(false).c_str());
+  EXPECT_STREQ("xprvA5P4YtgFjzqM4QpXJZ8Zr7Wkhng7ugTybA3KWMAqDfAamqu5nqJ3zKRhB29cxuqCc8hPagZcN5BsuoXx4Xn7iYHnQvEdyMwZRFgoJXs8CDN", data2.GetExtPrivkey().ToString().c_str());
 }
 
 TEST(ExtPrivkey, GetExtPubkeyTest) {
@@ -227,5 +237,14 @@ TEST(ExtPrivkey, DerivePubkeyTest) {
   child2 = extkey.DerivePubkey("0/44h");
   EXPECT_STREQ(child2.ToString().c_str(), child.ToString().c_str());
   EXPECT_EQ(child2.GetVersion(), child.GetVersion());
+
+  // KeyData
+  KeyData data1 = extkey.DerivePubkeyData("0/44h");
+  EXPECT_STREQ("[ae05dbb7/0/44']xpub6JNQxQDHv2vcUQiXjggbaGYZg3nmxX6ojMcJPSs4KfLSLnMBCg8VbJUh5n4to2SwLWXdSXnHBkUQx1fVnJ9oKYjPPYAQehjWRpx6ErQyykX", data1.ToString(false).c_str());
+  EXPECT_STREQ("xpub6JNQxQDHv2vcUQiXjggbaGYZg3nmxX6ojMcJPSs4KfLSLnMBCg8VbJUh5n4to2SwLWXdSXnHBkUQx1fVnJ9oKYjPPYAQehjWRpx6ErQyykX", data1.GetExtPubkey().ToString().c_str());
+
+  KeyData data2 = extkey.DerivePubkeyData(path);
+  EXPECT_STREQ("[ae05dbb7/0/44']xpub6JNQxQDHv2vcUQiXjggbaGYZg3nmxX6ojMcJPSs4KfLSLnMBCg8VbJUh5n4to2SwLWXdSXnHBkUQx1fVnJ9oKYjPPYAQehjWRpx6ErQyykX", data2.ToString(false).c_str());
+  EXPECT_STREQ("xpub6JNQxQDHv2vcUQiXjggbaGYZg3nmxX6ojMcJPSs4KfLSLnMBCg8VbJUh5n4to2SwLWXdSXnHBkUQx1fVnJ9oKYjPPYAQehjWRpx6ErQyykX", data2.GetExtPubkey().ToString().c_str());
 }
 

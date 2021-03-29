@@ -9,20 +9,34 @@
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_script.h"
 #include "cfdcore/cfdcore_bytedata.h"
+#include "cfdcore/cfdcore_key.h"
+#include "cfdcore/cfdcore_schnorrsig.h"
+#include "cfdcore/cfdcore_util.h"
 
 using cfd::core::AbstractTransaction;
+using cfd::core::Address;
 using cfd::core::Amount;
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
 using cfd::core::ByteData256;
 using cfd::core::CfdException;
+using cfd::core::CryptoUtil;
 using cfd::core::HashType;
+using cfd::core::Privkey;
+using cfd::core::Pubkey;
+using cfd::core::SchnorrPubkey;
+using cfd::core::SchnorrSignature;
+using cfd::core::SchnorrUtil;
 using cfd::core::Script;
+using cfd::core::ScriptBuilder;
+using cfd::core::ScriptOperator;
+using cfd::core::ScriptUtil;
 using cfd::core::SigHashAlgorithm;
 using cfd::core::SigHashType;
 using cfd::core::Transaction;
 using cfd::core::Txid;
 using cfd::core::TxInReference;
+using cfd::core::TxOut;
 using cfd::core::TxOutReference;
 using cfd::core::WitnessVersion;
 
@@ -451,4 +465,109 @@ TEST(Transaction, CheckTxOutBuffer) {
   EXPECT_EQ(tx.GetWeight(), 212);
   EXPECT_EQ(tx.GetTxInCount(), 0);
   EXPECT_EQ(tx.GetTxOutCount(), 1);
+}
+
+TEST(Transaction, GetSchnorrSignatureHash) {
+  Privkey key("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+  Pubkey pubkey = key.GeneratePubkey();
+  bool is_parity = false;
+  SchnorrPubkey schnorr_pubkey = SchnorrPubkey::FromPubkey(pubkey, &is_parity);
+  EXPECT_EQ("1777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb",
+      schnorr_pubkey.GetHex());
+  EXPECT_TRUE(is_parity);
+
+  Script locking_script = (ScriptBuilder() << ScriptOperator::OP_1
+        << schnorr_pubkey.GetData()).Build();
+
+  Transaction tx1(2, 0);
+  tx1.AddTxIn(
+      Txid("1f9866dc0a19c427347c2db0b5910bdc2c20b78fa9f74f8756b21db890dba8ff"),
+      0, 0xffffffff);  // bcrt1qze8fshg0eykfy7nxcr96778xagufv2w429wx40
+  Amount amt1(int64_t{2499999000});
+  tx1.AddTxOut(amt1, locking_script);
+  EXPECT_EQ("0200000001ffa8db90b81db256874ff7a98fb7202cdc0b91b5b02d7c3427c4190adc66981f0000000000ffffffff0118f50295000000002251201777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb00000000", tx1.GetHex());
+  Privkey key1 = Privkey::FromWif("cNveTchXQTFjtsMmR7B7MZmebXnU69S7PmDfgrUX6KbT9kyDLH57");
+  Pubkey pk1("023179b32721d07deb06cade59f56dedefdc932e89fde56e998f7a0e93a3e30c44");
+  auto pkh_script1 = ScriptUtil::CreateP2pkhLockingScript(pk1);
+  SigHashType sighash_type;
+  auto sighash = tx1.GetSignatureHash(0, pkh_script1.GetData(),
+        sighash_type, Amount(int64_t{2500000000}), WitnessVersion::kVersion0);
+  auto sig = key1.CalculateEcSignature(sighash);
+  auto der_sig = CryptoUtil::ConvertSignatureToDer(sig, sighash_type);
+  tx1.AddScriptWitnessStack(0, der_sig);
+  tx1.AddScriptWitnessStack(0, pk1.GetData());
+  EXPECT_EQ("02000000000101ffa8db90b81db256874ff7a98fb7202cdc0b91b5b02d7c3427c4190adc66981f0000000000ffffffff0118f50295000000002251201777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb02473044022018b10265080f8c491c43595000461a19212239fea9ee4c6fd26498f358b1760d0220223c1389ac26a2ed5f77ad73240af2fa6eb30ef5d19520026c2f7b7e817592530121023179b32721d07deb06cade59f56dedefdc932e89fde56e998f7a0e93a3e30c4400000000", tx1.GetHex());
+  
+  Transaction tx2(2, 0);
+  tx2.AddTxIn(
+      Txid("2fea883042440d030ca5929814ead927075a8f52fef5f4720fa3cec2e475d916"),
+      0, 0xffffffff);  // taproot
+  Address addr2("bcrt1qze8fshg0eykfy7nxcr96778xagufv2w429wx40");
+  tx2.AddTxOut(Amount(int64_t{2499998000}), addr2.GetLockingScript());
+  std::vector<TxOut> utxo_list(1);
+  TxOut utxo(amt1, locking_script);
+  utxo_list[0] = utxo;
+  auto sighash2 = tx2.GetSchnorrSignatureHash(0, sighash_type, utxo_list);
+  EXPECT_EQ("e5b11ddceab1e4fc49a8132ae589a39b07acf49cabb2b0fbf6104bc31da12c02", sighash2.GetHex());
+  auto sig2 = SchnorrUtil::Sign(sighash2, key);
+  EXPECT_EQ("61f75636003a870b7a1685abae84eedf8c9527227ac70183c376f7b3a35b07ebcbea14749e58ce1a87565b035b2f3963baa5ae3ede95e89fd607ab7849f20872", sig2.GetHex());
+  SchnorrSignature schnorr_sig(sig2);
+  schnorr_sig.SetSigHashType(sighash_type);
+  tx2.AddScriptWitnessStack(0, schnorr_sig.GetData(true));
+  EXPECT_EQ("0200000000010116d975e4c2cea30f72f4f5fe528f5a0727d9ea149892a50c030d44423088ea2f0000000000ffffffff0130f1029500000000160014164e985d0fc92c927a66c0cbaf78e6ea389629d5014161f75636003a870b7a1685abae84eedf8c9527227ac70183c376f7b3a35b07ebcbea14749e58ce1a87565b035b2f3963baa5ae3ede95e89fd607ab7849f208720100000000", tx2.GetHex());
+
+  EXPECT_TRUE(schnorr_pubkey.Verify(schnorr_sig, sighash2));
+}
+
+TEST(Transaction, GetSchnorrSignatureHashNonce) {
+  Privkey key("305e293b010d29bf3c888b617763a438fee9054c8cab66eb12ad078f819d9f27");
+  Pubkey pubkey = key.GeneratePubkey();
+  bool is_parity = false;
+  SchnorrPubkey schnorr_pubkey = SchnorrPubkey::FromPubkey(pubkey, &is_parity);
+  EXPECT_EQ("1777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb",
+      schnorr_pubkey.GetHex());
+  EXPECT_TRUE(is_parity);
+
+  Script locking_script = (ScriptBuilder() << ScriptOperator::OP_1
+        << schnorr_pubkey.GetData()).Build();
+
+  Transaction tx1(2, 0);
+  tx1.AddTxIn(
+      Txid("1f9866dc0a19c427347c2db0b5910bdc2c20b78fa9f74f8756b21db890dba8ff"),
+      0, 0xffffffff);  // bcrt1qze8fshg0eykfy7nxcr96778xagufv2w429wx40
+  Amount amt1(int64_t{2499999000});
+  tx1.AddTxOut(amt1, locking_script);
+  EXPECT_EQ("0200000001ffa8db90b81db256874ff7a98fb7202cdc0b91b5b02d7c3427c4190adc66981f0000000000ffffffff0118f50295000000002251201777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb00000000", tx1.GetHex());
+  Privkey key1 = Privkey::FromWif("cNveTchXQTFjtsMmR7B7MZmebXnU69S7PmDfgrUX6KbT9kyDLH57");
+  Pubkey pk1("023179b32721d07deb06cade59f56dedefdc932e89fde56e998f7a0e93a3e30c44");
+  auto pkh_script1 = ScriptUtil::CreateP2pkhLockingScript(pk1);
+  SigHashType sighash_type;
+  auto sighash = tx1.GetSignatureHash(0, pkh_script1.GetData(),
+        sighash_type, Amount(int64_t{2500000000}), WitnessVersion::kVersion0);
+  auto sig = key1.CalculateEcSignature(sighash);
+  auto der_sig = CryptoUtil::ConvertSignatureToDer(sig, sighash_type);
+  tx1.AddScriptWitnessStack(0, der_sig);
+  tx1.AddScriptWitnessStack(0, pk1.GetData());
+  EXPECT_EQ("02000000000101ffa8db90b81db256874ff7a98fb7202cdc0b91b5b02d7c3427c4190adc66981f0000000000ffffffff0118f50295000000002251201777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb02473044022018b10265080f8c491c43595000461a19212239fea9ee4c6fd26498f358b1760d0220223c1389ac26a2ed5f77ad73240af2fa6eb30ef5d19520026c2f7b7e817592530121023179b32721d07deb06cade59f56dedefdc932e89fde56e998f7a0e93a3e30c4400000000", tx1.GetHex());
+  
+  Transaction tx2(2, 0);
+  tx2.AddTxIn(
+      Txid("2fea883042440d030ca5929814ead927075a8f52fef5f4720fa3cec2e475d916"),
+      0, 0xffffffff);  // taproot
+  Address addr2("bcrt1qze8fshg0eykfy7nxcr96778xagufv2w429wx40");
+  tx2.AddTxOut(Amount(int64_t{2499998000}), addr2.GetLockingScript());
+  std::vector<TxOut> utxo_list(1);
+  TxOut utxo(amt1, locking_script);
+  utxo_list[0] = utxo;
+  auto sighash2 = tx2.GetSchnorrSignatureHash(0, sighash_type, utxo_list);
+  EXPECT_EQ("e5b11ddceab1e4fc49a8132ae589a39b07acf49cabb2b0fbf6104bc31da12c02", sighash2.GetHex());
+  ByteData256 nonce("2fea883042440d030ca5929814ead927075a8f52fef5f4720fa3cec2e475d916");
+  auto sig2 = SchnorrUtil::Sign(sighash2, key, nonce);
+  EXPECT_EQ("51df55894d1a024c244e20ecedc39cae39fa6d43653305b7f32605eea6359415a7ceef44c52a2f26be2e06d33d79c2e90b5dfaebcb4f79e242134121e0b9579e", sig2.GetHex());
+  SchnorrSignature schnorr_sig(sig2);
+  schnorr_sig.SetSigHashType(sighash_type);
+  tx2.AddScriptWitnessStack(0, schnorr_sig.GetData(true));
+  EXPECT_EQ("0200000000010116d975e4c2cea30f72f4f5fe528f5a0727d9ea149892a50c030d44423088ea2f0000000000ffffffff0130f1029500000000160014164e985d0fc92c927a66c0cbaf78e6ea389629d5014151df55894d1a024c244e20ecedc39cae39fa6d43653305b7f32605eea6359415a7ceef44c52a2f26be2e06d33d79c2e90b5dfaebcb4f79e242134121e0b9579e0100000000", tx2.GetHex());
+
+  EXPECT_TRUE(schnorr_pubkey.Verify(schnorr_sig, sighash2));
 }

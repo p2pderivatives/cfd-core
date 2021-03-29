@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_script.h
  *
- * @brief Script関連クラス定義
+ * @brief The script related class definition.
  *
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_SCRIPT_H_
@@ -21,18 +21,45 @@
 namespace cfd {
 namespace core {
 
-/// P2PKHのScriptサイズ（WALLY_SCRIPTPUBKEY_P2PKH_LEN）
+/// Script size on P2PKH.
 constexpr size_t kScriptHashP2pkhLength = 25;
-/// P2SHのScriptサイズ（WALLY_SCRIPTPUBKEY_P2SH_LEN）
+/// Script size on P2SH.
 constexpr size_t kScriptHashP2shLength = 23;
-/// P2WPKHのScriptサイズ（WALLY_SCRIPTPUBKEY_P2WPKH_LEN）
+/// Script size on P2WPKH.
 constexpr size_t kScriptHashP2wpkhLength = 22;
-/// P2WSHのScriptサイズ（WALLY_SCRIPTPUBKEY_P2WSH_LEN）
+/// Script size on P2WSH.
 constexpr size_t kScriptHashP2wshLength = 34;
-/// WitnessProgramの最小サイズ
+/// Script size on Taproot.
+constexpr size_t kScriptHashTaprootLength = 34;
+/// WitnessProgram's minimum size.
 constexpr size_t kMinWitnessProgramLength = 4;
-/// WitnessProgramの最大サイズ
+/// WitnessProgram's maximum size.
 constexpr size_t kMaxWitnessProgramLength = 42;
+
+/**
+ * @typedef WitnessVersion
+ * @brief Witness version
+ */
+enum WitnessVersion {
+  kVersionNone = -1,  //!< Missing WitnessVersion
+  kVersion0 = 0,      //!< version 0
+  kVersion1,          //!< version 1 (for future use)
+  kVersion2,          //!< version 2 (for future use)
+  kVersion3,          //!< version 3 (for future use)
+  kVersion4,          //!< version 4 (for future use)
+  kVersion5,          //!< version 5 (for future use)
+  kVersion6,          //!< version 6 (for future use)
+  kVersion7,          //!< version 7 (for future use)
+  kVersion8,          //!< version 8 (for future use)
+  kVersion9,          //!< version 9 (for future use)
+  kVersion10,         //!< version 10 (for future use)
+  kVersion11,         //!< version 11 (for future use)
+  kVersion12,         //!< version 12 (for future use)
+  kVersion13,         //!< version 13 (for future use)
+  kVersion14,         //!< version 14 (for future use)
+  kVersion15,         //!< version 15 (for future use)
+  kVersion16          //!< version 16 (for future use)
+};
 
 /**
  * @brief script element type
@@ -56,6 +83,7 @@ enum ScriptType {
   kOpPushData4 = 0x4e,            //!< kOpPushData4
   kOp1Negate = 0x4f,              //!< kOp1Negate
   kOpReserved = 0x50,             //!< kOpReserved
+  kOpSuccess80 = 0x50,            //!< kOpSuccess80 (BIP-342)
   kOp_1 = 0x51,                   //!< kOp_1
   kOpTrue = 0x51,                 //!< kOpTrue
   kOp_2 = 0x52,                   //!< kOp_2
@@ -75,6 +103,7 @@ enum ScriptType {
   kOp_16 = 0x60,                  //!< kOp_16
   kOpNop = 0x61,                  //!< kOpNop
   kOpVer = 0x62,                  //!< kOpVer
+  kOpSuccess98 = 0x62,            //!< kOpSuccess98 (BIP-342)
   kOpIf = 0x63,                   //!< kOpIf
   kOpNotIf = 0x64,                //!< kOpNotIf
   kOpVerIf = 0x65,                //!< kOpVerIf
@@ -106,19 +135,31 @@ enum ScriptType {
   kOpSubstr = 0x7f,               //!< kOpSubstr
   kOpLeft = 0x80,                 //!< kOpLeft
   kOpRight = 0x81,                //!< kOpRight
+  kOpSuccess126 = 0x7e,           //!< kOpSuccess126 (BIP-342)
+  kOpSuccess127 = 0x7f,           //!< kOpSuccess127 (BIP-342)
+  kOpSuccess128 = 0x80,           //!< kOpSuccess128 (BIP-342)
+  kOpSuccess129 = 0x81,           //!< kOpSuccess129 (BIP-342)
   kOpSize = 0x82,                 //!< kOpSize
   kOpInvert = 0x83,               //!< kOpInvert
   kOpAnd = 0x84,                  //!< kOpAnd
   kOpOr = 0x85,                   //!< kOpOr
   kOpXor = 0x86,                  //!< kOpXor
+  kOpSuccess131 = 0x83,           //!< kOpSuccess131 (BIP-342)
+  kOpSuccess132 = 0x84,           //!< kOpSuccess132 (BIP-342)
+  kOpSuccess133 = 0x85,           //!< kOpSuccess133 (BIP-342)
+  kOpSuccess134 = 0x86,           //!< kOpSuccess134 (BIP-342)
   kOpEqual = 0x87,                //!< kOpEqual
   kOpEqualVerify = 0x88,          //!< kOpEqualVerify
   kOpReserved1 = 0x89,            //!< kOpReserved1
   kOpReserved2 = 0x8a,            //!< kOpReserved2
+  kOpSuccess137 = 0x89,           //!< kOpSuccess137 (BIP-342)
+  kOpSuccess138 = 0x8a,           //!< kOpSuccess138 (BIP-342)
   kOp1Add = 0x8b,                 //!< kOp1Add
   kOp1Sub = 0x8c,                 //!< kOp1Sub
   kOp2Mul = 0x8d,                 //!< kOp2Mul
   kOp2Div = 0x8e,                 //!< kOp2Div
+  kOpSuccess141 = 0x8d,           //!< kOpSuccess141 (BIP-342)
+  kOpSuccess142 = 0x8e,           //!< kOpSuccess142 (BIP-342)
   kOpNegate = 0x8f,               //!< kOpNegate
   kOpAbs = 0x90,                  //!< kOpAbs
   kOpNot = 0x91,                  //!< kOpNot
@@ -130,6 +171,11 @@ enum ScriptType {
   kOpMod = 0x97,                  //!< kOpMod
   kOpLShift = 0x98,               //!< kOpLShift
   kOpRShift = 0x99,               //!< kOpRShift
+  kOpSuccess149 = 0x95,           //!< kOpSuccess149 (BIP-342)
+  kOpSuccess150 = 0x96,           //!< kOpSuccess150 (BIP-342)
+  kOpSuccess151 = 0x97,           //!< kOpSuccess151 (BIP-342)
+  kOpSuccess152 = 0x98,           //!< kOpSuccess152 (BIP-342)
+  kOpSuccess153 = 0x99,           //!< kOpSuccess153 (BIP-342)
   kOpBoolAnd = 0x9a,              //!< kOpBoolAnd
   kOpBoolOr = 0x9b,               //!< kOpBoolOr
   kOpNumEqual = 0x9c,             //!< kOpNumEqual
@@ -164,6 +210,75 @@ enum ScriptType {
   kOpNop8 = 0xb7,                 //!< kOpNop8
   kOpNop9 = 0xb8,                 //!< kOpNop9
   kOpNop10 = 0xb9,                //!< kOpNop10
+  kOpCheckSigAdd = 0xba,          //!< kOpCheckSigAdd (BIP-342)
+  kOpSuccess187 = 0xbb,           //!< kOpSuccess187 (BIP-342)
+  kOpSuccess188 = 0xbc,           //!< kOpSuccess188 (BIP-342)
+  kOpSuccess189 = 0xbd,           //!< kOpSuccess189 (BIP-342)
+  kOpSuccess190 = 0xbe,           //!< kOpSuccess190 (BIP-342)
+  kOpSuccess191 = 0xbf,           //!< kOpSuccess191 (BIP-342)
+  kOpSuccess192 = 0xc0,           //!< kOpSuccess192 (BIP-342)
+  kOpSuccess193 = 0xc1,           //!< kOpSuccess193 (BIP-342)
+  kOpSuccess194 = 0xc2,           //!< kOpSuccess194 (BIP-342)
+  kOpSuccess195 = 0xc3,           //!< kOpSuccess195 (BIP-342)
+  kOpSuccess196 = 0xc4,           //!< kOpSuccess196 (BIP-342)
+  kOpSuccess197 = 0xc5,           //!< kOpSuccess197 (BIP-342)
+  kOpSuccess198 = 0xc6,           //!< kOpSuccess198 (BIP-342)
+  kOpSuccess199 = 0xc7,           //!< kOpSuccess199 (BIP-342)
+  kOpSuccess200 = 0xc8,           //!< kOpSuccess200 (BIP-342)
+  kOpSuccess201 = 0xc9,           //!< kOpSuccess201 (BIP-342)
+  kOpSuccess202 = 0xca,           //!< kOpSuccess202 (BIP-342)
+  kOpSuccess203 = 0xcb,           //!< kOpSuccess203 (BIP-342)
+  kOpSuccess204 = 0xcc,           //!< kOpSuccess204 (BIP-342)
+  kOpSuccess205 = 0xcd,           //!< kOpSuccess205 (BIP-342)
+  kOpSuccess206 = 0xce,           //!< kOpSuccess206 (BIP-342)
+  kOpSuccess207 = 0xcf,           //!< kOpSuccess207 (BIP-342)
+  kOpSuccess208 = 0xd0,           //!< kOpSuccess208 (BIP-342)
+  kOpSuccess209 = 0xd1,           //!< kOpSuccess209 (BIP-342)
+  kOpSuccess210 = 0xd2,           //!< kOpSuccess210 (BIP-342)
+  kOpSuccess211 = 0xd3,           //!< kOpSuccess211 (BIP-342)
+  kOpSuccess212 = 0xd4,           //!< kOpSuccess212 (BIP-342)
+  kOpSuccess213 = 0xd5,           //!< kOpSuccess213 (BIP-342)
+  kOpSuccess214 = 0xd6,           //!< kOpSuccess214 (BIP-342)
+  kOpSuccess215 = 0xd7,           //!< kOpSuccess215 (BIP-342)
+  kOpSuccess216 = 0xd8,           //!< kOpSuccess216 (BIP-342)
+  kOpSuccess217 = 0xd9,           //!< kOpSuccess217 (BIP-342)
+  kOpSuccess218 = 0xda,           //!< kOpSuccess218 (BIP-342)
+  kOpSuccess219 = 0xdb,           //!< kOpSuccess219 (BIP-342)
+  kOpSuccess220 = 0xdc,           //!< kOpSuccess220 (BIP-342)
+  kOpSuccess221 = 0xdd,           //!< kOpSuccess221 (BIP-342)
+  kOpSuccess222 = 0xde,           //!< kOpSuccess222 (BIP-342)
+  kOpSuccess223 = 0xdf,           //!< kOpSuccess223 (BIP-342)
+  kOpSuccess224 = 0xe0,           //!< kOpSuccess224 (BIP-342)
+  kOpSuccess225 = 0xe1,           //!< kOpSuccess225 (BIP-342)
+  kOpSuccess226 = 0xe2,           //!< kOpSuccess226 (BIP-342)
+  kOpSuccess227 = 0xe3,           //!< kOpSuccess227 (BIP-342)
+  kOpSuccess228 = 0xe4,           //!< kOpSuccess228 (BIP-342)
+  kOpSuccess229 = 0xe5,           //!< kOpSuccess229 (BIP-342)
+  kOpSuccess230 = 0xe6,           //!< kOpSuccess230 (BIP-342)
+  kOpSuccess231 = 0xe7,           //!< kOpSuccess231 (BIP-342)
+  kOpSuccess232 = 0xe8,           //!< kOpSuccess232 (BIP-342)
+  kOpSuccess233 = 0xe9,           //!< kOpSuccess233 (BIP-342)
+  kOpSuccess234 = 0xea,           //!< kOpSuccess234 (BIP-342)
+  kOpSuccess235 = 0xeb,           //!< kOpSuccess235 (BIP-342)
+  kOpSuccess236 = 0xec,           //!< kOpSuccess236 (BIP-342)
+  kOpSuccess237 = 0xed,           //!< kOpSuccess237 (BIP-342)
+  kOpSuccess238 = 0xee,           //!< kOpSuccess238 (BIP-342)
+  kOpSuccess239 = 0xef,           //!< kOpSuccess239 (BIP-342)
+  kOpSuccess240 = 0xf0,           //!< kOpSuccess240 (BIP-342)
+  kOpSuccess241 = 0xf1,           //!< kOpSuccess241 (BIP-342)
+  kOpSuccess242 = 0xf2,           //!< kOpSuccess242 (BIP-342)
+  kOpSuccess243 = 0xf3,           //!< kOpSuccess243 (BIP-342)
+  kOpSuccess244 = 0xf4,           //!< kOpSuccess244 (BIP-342)
+  kOpSuccess245 = 0xf5,           //!< kOpSuccess245 (BIP-342)
+  kOpSuccess246 = 0xf6,           //!< kOpSuccess246 (BIP-342)
+  kOpSuccess247 = 0xf7,           //!< kOpSuccess247 (BIP-342)
+  kOpSuccess248 = 0xf8,           //!< kOpSuccess248 (BIP-342)
+  kOpSuccess249 = 0xf9,           //!< kOpSuccess249 (BIP-342)
+  kOpSuccess250 = 0xfa,           //!< kOpSuccess250 (BIP-342)
+  kOpSuccess251 = 0xfb,           //!< kOpSuccess251 (BIP-342)
+  kOpSuccess252 = 0xfc,           //!< kOpSuccess252 (BIP-342)
+  kOpSuccess253 = 0xfd,           //!< kOpSuccess253 (BIP-342)
+  kOpSuccess254 = 0xfe,           //!< kOpSuccess254 (BIP-342)
   kOpInvalidOpCode = 0xff,        //!< kOpInvalidOpCode
 #ifndef CFD_DISABLE_ELEMENTS
   kOpDeterministricRandom = 0xc0,     //!< kOpDeterministricRandom
@@ -181,13 +296,13 @@ enum ScriptType {
 class Script;
 
 /**
- * @brief Script操作定義クラス。
+ * @brief Script Operation definition class.
  * @details
- * OP_XXXXの定義値についてですが、使用時は以下に注意してください。
- * - static linkする場合は、グローバル変数の初期値に使用しないこと。
- *   - 初期化順序の関係で、未初期化状態で設定されることがあります。
- *   - グローバル変数の初期値に使う場合、
- *     ScriptOperatorではなくScriptTypeを使用して下さい。
+ * Regarding the definition value of OP_XXXX, please note the following when using it.
+ * - When statically linking, do not use it as the initial value of global variables.
+ *   - Due to the initialization order, it may be set in the uninitialized state.
+ *   - When using it as the initial value of a global variable, \
+ *     use ScriptType instead of ScriptOperator.
  */
 class CFD_CORE_EXPORT ScriptOperator {
  public:
@@ -282,8 +397,7 @@ class CFD_CORE_EXPORT ScriptOperator {
   static const ScriptOperator OP_LESSTHAN;         //!< OP_LESSTHAN
   static const ScriptOperator OP_GREATERTHAN;      //!< OP_GREATERTHAN
   static const ScriptOperator OP_LESSTHANOREQUAL;  //!< OP_LESSTHANOREQUAL
-  static const ScriptOperator
-      OP_GREATERTHANOREQUAL;              //!< OP_GREATERTHANOREQUAL  //NOLINT
+  static const ScriptOperator OP_GREATERTHANOREQUAL;  //!< OP_GREATERTHANOREQUAL  //NOLINT
   static const ScriptOperator OP_MIN;     //!< OP_MIN
   static const ScriptOperator OP_MAX;     //!< OP_MAX
   static const ScriptOperator OP_WITHIN;  //!< OP_WITHIN
@@ -296,14 +410,11 @@ class CFD_CORE_EXPORT ScriptOperator {
   static const ScriptOperator OP_CHECKSIG;        //!< OP_CHECKSIG
   static const ScriptOperator OP_CHECKSIGVERIFY;  //!< OP_CHECKSIGVERIFY
   static const ScriptOperator OP_CHECKMULTISIG;   //!< OP_CHECKMULTISIG
-  static const ScriptOperator
-      OP_CHECKMULTISIGVERIFY;           //!< OP_CHECKMULTISIGVERIFY  //NOLINT
+  static const ScriptOperator OP_CHECKMULTISIGVERIFY;  //!< OP_CHECKMULTISIGVERIFY  //NOLINT
   static const ScriptOperator OP_NOP1;  //!< OP_NOP1
-  static const ScriptOperator
-      OP_CHECKLOCKTIMEVERIFY;           //!< OP_CHECKLOCKTIMEVERIFY  //NOLINT
+  static const ScriptOperator OP_CHECKLOCKTIMEVERIFY;  //!< OP_CHECKLOCKTIMEVERIFY  //NOLINT
   static const ScriptOperator OP_NOP2;  //!< OP_NOP2
-  static const ScriptOperator
-      OP_CHECKSEQUENCEVERIFY;            //!< OP_CHECKSEQUENCEVERIFY  //NOLINT
+  static const ScriptOperator OP_CHECKSEQUENCEVERIFY;  //!< OP_CHECKSEQUENCEVERIFY  //NOLINT
   static const ScriptOperator OP_NOP3;   //!< OP_NOP3
   static const ScriptOperator OP_NOP4;   //!< OP_NOP4
   static const ScriptOperator OP_NOP5;   //!< OP_NOP5
@@ -312,6 +423,7 @@ class CFD_CORE_EXPORT ScriptOperator {
   static const ScriptOperator OP_NOP8;   //!< OP_NOP8
   static const ScriptOperator OP_NOP9;   //!< OP_NOP9
   static const ScriptOperator OP_NOP10;  //!< OP_NOP10
+  static const ScriptOperator OP_CHECKSIGADD;    //!< OP_CHECKSIGADD
   static const ScriptOperator OP_INVALIDOPCODE;  //!< OP_INVALIDOPCODE
 #ifndef CFD_DISABLE_ELEMENTS
   static const ScriptOperator
@@ -325,6 +437,93 @@ class CFD_CORE_EXPORT ScriptOperator {
   static const ScriptOperator OP_PUBKEYHASH;    //!< OP_PUBKEYHASH
   static const ScriptOperator OP_PUBKEY;        //!< OP_PUBKEY
 #endif  // CFD_DISABLE_ELEMENTS
+  static const ScriptOperator OP_SUCCESS80;   //!< OP_SUCCESS80 (BIP-342)
+  static const ScriptOperator OP_SUCCESS98;   //!< OP_SUCCESS98 (BIP-342)
+  static const ScriptOperator OP_SUCCESS126;  //!< OP_SUCCESS126 (BIP-342)
+  static const ScriptOperator OP_SUCCESS127;  //!< OP_SUCCESS127 (BIP-342)
+  static const ScriptOperator OP_SUCCESS128;  //!< OP_SUCCESS128 (BIP-342)
+  static const ScriptOperator OP_SUCCESS129;  //!< OP_SUCCESS129 (BIP-342)
+  static const ScriptOperator OP_SUCCESS131;  //!< OP_SUCCESS131 (BIP-342)
+  static const ScriptOperator OP_SUCCESS132;  //!< OP_SUCCESS132 (BIP-342)
+  static const ScriptOperator OP_SUCCESS133;  //!< OP_SUCCESS133 (BIP-342)
+  static const ScriptOperator OP_SUCCESS134;  //!< OP_SUCCESS134 (BIP-342)
+  static const ScriptOperator OP_SUCCESS137;  //!< OP_SUCCESS137 (BIP-342)
+  static const ScriptOperator OP_SUCCESS138;  //!< OP_SUCCESS138 (BIP-342)
+  static const ScriptOperator OP_SUCCESS141;  //!< OP_SUCCESS141 (BIP-342)
+  static const ScriptOperator OP_SUCCESS142;  //!< OP_SUCCESS142 (BIP-342)
+  static const ScriptOperator OP_SUCCESS149;  //!< OP_SUCCESS149 (BIP-342)
+  static const ScriptOperator OP_SUCCESS150;  //!< OP_SUCCESS150 (BIP-342)
+  static const ScriptOperator OP_SUCCESS151;  //!< OP_SUCCESS151 (BIP-342)
+  static const ScriptOperator OP_SUCCESS152;  //!< OP_SUCCESS152 (BIP-342)
+  static const ScriptOperator OP_SUCCESS153;  //!< OP_SUCCESS153 (BIP-342)
+  static const ScriptOperator OP_SUCCESS187;  //!< OP_SUCCESS187 (BIP-342)
+  static const ScriptOperator OP_SUCCESS188;  //!< OP_SUCCESS188 (BIP-342)
+  static const ScriptOperator OP_SUCCESS189;  //!< OP_SUCCESS189 (BIP-342)
+  static const ScriptOperator OP_SUCCESS190;  //!< OP_SUCCESS190 (BIP-342)
+  static const ScriptOperator OP_SUCCESS191;  //!< OP_SUCCESS191 (BIP-342)
+  static const ScriptOperator OP_SUCCESS192;  //!< OP_SUCCESS192 (BIP-342)
+  static const ScriptOperator OP_SUCCESS193;  //!< OP_SUCCESS193 (BIP-342)
+  static const ScriptOperator OP_SUCCESS194;  //!< OP_SUCCESS194 (BIP-342)
+  static const ScriptOperator OP_SUCCESS195;  //!< OP_SUCCESS195 (BIP-342)
+  static const ScriptOperator OP_SUCCESS196;  //!< OP_SUCCESS196 (BIP-342)
+  static const ScriptOperator OP_SUCCESS197;  //!< OP_SUCCESS197 (BIP-342)
+  static const ScriptOperator OP_SUCCESS198;  //!< OP_SUCCESS198 (BIP-342)
+  static const ScriptOperator OP_SUCCESS199;  //!< OP_SUCCESS199 (BIP-342)
+  static const ScriptOperator OP_SUCCESS200;  //!< OP_SUCCESS200 (BIP-342)
+  static const ScriptOperator OP_SUCCESS201;  //!< OP_SUCCESS201 (BIP-342)
+  static const ScriptOperator OP_SUCCESS202;  //!< OP_SUCCESS202 (BIP-342)
+  static const ScriptOperator OP_SUCCESS203;  //!< OP_SUCCESS203 (BIP-342)
+  static const ScriptOperator OP_SUCCESS204;  //!< OP_SUCCESS204 (BIP-342)
+  static const ScriptOperator OP_SUCCESS205;  //!< OP_SUCCESS205 (BIP-342)
+  static const ScriptOperator OP_SUCCESS206;  //!< OP_SUCCESS206 (BIP-342)
+  static const ScriptOperator OP_SUCCESS207;  //!< OP_SUCCESS207 (BIP-342)
+  static const ScriptOperator OP_SUCCESS208;  //!< OP_SUCCESS208 (BIP-342)
+  static const ScriptOperator OP_SUCCESS209;  //!< OP_SUCCESS209 (BIP-342)
+  static const ScriptOperator OP_SUCCESS210;  //!< OP_SUCCESS210 (BIP-342)
+  static const ScriptOperator OP_SUCCESS211;  //!< OP_SUCCESS211 (BIP-342)
+  static const ScriptOperator OP_SUCCESS212;  //!< OP_SUCCESS212 (BIP-342)
+  static const ScriptOperator OP_SUCCESS213;  //!< OP_SUCCESS213 (BIP-342)
+  static const ScriptOperator OP_SUCCESS214;  //!< OP_SUCCESS214 (BIP-342)
+  static const ScriptOperator OP_SUCCESS215;  //!< OP_SUCCESS215 (BIP-342)
+  static const ScriptOperator OP_SUCCESS216;  //!< OP_SUCCESS216 (BIP-342)
+  static const ScriptOperator OP_SUCCESS217;  //!< OP_SUCCESS217 (BIP-342)
+  static const ScriptOperator OP_SUCCESS218;  //!< OP_SUCCESS218 (BIP-342)
+  static const ScriptOperator OP_SUCCESS219;  //!< OP_SUCCESS219 (BIP-342)
+  static const ScriptOperator OP_SUCCESS220;  //!< OP_SUCCESS220 (BIP-342)
+  static const ScriptOperator OP_SUCCESS221;  //!< OP_SUCCESS221 (BIP-342)
+  static const ScriptOperator OP_SUCCESS222;  //!< OP_SUCCESS222 (BIP-342)
+  static const ScriptOperator OP_SUCCESS223;  //!< OP_SUCCESS223 (BIP-342)
+  static const ScriptOperator OP_SUCCESS224;  //!< OP_SUCCESS224 (BIP-342)
+  static const ScriptOperator OP_SUCCESS225;  //!< OP_SUCCESS225 (BIP-342)
+  static const ScriptOperator OP_SUCCESS226;  //!< OP_SUCCESS226 (BIP-342)
+  static const ScriptOperator OP_SUCCESS227;  //!< OP_SUCCESS227 (BIP-342)
+  static const ScriptOperator OP_SUCCESS228;  //!< OP_SUCCESS228 (BIP-342)
+  static const ScriptOperator OP_SUCCESS229;  //!< OP_SUCCESS229 (BIP-342)
+  static const ScriptOperator OP_SUCCESS230;  //!< OP_SUCCESS230 (BIP-342)
+  static const ScriptOperator OP_SUCCESS231;  //!< OP_SUCCESS231 (BIP-342)
+  static const ScriptOperator OP_SUCCESS232;  //!< OP_SUCCESS232 (BIP-342)
+  static const ScriptOperator OP_SUCCESS233;  //!< OP_SUCCESS233 (BIP-342)
+  static const ScriptOperator OP_SUCCESS234;  //!< OP_SUCCESS234 (BIP-342)
+  static const ScriptOperator OP_SUCCESS235;  //!< OP_SUCCESS235 (BIP-342)
+  static const ScriptOperator OP_SUCCESS236;  //!< OP_SUCCESS236 (BIP-342)
+  static const ScriptOperator OP_SUCCESS237;  //!< OP_SUCCESS237 (BIP-342)
+  static const ScriptOperator OP_SUCCESS238;  //!< OP_SUCCESS238 (BIP-342)
+  static const ScriptOperator OP_SUCCESS239;  //!< OP_SUCCESS239 (BIP-342)
+  static const ScriptOperator OP_SUCCESS240;  //!< OP_SUCCESS240 (BIP-342)
+  static const ScriptOperator OP_SUCCESS241;  //!< OP_SUCCESS241 (BIP-342)
+  static const ScriptOperator OP_SUCCESS242;  //!< OP_SUCCESS242 (BIP-342)
+  static const ScriptOperator OP_SUCCESS243;  //!< OP_SUCCESS243 (BIP-342)
+  static const ScriptOperator OP_SUCCESS244;  //!< OP_SUCCESS244 (BIP-342)
+  static const ScriptOperator OP_SUCCESS245;  //!< OP_SUCCESS245 (BIP-342)
+  static const ScriptOperator OP_SUCCESS246;  //!< OP_SUCCESS246 (BIP-342)
+  static const ScriptOperator OP_SUCCESS247;  //!< OP_SUCCESS247 (BIP-342)
+  static const ScriptOperator OP_SUCCESS248;  //!< OP_SUCCESS248 (BIP-342)
+  static const ScriptOperator OP_SUCCESS249;  //!< OP_SUCCESS249 (BIP-342)
+  static const ScriptOperator OP_SUCCESS250;  //!< OP_SUCCESS250 (BIP-342)
+  static const ScriptOperator OP_SUCCESS251;  //!< OP_SUCCESS251 (BIP-342)
+  static const ScriptOperator OP_SUCCESS252;  //!< OP_SUCCESS252 (BIP-342)
+  static const ScriptOperator OP_SUCCESS253;  //!< OP_SUCCESS253 (BIP-342)
+  static const ScriptOperator OP_SUCCESS254;  //!< OP_SUCCESS254 (BIP-342)
 // @formatter:on
   // clang-format on
 
@@ -342,6 +541,14 @@ class CFD_CORE_EXPORT ScriptOperator {
    * @return script operator.
    */
   static ScriptOperator Get(const std::string &message);
+
+  /**
+   * @brief Check if it is OP_SUCCESSxx.
+   * @param[in] op_code   OP Code
+   * @retval true   OP_SUCCESSxx
+   * @retval false  other
+   */
+  static bool IsOpSuccess(ScriptType op_code);
 
   /**
    * @brief get data type.
@@ -397,54 +604,50 @@ class CFD_CORE_EXPORT ScriptOperator {
   ScriptOperator &operator=(const ScriptOperator &object);
 
   /**
-   * @brief 等価比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 等価
-   * @retval false 不等価
-   * @return 等価であればtrue, それ以外はfalse
+   * @brief Equals operator.
+   * @param[in] object     object
+   * @retval true   equals
+   * @retval false  not equals
    */
   bool operator==(const ScriptOperator &object) const;
   /**
-   * @brief 不等価比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 不等価
-   * @retval false 等価
-   * @return 不等価であればtrue, それ以外はfalse
+   * @brief Not Equals operator.
+   * @param[in] object     object
+   * @retval true   not equals
+   * @retval false  equals
    */
   bool operator!=(const ScriptOperator &object) const;
   /**
-   * @brief 比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 条件に合致
-   * @retval false 条件に合致せず
+   * @brief Compare operator.
+   * @param[in] object     object
+   * @retval true   match
+   * @retval false  unmatch
    */
   bool operator<(const ScriptOperator &object) const;
   /**
-   * @brief 比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 条件に合致
-   * @retval false 条件に合致せず
+   * @brief Compare operator.
+   * @param[in] object     object
+   * @retval true   match
+   * @retval false  unmatch
    */
   bool operator<=(const ScriptOperator &object) const;
   /**
-   * @brief 比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 条件に合致
-   * @retval false 条件に合致せず
+   * @brief Compare operator.
+   * @param[in] object     object
+   * @retval true   match
+   * @retval false  unmatch
    */
   bool operator>(const ScriptOperator &object) const;
   /**
-   * @brief 比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 条件に合致
-   * @retval false 条件に合致せず
+   * @brief Compare operator.
+   * @param[in] object     object
+   * @retval true   match
+   * @retval false  unmatch
    */
   bool operator>=(const ScriptOperator &object) const;
 
   /**
    * @brief default constructor.
-   *
-   * リスト型使用時のため.
    */
   ScriptOperator()
       : data_type_(kOpInvalidOpCode), text_data_("OP_INVALIDOPCODE") {
@@ -470,117 +673,122 @@ class CFD_CORE_EXPORT ScriptOperator {
 };
 
 /**
- * @brief Script要素保持クラス。
+ * @brief Script element class.
  */
 class CFD_CORE_EXPORT ScriptElement {
  public:
   /**
-   * @brief コンストラクタ.
-   * @param[in] element     オブジェクト
+   * @brief constructor.
+   * @param[in] element     object
    */
   ScriptElement(const ScriptElement &element);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] type     OP_CODE
    */
   explicit ScriptElement(const ScriptType &type);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] op_code     OP_CODE
    */
   explicit ScriptElement(const ScriptOperator &op_code);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] binary_data   binary data
    */
   explicit ScriptElement(const ByteData &binary_data);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] value       script number.
    */
   explicit ScriptElement(int64_t value);
   /**
-   * @brief デストラクタ.
+   * @brief constructor.
+   * @param[in] value       script number.
+   * @param[in] is_binary   binary mode.
+   */
+  explicit ScriptElement(int64_t value, bool is_binary);
+  /**
+   * @brief destructor.
    */
   virtual ~ScriptElement() {
     // do nothing
   }
   /**
-   * @brief コピーコンストラクタ.
-   * @param[in] element     オブジェクト
-   * @return オブジェクト
+   * @brief copy constructor.
+   * @param[in] element     object
+   * @return object
    */
   ScriptElement &operator=(const ScriptElement &element);
 
   /**
-   * @brief 要素種別を取得する.
-   * @return 要素種別.
+   * @brief Get the element type.
+   * @return element type.
    */
   ScriptElementType GetType() const;
   /**
-   * @brief OP_CODEを取得する.
+   * @brief Get the OP_CODE.
    * @return OP_CODE
    */
   const ScriptOperator &GetOpCode() const;
   /**
-   * @brief バイナリ値を取得する.
-   * @return バイナリ値
+   * @brief Get a binary data.
+   * @return binary data.
    */
   ByteData GetBinaryData() const;
   /**
-   * @brief 数値情報を取得する.
-   * @return 数値情報
+   * @brief Get a numeric value.
+   * @return numeric value.
    */
   int64_t GetNumber() const;
 
   /**
-   * @brief バイト配列を取得する.
-   * @return バイト配列
+   * @brief Get a byte array.
+   * @return byte array.
    */
   ByteData GetData() const;
   /**
-   * @brief 文字列情報を取得する.
-   * @return 文字列情報
+   * @brief Get a stirng data.
+   * @return string data.
    */
   std::string ToString() const;
 
   /**
-   * @brief OP_CODE型の情報かどうか判定する.
+   * @brief Determine if it is OP_CODE type information.
    * @retval true   OP_CODE
-   * @retval false  その他
+   * @retval false  other
    */
   bool IsOpCode() const { return type_ == kElementOpCode; }
 
   /**
-   * @brief 数値型の情報かどうか判定する.
-   * @retval true   数値型
-   * @retval false  その他
+   * @brief Determine if it is numeric type information.
+   * @retval true   Numeric type
+   * @retval false  other type
    */
   bool IsNumber() const {
-    // 数値型明示 or 数値が入っている or OP_0 の何れかなら数値とみなす
+    // If either the numeric type is specified, the number is included,
+    // or OP_0 is specified, it is regarded as a number.
     return (type_ == kElementNumber) || (value_ != 0) ||
            (op_code_.GetDataType() == kOp_0);
   }
 
   /**
-   * @brief バイナリ情報かどうか判定する.
-   * @retval true   バイナリ情報
-   * @retval false  その他
+   * @brief Determine if it is binary information.
+   * @retval true   Binary information
+   * @retval false  other
    */
   bool IsBinary() const { return type_ == kElementBinary; }
 
   /**
-   * @brief バイナリ値から数値型に変換する.
-   * @param[out] int64_value    数値
-   * @retval true   数値型変換OK
-   * @retval false  数値型変換NG
+   * @brief Convert from a binary value to a numeric type.
+   * @param[out] int64_value    numeric
+   * @retval true   conversion OK
+   * @retval false  conversion fail.
    */
   bool ConvertBinaryToNumber(int64_t *int64_value = nullptr) const;
 
   /**
-   * @brief デフォルトコンストラクタ.
-   *
-   * リスト作成のため.
+   * @brief default constructor.
    */
   ScriptElement()
       : type_(kElementOpCode), op_code_(), binary_data_(), value_(0) {
@@ -588,15 +796,15 @@ class CFD_CORE_EXPORT ScriptElement {
   }
 
  private:
-  ScriptElementType type_;  ///< 要素種別
+  ScriptElementType type_;  ///< element type
   ScriptOperator op_code_;  ///< OP_CODE
-  ByteData binary_data_;    ///< バイナリ情報
-  int64_t value_;           ///< 数値
+  ByteData binary_data_;    ///< binary data
+  int64_t value_;           ///< numeric value
 
   /**
-   * @brief             Scriptに追加する数値をbyteデータに変換する
-   * @param[in] value   scriptに追加する数値
-   * @return            numberをserializeしたbyteデータ
+   * @brief Convert the numerical value to be added to Script to byte data.
+   * @param[in] value   Numerical value to add to script
+   * @return Byte data with serialized number
    */
   static std::vector<uint8_t> SerializeScriptNum(int64_t value);
 };
@@ -649,6 +857,8 @@ class CFD_CORE_EXPORT Script {
   static constexpr uint32_t kMaxScriptSize = 10000;
   //! maximum size of RedeemScript
   static constexpr uint32_t kMaxRedeemScriptSize = 520;
+  //! maximum size of multisig
+  static constexpr uint32_t kMaxMultisigPubkeyNum = 20;
 
   /**
    * @brief constructor.
@@ -670,6 +880,17 @@ class CFD_CORE_EXPORT Script {
   virtual ~Script() {
     // do nothing
   }
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  Script(const Script &object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  Script &operator=(const Script &object) &;
   /**
    * @brief get script.
    * @return script
@@ -701,6 +922,13 @@ class CFD_CORE_EXPORT Script {
    * @retval false  data exist.
    */
   bool IsEmpty() const;
+  /**
+   * @brief check equal object.
+   * @param[in] script     check target,
+   * @retval true   equal
+   * @retval false  differ
+   */
+  bool Equals(const Script &script) const;
   /**
    * @brief get element list.
    * @return element list
@@ -768,11 +996,24 @@ class CFD_CORE_EXPORT Script {
   bool IsP2wshScript() const;
 
   /**
+   * @brief Check if the script is taproot script.
+   * @retval true   script is taproot.
+   * @retval false  not taproot.
+   */
+  bool IsTaprootScript() const;
+
+  /**
    * @brief Check if the script is pegout script.
    * @retval true   script is pegout script.
    * @retval false  not pegout script.
    */
   bool IsPegoutScript() const;
+
+  /**
+   * @brief get witness version on locking script.
+   * @return witness version.
+   */
+  WitnessVersion GetWitnessVersion() const;
 
  private:
   /// script byte data
@@ -800,7 +1041,7 @@ class CFD_CORE_EXPORT Script {
 };
 
 /**
- * @brief script builderクラス.
+ * @brief script builder class.
  */
 class CFD_CORE_EXPORT ScriptBuilder {
  public:
@@ -887,6 +1128,67 @@ class CFD_CORE_EXPORT ScriptBuilder {
   // ScriptBuilder& AppendData(const ByteData& data, bool is_template);
 
   /**
+   * @brief append string data.
+   * @param[in] message  string data.
+   * @return script builder object.
+   */
+  ScriptBuilder &operator<<(const std::string &message);
+  /**
+   * @brief append script operator.
+   * @param[in] type      ScriptType.
+   * @return script builder object.
+   */
+  ScriptBuilder &operator<<(ScriptType type);
+  /**
+   * @brief append script operator.
+   * @param[in] operate_object     operator object.
+   * @return script builder object.
+   */
+  ScriptBuilder &operator<<(const ScriptOperator &operate_object);
+  /**
+   * @brief             append script data.
+   * @param[in] data    script data.
+   * @return            script builder object.
+   */
+  ScriptBuilder &operator<<(const ByteData &data);
+  /**
+   * @brief             append script data.
+   * @param[in] data    script data.
+   * @return            script builder object.
+   */
+  ScriptBuilder &operator<<(const ByteData160 &data);
+  /**
+   * @brief             append script data.
+   * @param[in] data    script data.
+   * @return            script builder object.
+   */
+  ScriptBuilder &operator<<(const ByteData256 &data);
+  /**
+   * @brief               append script data.
+   * @param[in] pubkey   public key.
+   * @return              script builder object.
+   */
+  ScriptBuilder &operator<<(const Pubkey &pubkey);
+  /**
+   * @brief               append script data.
+   * @param[in] script    script data.
+   * @return              script builder object.
+   */
+  ScriptBuilder &operator<<(const Script &script);
+  /**
+   * @brief           append script data.
+   * @param[in] data  script number.
+   * @return          script builder object.
+   */
+  ScriptBuilder &operator<<(const int64_t &data);
+  /**
+   * @brief             append script element data.
+   * @param[in] element element data.
+   * @return            script builder object.
+   */
+  ScriptBuilder &operator<<(const ScriptElement &element);
+
+  /**
    * @brief   build script.
    * @return  script
    */
@@ -897,127 +1199,144 @@ class CFD_CORE_EXPORT ScriptBuilder {
 };
 
 /**
- * @brief Scriptを作成する関数群クラス
+ * @brief Utility class that creates Script.
  */
 class CFD_CORE_EXPORT ScriptUtil {
  public:
   /**
-   * @brief P2PKのlocking scriptを作成する.
-   * @param[in] pubkey Pubkeyインスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2PK locking script.
+   * @param[in] pubkey Pubkey
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * <pubkey> OP_CHECKSIG
    * @endcode
    */
   static Script CreateP2pkLockingScript(const Pubkey &pubkey);
   /**
-   * @brief P2PKHのlocking scriptを作成する.
-   * @param[in] pubkey_hash pubkey hashが格納されたByteData160インスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2PKH locking script.
+   * @param[in] pubkey_hash pubkey hash
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_DUP OP_HASH160 <hash160(pubkey)> OP_EQUALVERIFY OP_CHECKSIG
    * @endcode
    */
   static Script CreateP2pkhLockingScript(const ByteData160 &pubkey_hash);
   /**
-   * @brief P2PKHのlocking scriptを作成する.
-   * @param[in] pubkey Pubkeyインスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2PKH locking script.
+   * @param[in] pubkey Pubkey
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_DUP OP_HASH160 <hash160(pubkey)> OP_EQUALVERIFY OP_CHECKSIG
    * @endcode
    */
   static Script CreateP2pkhLockingScript(const Pubkey &pubkey);
   /**
-   * @brief P2SHのlocking scriptを作成する.
-   * @param[in] script_hash script hashが格納されたByteData160インスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2SH locking script.
+   * @param[in] script_hash script hash
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_HASH160 <hash160(redeemScript)> OP_EQUAL
    * @endcode
    */
   static Script CreateP2shLockingScript(const ByteData160 &script_hash);
   /**
-   * @brief P2SHのlocking scriptを作成する.
-   * @param[in] redeem_script redeem scriptのScriptインスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2SH locking script.
+   * @param[in] redeem_script redeem script
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_HASH160 <hash160(redeemScript)> OP_EQUAL
    * @endcode
    */
   static Script CreateP2shLockingScript(const Script &redeem_script);
   /**
-   * @brief P2WPKHのlocking scriptを作成する.
-   * @param[in] pubkey_hash pubkey hashが格納されたByteData160インスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2WPKH locking script.
+   * @param[in] pubkey_hash pubkey hash
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_0 <hash160(pubkey)>
    * @endcode
    */
   static Script CreateP2wpkhLockingScript(const ByteData160 &pubkey_hash);
   /**
-   * @brief P2WPKHのlocking scriptを作成する.
-   * @param[in] pubkey Pubkeyインスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2WPKH locking script.
+   * @param[in] pubkey Pubkey
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_0 <hash160(pubkey)>
    * @endcode
    */
   static Script CreateP2wpkhLockingScript(const Pubkey &pubkey);
   /**
-   * @brief P2WSHのlocking scriptを作成する.
-   * @param[in] script_hash script hashのByteData256インスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2WSH locking script.
+   * @param[in] script_hash  script hash
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_0 <sha256(redeemScript)>
    * @endcode
    */
   static Script CreateP2wshLockingScript(const ByteData256 &script_hash);
   /**
-   * @brief P2WSHのlocking scriptを作成する.
-   * @param[in] redeem_script redeem scriptのScriptインスタンス
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create a P2WSH locking script.
+   * @param[in] redeem_script redeem script
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_0 <sha256(redeemScript)>
    * @endcode
    */
   static Script CreateP2wshLockingScript(const Script &redeem_script);
   /**
-   * @brief RedeemScriptが有効なものであるかをチェックする.
+   * @brief Create locking script for taproot.
+   * @param[in] data  witness program
+   * @return Script
+   * @details Create a Script with the following content.
+   * @code{.unparse}
+   * OP_1 <32-byte>
+   * @endcode
+   */
+  static Script CreateTaprootLockingScript(const ByteData256 &data);
+  /**
+   * @brief Check if Redeem Script is valid.
    * @param[in] redeem_script redeem script
-   * @retval true 有効なredeem script
-   * @retval false 有効でないredeem script
+   * @retval true   valid
+   * @retval false  invalid
    */
   static bool IsValidRedeemScript(const Script &redeem_script);
   /**
-   * @brief M-of-N Multisigのredeem scriptを作成する.
-   * @param[in] require_sig_num unlockingに必要なSignature数（Mに相当）
-   * @param[in] pubkeys 署名に対応するPubkey配列（Nに相当）
-   * @return Scriptインスタンス
-   * @details 下記の内容のScriptを作成する.
+   * @brief Create redeem script of the M-of-N Multisig.
+   * @param[in] require_sig_num \
+   *    Number of Signatures required for unlocking (equivalent to M)
+   * @param[in] pubkeys   Pubkey array corresponding to the signature. \
+   *    (equivalent to N)
+   * @param[in] has_witness   target is witness script.
+   * @return Script
+   * @details Create a Script with the following content.
    * @code{.unparse}
    * OP_<requireSigNum> <pubkey> ... OP_n OP_CHECKMULTISIG
    * @endcode
    */
   static Script CreateMultisigRedeemScript(
-      uint32_t require_sig_num, const std::vector<Pubkey> &pubkeys);
+      uint32_t require_sig_num, const std::vector<Pubkey> &pubkeys,
+      bool has_witness = true);
+
 #ifndef CFD_DISABLE_ELEMENTS
   /**
-   * @brief Pegoutのlocking scriptを作成する.
-   * @param[in] genesisblock_hash mainchainのgenesisblock hash
-   * @param[in] parent_locking_script 送り先 bitcoin address の locking script
-   * @param[in] btc_pubkey_bytes DerivePubTweak関数で作られたpubkey情報
-   * @param[in] whitelist_proof whitelistの証明
-   * @return Scriptインスタンス
+   * @brief Create a Pegout locking script.
+   * @param[in] genesisblock_hash   mainchain genesis block hash
+   * @param[in] parent_locking_script  \
+   *    Destination bitcoin address locking script
+   * @param[in] btc_pubkey_bytes  \
+   *    Pubkey information created by the DerivePubTweak function
+   * @param[in] whitelist_proof   Proof of whitelist
+   * @return Script
    * @code{.unparse}
    * OP_RETURN <genesis block hash> <bitcoin address lockingScript> <tweaked pubkey bytes> <whitelistproof>
    * @endcode

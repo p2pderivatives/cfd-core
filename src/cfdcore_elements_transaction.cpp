@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_elements_transaction.cpp
  *
- * @brief \~japanese Confidential Transaction関連クラスの実装ファイルです。
- *   \~english implementation of Confidential Transaction classes
+ * @brief implementation of Confidential Transaction classes
  */
 #ifndef CFD_DISABLE_ELEMENTS
 
@@ -11,6 +10,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -289,6 +289,20 @@ ConfidentialNonce::ConfidentialNonce(const Pubkey &pubkey)
   // do nothing
 }
 
+ConfidentialNonce::ConfidentialNonce(const ConfidentialNonce &object) {
+  data_ = object.data_;
+  version_ = object.version_;
+}
+
+ConfidentialNonce &ConfidentialNonce::operator=(
+    const ConfidentialNonce &object) {
+  if (this != &object) {
+    data_ = object.data_;
+    version_ = object.version_;
+  }
+  return *this;
+}
+
 void ConfidentialNonce::CheckVersion(uint8_t version) {
   if ((version != 0) && (version != 1) && (version != 2) && (version != 3)) {
     warn(CFD_LOG_SOURCE, "Nonce version Invalid. version={}.", version);
@@ -384,6 +398,20 @@ ConfidentialAssetId::ConfidentialAssetId(const ByteData &byte_data)
           CfdError::kCfdIllegalArgumentError, "AssetId size Invalid.");
   }
   CheckVersion(version_);
+}
+
+ConfidentialAssetId::ConfidentialAssetId(const ConfidentialAssetId &object) {
+  data_ = object.data_;
+  version_ = object.version_;
+}
+
+ConfidentialAssetId &ConfidentialAssetId::operator=(
+    const ConfidentialAssetId &object) {
+  if (this != &object) {
+    data_ = object.data_;
+    version_ = object.version_;
+  }
+  return *this;
 }
 
 void ConfidentialAssetId::CheckVersion(uint8_t version) {
@@ -524,6 +552,20 @@ ConfidentialValue::ConfidentialValue(const ByteData &byte_data)
   CheckVersion(version_);
 }
 
+ConfidentialValue::ConfidentialValue(const ConfidentialValue &object) {
+  data_ = object.data_;
+  version_ = object.version_;
+}
+
+ConfidentialValue &ConfidentialValue::operator=(
+    const ConfidentialValue &object) {
+  if (this != &object) {
+    data_ = object.data_;
+    version_ = object.version_;
+  }
+  return *this;
+}
+
 ConfidentialValue::ConfidentialValue(const Amount &amount)
     : ConfidentialValue(ConvertToConfidentialValue(amount)) {
   // do nothing
@@ -635,6 +677,15 @@ BlindFactor::BlindFactor(const ByteData &byte_data)
 
 BlindFactor::BlindFactor(const ByteData256 &byte_data) : data_(byte_data) {
   // do nothing
+}
+
+BlindFactor::BlindFactor(const BlindFactor &object) { data_ = object.data_; }
+
+BlindFactor &BlindFactor::operator=(const BlindFactor &object) {
+  if (this != &object) {
+    data_ = object.data_;
+  }
+  return *this;
 }
 
 ByteData256 BlindFactor::GetData() const { return data_; }
@@ -1120,7 +1171,7 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
     if ((rangeproof_size != nullptr) && (*rangeproof_size != 0)) {
       work_proof_size = *rangeproof_size;
     } else if (confidential_value_.HasBlinding()) {
-      work_proof_size = 4 + range_proof_.GetDataSize();
+      work_proof_size = 4 + static_cast<uint32_t>(range_proof_.GetDataSize());
     } else {
       int64_t amount = confidential_value_.GetAmount().GetSatoshiValue();
       if (amount == 0) amount = kMaxAmount;
@@ -1322,8 +1373,37 @@ void ConfidentialTransaction::SetFromHex(const std::string &hex_string) {
 
 ConfidentialTransaction &ConfidentialTransaction::operator=(
     const ConfidentialTransaction &transaction) & {
-  SetFromHex(transaction.GetHex());
+  if (this != &transaction) {
+    SetFromHex(transaction.GetHex());
+  }
   return *this;
+}
+
+uint32_t ConfidentialTransaction::GetTotalSize() const {
+  static constexpr uint32_t kMinimumConfidentialTxSize = 11;
+  uint32_t length = AbstractTransaction::GetTotalSize();
+  if (length < kMinimumConfidentialTxSize) {
+    length = kMinimumConfidentialTxSize;
+  }
+  return length;
+}
+
+uint32_t ConfidentialTransaction::GetVsize() const {
+  static constexpr uint32_t kMinimumConfidentialTxSize = 11;
+  uint32_t length = AbstractTransaction::GetVsize();
+  if (length < kMinimumConfidentialTxSize) {
+    length = kMinimumConfidentialTxSize;
+  }
+  return length;
+}
+
+uint32_t ConfidentialTransaction::GetWeight() const {
+  static constexpr uint32_t kMinimumConfidentialTxWeight = 44;
+  uint32_t weight = AbstractTransaction::GetWeight();
+  if (weight < kMinimumConfidentialTxWeight) {
+    weight = kMinimumConfidentialTxWeight;
+  }
+  return weight;
 }
 
 const ConfidentialTxInReference ConfidentialTransaction::GetTxIn(
@@ -2220,12 +2300,28 @@ void ConfidentialTransaction::BlindTransaction(
   std::vector<uint8_t> vbfs;              // serialize
   std::vector<uint8_t> input_abfs;        // serialize
   std::vector<uint8_t> empty_factor(kBlindFactorSize);
+  std::map<std::vector<uint8_t>, int64_t> amount_map;
+  bool has_amount_check = true;
   uint32_t blinded_txin_count = 0;
   size_t blind_target_count = 0;
   std::vector<size_t> blind_issuance_indexes;
   std::vector<size_t> blind_txout_indexes;
   int ret;
   memset(empty_factor.data(), 0, empty_factor.size());
+
+  auto add_map_func =
+      [](const std::vector<uint8_t> &asset_id, const Amount &amount,
+         bool is_output,
+         std::map<std::vector<uint8_t>, int64_t> *amount_map) -> void {
+    if (amount == 0) return;
+    int64_t value = amount.GetSatoshiValue() * ((is_output) ? -1 : 1);
+    if (amount_map->find(asset_id) == amount_map->end()) {
+      amount_map->emplace(asset_id, value);
+    } else {
+      auto &map_value = amount_map->at(asset_id);
+      map_value += value;
+    }
+  };
 
   if (vin_.size() > txin_info_list.size()) {
     warn(
@@ -2269,6 +2365,8 @@ void ConfidentialTransaction::BlindTransaction(
           amount.GetSatoshiValue());
       throw CfdException(kCfdIllegalStateError, "satoshi under zero.");
     }
+    add_map_func(asset_id, amount, false, &amount_map);
+
     if ((abf != empty_factor) || (vbf != empty_factor)) {
       ++blinded_txin_count;
       input_values.push_back(amount.GetSatoshiValue());
@@ -2328,6 +2426,9 @@ void ConfidentialTransaction::BlindTransaction(
         info(
             CFD_LOG_SOURCE, "generator_data asset=[{}]",
             generator_data.GetHex());
+        add_map_func(
+            asset_bytes, vin_[index].GetIssuanceAmount().GetAmount(), false,
+            &amount_map);
       }
       if ((!is_reissue) && (!vin_[index].GetInflationKeys().IsEmpty())) {
         const std::vector<uint8_t> &token_bytes =
@@ -2357,6 +2458,9 @@ void ConfidentialTransaction::BlindTransaction(
         info(
             CFD_LOG_SOURCE, "generator_data token=[{}]",
             generator_data.GetHex());
+        add_map_func(
+            token_bytes, vin_[index].GetInflationKeys().GetAmount(), false,
+            &amount_map);
       }
       // Marked for blinding
       if (asset_blind) {
@@ -2508,6 +2612,15 @@ void ConfidentialTransaction::BlindTransaction(
       input_confidential_keys[index] =
           txout_confidential_keys[index].Compress();
     }
+
+    const auto &temp_value = vout_[index].GetConfidentialValue();
+    const auto &temp_asset = vout_[index].GetAsset();
+    if (temp_value.HasBlinding() || temp_asset.HasBlinding()) {
+      has_amount_check = false;
+    } else {
+      auto asset_bytes = temp_asset.GetUnblindedData().GetBytes();
+      add_map_func(asset_bytes, temp_value.GetAmount(), true, &amount_map);
+    }
   }
   blind_target_count += blind_txout_indexes.size();
   if ((blinded_txin_count == 0) && (blind_target_count <= 1)) {
@@ -2526,6 +2639,19 @@ void ConfidentialTransaction::BlindTransaction(
     // add one output of 0 amount and blind only it.
     warn(CFD_LOG_SOURCE, "txout blind target empty. set over 1.");
     throw CfdException(kCfdIllegalArgumentError, "txout blind target empty.");
+  }
+
+  if (has_amount_check) {
+    for (auto &item : amount_map) {
+      if (item.second != 0) {
+        ConfidentialAssetId temp_asset(ByteData(item.first));
+        warn(
+            CFD_LOG_SOURCE, "unmatch input/output amount. ({},{})",
+            temp_asset.GetHex(), item.second);
+        throw CfdException(
+            kCfdIllegalArgumentError, "unmatch input/output amount.");
+      }
+    }
   }
 
   std::vector<ByteData> output_abfs(blind_txout_indexes.size());

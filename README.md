@@ -1,17 +1,53 @@
 # Crypto Finance Development Kit Core (CFD-CORE)
 
-core moduels for cfd libraries
-
-<!-- TODO: Write Summary and Overview
+Core library for cfd libraries.
 
 ## Overview
 
--->
+This library is development kit for crypto finance application.
+Useful when developing applications for cryptocurrencies.
+
+### Target Network
+
+- Bitcoin
+- Liquid Network
+
+### Support function by cfd-core
+
+- Bitcoin
+  - Bitcoin Script (builder, viewer)
+  - Transaction
+  - PSBT (v0)
+  - ECDSA Pubkey/Privkey (TweakAdd/Mul, Negate, Sign, Verify)
+  - BIP32, BIP39
+  - Output Descriptor (contains miniscript parser)
+  - Schnorr/Taproot
+  - Bitcoin Address (Segwit-v0, Segwit-v1, P2PKH/P2SH)
+- Liquid Network
+  - Confidential Transaction
+    - Blind, Unblind
+    - Issuance, Reissuance
+    - PegIn, PegOut
+  - Confidential Address
+
+### Libraries for each language
+
+- C++ : cfd-core
+  - Core library. Definition base class.
+- C/C++ : cfd
+  - Extend the cfd-core library. Defines the C language API and extension classes.
+- Libraries to link cfd library:
+  - JavaScript : cfd-js
+  - WebAssembly : cfd-js-wasm
+  - Python : cfd-python
+  - C# : cfd-csharp
+  - Go : cfd-go
+  - Rust : cfd-rust
 
 ## Dependencies
 
 - C/C++ Compiler
-  - can compile c++11
+  - can compile c++11
 - CMake (3.14.3 or higher)
 - When using npm scripts and cmake-js
   - node.js (stable version)
@@ -21,6 +57,7 @@ core moduels for cfd libraries
 ### Windows
 
 download and install files.
+
 - [CMake](https://cmake.org/) (3.14.3 or higher)
 - Compiler or development environment (One of the following)
   - MSVC
@@ -55,7 +92,7 @@ apt-get install -y build-essential cmake python nodejs
 ```
 
 cmake version 3.14.2 or lower, download from website and install cmake.
-(https://cmake.org/download/)
+(<https://cmake.org/download/>)
 
 ---
 
@@ -88,7 +125,7 @@ cmake -D ENABLE_SHARED=1 -DCMAKE_BUILD_TYPE=Release --build build
 cmake --build build
 ```
 
-**CMake options**
+### CMake options
 
 - `-DENABLE_ELEMENTS`: Enable functionalies for elements sidechain. [ON/OFF] (default:ON)
 - `-DENABLE_SHARED`: Enable building a shared library. [ON/OFF] (default:OFF)
@@ -118,6 +155,7 @@ npm cmake_make_install
 ```
 
 cmake version is 3.15 or higher:
+
 ```Shell
 npm cmake_install
 (Enter the password when prompted to use the sudo command.)
@@ -135,6 +173,7 @@ cd build && sudo ninja install
 cmake version is 3.15 or higher: `cmake --install build`
 
 ### uninstall
+
 ```Shell
 (uninstall by using makefile)
 cd build && sudo make uninstall
@@ -167,6 +206,7 @@ npm run ctest
 ### using library
 
 - [libwally-core](https://github.com/cryptogarageinc/libwally-core/tree/cfd-develop) (forked from [ElementsProject/libwally-core](https://github.com/ElementsProject/libwally-core))
+  - [secp256k1-zkp](https://github.com/cryptogarageinc/secp256k1-zkp/tree/cfd-develop) (forked from [ElementsProject/secp256k1-zkp](https://github.com/ElementsProject/secp256k1-zkp))
 - [univalue](https://github.com/jgarzik/univalue) (for JSON encoding and decoding)
 - [googletest](https://github.com/google/googletest) (for testing)
 
@@ -199,26 +239,29 @@ npm run ctest
 
 ## Note
 
-### Git connection:
+### Git connection
 
 Git repository connections default to HTTPS.
 However, depending on the connection settings of GitHub, you may only be able to connect via SSH.
 As a countermeasure, forcibly establish SSH connection by setting `CFD_CMAKE_GIT_SSH=1` in the environment variable.
 
 - Windows: (On the command line. Or set from the system setting screen.)
-```
+
+```Bat
 set CFD_CMAKE_GIT_SSH=1
 ```
 
 - MacOS & Linux(Ubuntu):
-```
+
+```Shell
 export CFD_CMAKE_GIT_SSH=1
 ```
 
-### Ignore git update for CMake External Project:
+### Ignore git update for CMake External Project
 
 Depending on your git environment, you may get the following error when checking out external:
-```
+
+```Shell
   Performing update step for 'libwally-core-download'
   Current branch cmake_build is up to date.
   No stash entries found.
@@ -237,11 +280,13 @@ This phenomenon is due to the `git update` related command.
 Please set an environment variable that skips update processing.
 
 - Windows: (On the command line. Or set from the system setting screen.)
-```
+
+```Bat
 set CFD_CMAKE_GIT_SKIP_UPDATE=1
 ```
 
 - MacOS & Linux(Ubuntu):
-```
+
+```Shell
 export CFD_CMAKE_GIT_SKIP_UPDATE=1
 ```

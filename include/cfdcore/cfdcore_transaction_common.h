@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_transaction_common.h
  *
- * @brief Transaction関連の共通クラスおよび基底クラスを定義する。
+ * @brief Define Transaction-related common class and base class.
  *
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_TRANSACTION_COMMON_H_
@@ -24,69 +24,70 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief ハッシュ種別定義
+ * @brief Hash type definition
  */
 enum HashType {
   kP2pkh = 0,   //!< P2pkh
   kP2sh = 1,    //!< P2sh
   kP2wpkh = 2,  //!< P2wpkh
-  kP2wsh = 3    //!< P2wsh
+  kP2wsh = 3,   //!< P2wsh
+  kTaproot = 6  //!< Taproot
 };
 
 /**
- * @brief witness情報の保持クラス
+ * @brief witness information retention class
  */
 class CFD_CORE_EXPORT ScriptWitness {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief constructor.
    */
   ScriptWitness() : witness_stack_() {
     // do nothing
   }
   /**
-   * @brief デストラクタ
+   * @brief destructor.
    */
   virtual ~ScriptWitness() {
     // do nothing
   }
   /**
-   * @brief witness stackを取得する.
+   * @brief Get the witness stack.
    * @return witness stack
    */
   const std::vector<ByteData> GetWitness() const;
   /**
-   * @brief witness stack数を取得する.
-   * @return witness stack数
+   * @brief Get the number of witness stacks.
+   * @return number of witness stacks.
    */
   uint32_t GetWitnessNum() const;
   /**
-   * @brief witness stackに追加する.
-   * @param[in] data      バイトデータ
+   * @brief Add to witness stack.
+   * @param[in] data      byte array.
    */
   void AddWitnessStack(const ByteData& data);
   /**
-   * @brief witness stackの指定indexを更新する.
-   * @param[in] index     設定先index値
-   * @param[in] data      バイトデータ
+   * @brief Update the specified index of the witness stack.
+   * @param[in] index     index
+   * @param[in] data      byte array.
    */
   void SetWitnessStack(uint32_t index, const ByteData& data);
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check if the data is empty.
+   * @retval true   empty.
+   * @retval false  exist.
    * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check if the data is empty.
+   * @retval true   empty.
+   * @retval false  exist.
    */
   bool IsEmpty() const;
 
   /**
-   * @brief witness stack情報をserializeする.
+   * @brief Serialize witness stack information.
    * @return serialize data
    */
   ByteData Serialize() const;
@@ -130,17 +131,17 @@ class CFD_CORE_EXPORT OutPoint {
   bool IsValid() const;
 
   /**
-   * @brief 等価比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 等価
-   * @retval false 不等価
+   * @brief Equals operator.
+   * @param[in] object     compare target.
+   * @retval true   equals
+   * @retval false  not equals
    */
   bool operator==(const OutPoint& object) const;
   /**
-   * @brief 不等価比較オペレータ
-   * @param[in] object     比較対象
-   * @retval true 不等価
-   * @retval false 等価
+   * @brief Not Equals operator.
+   * @param[in] object     compare target.
+   * @retval true   not equals
+   * @retval false  equals
    */
   bool operator!=(const OutPoint& object) const;
 
@@ -150,126 +151,126 @@ class CFD_CORE_EXPORT OutPoint {
 };
 
 /**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
+ * @brief Compare operator.
+ * @param[in] source     source
+ * @param[in] dest       destination
+ * @retval true   match
+ * @retval false  unmatch
  */
 CFD_CORE_EXPORT bool operator<(const OutPoint& source, const OutPoint& dest);
 /**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
+ * @brief Compare operator.
+ * @param[in] source     source
+ * @param[in] dest       destination
+ * @retval true   match
+ * @retval false  unmatch
  */
 CFD_CORE_EXPORT bool operator<=(const OutPoint& source, const OutPoint& dest);
 /**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
+ * @brief Compare operator.
+ * @param[in] source     source
+ * @param[in] dest       destination
+ * @retval true   match
+ * @retval false  unmatch
  */
 CFD_CORE_EXPORT bool operator>(const OutPoint& source, const OutPoint& dest);
 /**
- * @brief 不等価比較オペレータ
- * @param[in] source     比較元
- * @param[in] dest       比較対象
- * @retval true 不等価
- * @retval false 等価
+ * @brief Compare operator.
+ * @param[in] source     source
+ * @param[in] dest       destination
+ * @retval true   match
+ * @retval false  unmatch
  */
 CFD_CORE_EXPORT bool operator>=(const OutPoint& source, const OutPoint& dest);
 
 /**
- * @brief TxInの基本情報を保持する基底クラス
+ * @brief Base class that holds basic information about TxIn.
  */
 class CFD_CORE_EXPORT AbstractTxIn {
  public:
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid        txid
-   * @param[in] index       txidのトランザクションのTxOutのIndex情報(vout)
-   * @param[in] sequence    sequence情報
+   * @param[in] index       TxOut Index information for txid transactions(vout)
+   * @param[in] sequence    sequence
    */
   AbstractTxIn(const Txid& txid, uint32_t index, uint32_t sequence);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid              txid
-   * @param[in] index             txidのトランザクションのTxOutのIndex情報(vout)
-   * @param[in] sequence          sequence情報
+   * @param[in] index             TxOut Index information for txid transactions(vout)
+   * @param[in] sequence          sequence
    * @param[in] unlocking_script  unlocking script
    */
   AbstractTxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
       const Script& unlocking_script);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~AbstractTxIn() {
     // do nothing
   }
   /**
-   * @brief txidを取得する.
-   * @return Txidインスタンス
+   * @brief Get a txid.
+   * @return Txid
    */
   Txid GetTxid() const;
   /**
-   * @brief voutを取得する.
+   * @brief Get a vout.
    * @return vout
    */
   uint32_t GetVout() const;
   /**
-   * @brief outpointを取得する.
+   * @brief Get an outpoint.
    * @return outpoint
    */
   OutPoint GetOutPoint() const;
   /**
-   * @brief unlocking scriptを取得する.
+   * @brief Get an unlocking script.
    * @return unlocking script
    */
   Script GetUnlockingScript() const;
   /**
-   * @brief unlocking scriptを設定する.
+   * @brief Set an unlocking script.
    * @param[in] unlocking_script    unlocking script
    */
   void SetUnlockingScript(const Script& unlocking_script);
   /**
-   * @brief sequenceを取得する.
+   * @brief Get a sequence.
    * @return sequence番号
    */
   uint32_t GetSequence() const;
   /**
-   * @brief script witness情報を取得する.
-   * @return ScriptWitnessインスタンス
+   * @brief Get a script witness.
+   * @return ScriptWitness
    */
   ScriptWitness GetScriptWitness() const;
   /**
-   * @brief script witnessの現在のstack数を取得する.
-   * @return script witnessのstack数
+   * @brief Get the current stack number of script witness.
+   * @return number of script witness.
    */
   uint32_t GetScriptWitnessStackNum() const;
   /**
-   * @brief script witnessにバイトデータを追加する.
-   * @param[in] data    witness stack情報
-   * @return script witnessオブジェクト
+   * @brief Add byte data to script witness.
+   * @param[in] data    witness stack
+   * @return ScriptWitness object
    */
   ScriptWitness AddScriptWitnessStack(const ByteData& data);
   /**
-   * @brief script witnessにバイトデータを設定する.
-   * @param[in] index   witness stackのindex値
-   * @param[in] data    witness stack情報
-   * @return ScriptWitnessインスタンス
+   * @brief Set byte data in script witness.
+   * @param[in] index   witness stack index
+   * @param[in] data    witness stack data
+   * @return ScriptWitness object
    */
   ScriptWitness SetScriptWitnessStack(uint32_t index, const ByteData& data);
   /**
-   * @brief script witnessを全て削除する.
+   * @brief Remove all script witness.
    */
   void RemoveScriptWitnessStackAll();
 
   /**
-   * @brief txid/voutによりcoinbaseを判定する.
+   * @brief Determine coinbase by txid / vout.
    * @retval true  coinbase
    * @retval false other
    */
@@ -284,55 +285,55 @@ class CFD_CORE_EXPORT AbstractTxIn {
 };
 
 /**
- * @brief TxInの基本情報を参照するための基底クラス
+ * @brief Base class for referencing basic information on TxIn.
  */
 class CFD_CORE_EXPORT AbstractTxInReference {
  public:
   /**
-   * @brief コンストラクタ.
-   * @param[in] tx_in 参照するTxInインスタンス
+   * @brief constructor.
+   * @param[in] tx_in   TxIn instance to reference
    */
   explicit AbstractTxInReference(const AbstractTxIn& tx_in);
 
   /**
-   * @brief デストラクタ
+   * @brief destructor.
    */
   virtual ~AbstractTxInReference() {
     // do nothing
   }
   /**
-   * @brief txidを取得する.
-   * @return Txidインスタンス
+   * @brief Get a txid.
+   * @return Txid object.
    */
   Txid GetTxid() const { return txid_; }
   /**
-   * @brief voutを取得する.
+   * @brief Get a vout.
    * @return vout
    */
   uint32_t GetVout() const { return vout_; }
   /**
-   * @brief outpointを取得する.
+   * @brief Get an outpoint.
    * @return outpoint
    */
   OutPoint GetOutPoint() const { return OutPoint(txid_, vout_); }
   /**
-   * @brief unlocking scriptを取得する.
+   * @brief Get an unlocking script.
    * @return unlocking script
    */
   Script GetUnlockingScript() const { return unlocking_script_; }
   /**
-   * @brief sequenceを取得する.
-   * @return sequence番号
+   * @brief Get a sequence.
+   * @return sequence
    */
   uint32_t GetSequence() const { return sequence_; }
   /**
-   * @brief script witness情報を取得する.
-   * @return ScriptWitnessインスタンス
+   * @brief Get a script witness.
+   * @return ScriptWitness
    */
   ScriptWitness GetScriptWitness() const { return script_witness_; }
   /**
-   * @brief script witnessの現在のstack数を取得する.
-   * @return script witnessのstack数
+   * @brief Get a stack number of script witness.
+   * @return stack number of script witness.
    */
   uint32_t GetScriptWitnessStackNum() const {
     return script_witness_.GetWitnessNum();
@@ -347,38 +348,38 @@ class CFD_CORE_EXPORT AbstractTxInReference {
 };
 
 /**
- * @brief TxOutの基本情報を保持する基底クラス
+ * @brief Base class that holds basic information about TxOut.
  */
 class CFD_CORE_EXPORT AbstractTxOut {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    */
   AbstractTxOut();
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    * @param[in] value             amount value.
    * @param[in] locking_script    locking script.
    */
   AbstractTxOut(const Amount& value, const Script& locking_script);
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    * @param[in] locking_script    locking script.
    */
   explicit AbstractTxOut(const Script& locking_script);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~AbstractTxOut() {
     // do nothing
   }
   /**
-   * @brief Amountを取得する.
+   * @brief Get the amount.
    * @return amount
    */
   const Amount GetValue() const;
   /**
-   * @brief locking script を取得する
+   * @brief Get the locking script.
    * @return locking script
    */
   const Script GetLockingScript() const;
@@ -389,35 +390,35 @@ class CFD_CORE_EXPORT AbstractTxOut {
   virtual void SetValue(const Amount& value);
 
  protected:
-  Amount value_;           ///< 金額
+  Amount value_;           ///< amount
   Script locking_script_;  ///< locking script
 };
 
 /**
- * @brief TxOutの基本情報を参照するための基底クラス
+ * @brief Base class for referencing basic information on TxOut.
  */
 class CFD_CORE_EXPORT AbstractTxOutReference {
  public:
   /**
-   * @brief コンストラクタ
-   * @param[in] tx_out 参照するTxOutインスタンス
+   * @brief constructor.
+   * @param[in] tx_out  TxOut instance to reference
    */
   explicit AbstractTxOutReference(const AbstractTxOut& tx_out);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~AbstractTxOutReference() {
     // do nothing
   }
 
   /**
-   * @brief Amountを取得する.
+   * @brief Get an amount.
    * @return amount
    */
   const Amount GetValue() const { return value_; }
 
   /**
-   * @brief locking script を取得する
+   * @brief Get a locking script.
    * @return locking script
    */
   const Script GetLockingScript() const { return locking_script_; }
@@ -435,133 +436,133 @@ class CFD_CORE_EXPORT AbstractTxOutReference {
   uint32_t GetSerializeVsize() const;
 
  protected:
-  Amount value_;           ///< 金額
+  Amount value_;           ///< amount
   Script locking_script_;  ///< locking script
 };
 
 /**
- * @brief トランザクション情報の基底クラス
+ * @brief Base class of transaction information.
  */
 class CFD_CORE_EXPORT AbstractTransaction {
  public:
-  /// Transactionの最小サイズ
+  /// Minimum size of Transaction
   static constexpr size_t kTransactionMinimumSize = 10;
 
   /**
-   * @brief コンストラクタ
+   * @brief constructor.
    */
   AbstractTransaction();
   /**
-   * @brief デストラクタ
+   * @brief destructor.
    */
   virtual ~AbstractTransaction() {
     AbstractTransaction::FreeWallyAddress(wally_tx_pointer_);
   }
 
   /**
-   * @brief バージョン情報を取得する.
-   * @return version番号
+   * @brief Get a version information.
+   * @return version
    */
   int32_t GetVersion() const;
   /**
-   * @brief lock timeを取得する.
+   * @brief Get a lock time.
    * @return lock time
    */
   uint32_t GetLockTime() const;
 
   /**
-   * @brief TxInのindexを取得する.
-   * @param[in] txid   取得するTxInのtxid
-   * @param[in] vout   取得するTxInのvout
-   * @return 条件に合致するTxInのindex番号
+   * @brief Get a TxIn index.
+   * @param[in] txid   txid
+   * @param[in] vout   vout
+   * @return index
    */
   virtual uint32_t GetTxInIndex(const Txid& txid, uint32_t vout) const = 0;
   /**
-   * @brief TxOutのindexを取得する.
+   * @brief Get a TxOut index.
    * @param[in] locking_script  locking script
-   * @return 条件に合致するTxOutのindex番号
+   * @return index
    */
   virtual uint32_t GetTxOutIndex(const Script& locking_script) const = 0;
 
   /**
-   * @brief Transactionの合計バイトサイズを取得する.
-   * @return 合計バイトサイズ
+   * @brief Get the total byte size of Transaction.
+   * @return Total byte size
    */
   virtual uint32_t GetTotalSize() const;
   /**
-   * @brief Transactionのvsize情報を取得する.
+   * @brief Get vsize information of Transaction.
    * @return vsize
    */
   virtual uint32_t GetVsize() const;
   /**
-   * @brief TransactionのWeight情報を取得する.
+   * @brief Get the Weight information of Transaction.
    * @return weight
    */
   virtual uint32_t GetWeight() const;
   /**
-   * @brief TransactionのTxOut合計額を取得する.
-   * @return TxOut合計額
+   * @brief Get the total TxOut amount of Transaction.
+   * @return total TxOut amount
    */
   Amount GetValueOut() const;
   /**
-   * @brief witness情報かどうかを取得する.
+   * @brief Get witness information.
    * @retval true   witness
-   * @retval false  witnessではない
+   * @retval false  not witness
    */
   virtual bool HasWitness() const;
   /**
-   * @brief Transactionのハッシュ値を取得する.
+   * @brief Get the hash value of Transaction.
    *
-   * Witness形式の場合、Witness情報はハッシュ計算に含めない.
-   * @return ハッシュ値
+   * In the Witness format, the Witness information is not included in the hash calculation.
+   * @return Hash value
    */
   ByteData256 GetHash() const;
   /**
-   * @brief Witness情報を含めたTransactionのハッシュ値を取得する.
-   * @return ハッシュ値
+   * @brief Get the hash value of Transaction including Witness information.
+   * @return Hash value
    */
   ByteData256 GetWitnessHash() const;
   /**
-   * @brief Transactionのバイトデータを取得する.
-   * @return バイトデータ
+   * @brief Get the byte data of Transaction.
+   * @return byte data
    */
   virtual ByteData GetData() const;
   /**
-   * @brief TransactionのバイトデータをHEX文字列変換して取得する.
-   * @return HEX文字列
+   * @brief Get the byte data of Transaction by converting to HEX character string.
+   * @return hex string.
    */
   std::string GetHex() const;
   /**
-   * @brief txidを取得する.
+   * @brief Get the txid.
    *
-   * GetHash()と同値となる.
+   * Equivalent to GetHash().
    * @return txid
    */
   Txid GetTxid() const;
   /**
-   * @brief coinbaseかどうか判定する.
-   * @retval true  coinbase transaction
-   * @retval false 通常のtransaction
+   * @brief Determine if it is coinbase.
+   * @retval true   coinbase transaction
+   * @retval false  normaltransaction
    */
   bool IsCoinBase() const;
 
   /**
-   * @brief libwally処理用フラグを取得する。
-   * @return libwally用フラグ
+   * @brief libwally Get the processing flag.
+   * @return Flag for libwally
    */
   virtual uint32_t GetWallyFlag() const = 0;
 
   /**
-   * @brief size情報からvsizeを取得する。
-   * @param[in] no_witness_size   非witness領域サイズ
-   * @param[in] witness_size      witness領域サイズ
+   * @brief Get vsize from size information.
+   * @param[in] no_witness_size   Non-witness area size
+   * @param[in] witness_size      witness area size
    * @return vsize
    */
   static uint32_t GetVsizeFromSize(
       uint32_t no_witness_size, uint32_t witness_size);
 
  protected:
-  void* wally_tx_pointer_;  ///< libwally tx構造体アドレス
+  void* wally_tx_pointer_;  ///< libwally tx structure address
 
   /**
    * @brief This function is called by the state change.
@@ -569,142 +570,141 @@ class CFD_CORE_EXPORT AbstractTransaction {
    */
   virtual void CallbackStateChange(uint32_t type);
   /**
-   * @brief TxInを追加する.
+   * @brief Add TxIn.
    * @param[in] txid                txid
    * @param[in] index               vout
    * @param[in] sequence            sequence
-   * @param[in] unlocking_script    unlocking script (未指定時はEmptyを設定する. default Script::Empty)
+   * @param[in] unlocking_script    unlocking script
    */
   void AddTxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
       const Script& unlocking_script = Script::Empty);
   /**
-   * @brief TxIn情報を削除する.
-   * @param[in] index     削除するindex位置
+   * @brief Delete the TxIn information.
+   * @param[in] index     index
    */
   void RemoveTxIn(uint32_t index);
   /**
-   * @brief unlocking scriptを設定する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] unlocking_script  TxInに設定するunlocking script (Push Op Only)
+   * @brief Set the unlocking script.
+   * @param[in] tx_in_index       index
+   * @param[in] unlocking_script  Unlocking script to set to TxIn (Push Op Only)
    */
   void SetUnlockingScript(
       uint32_t tx_in_index, const Script& unlocking_script);
   /**
-   * @brief unlocking scriptを設定する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] unlocking_script  TxInに設定するunlocking scriptの構成要素リスト
-   * @return 生成したUnlockingScript
+   * @brief Set the unlocking script.
+   * @param[in] tx_in_index       index
+   * @param[in] unlocking_script  List of unlocking script components to set in TxIn
+   * @return Generated Unlocking Script
    */
   Script SetUnlockingScript(
       uint32_t tx_in_index, const std::vector<ByteData>& unlocking_script);
   /**
-   * @brief script witnessを全て削除する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
+   * @brief Remove all script witness.
+   * @param[in] tx_in_index       index
    */
   void RemoveScriptWitnessStackAll(uint32_t tx_in_index);
   /**
-   * @brief TxOut情報を追加する.
+   * @brief Add TxOut information.
    * @param[in] value           amount
    * @param[in] locking_script  locking script
    */
   void AddTxOut(const Amount& value, const Script& locking_script);
   /**
-   * @brief TxOut情報を削除する.
-   * @param[in] index     取得するindex位置
+   * @brief Delete the TxOut information.
+   * @param[in] index     index
    */
   void RemoveTxOut(uint32_t index);
 
   /**
-   * @brief TxIn配列のIndex範囲をチェックする.
-   * @param[in] index     TxIn配列のIndex値
-   * @param[in] line      行数
-   * @param[in] caller    コール元関数名
+   * @brief Check the Index range of the TxIn array.
+   * @param[in] index     index
+   * @param[in] line      Number of lines
+   * @param[in] caller    Calling function name
    */
   virtual void CheckTxInIndex(
       uint32_t index, int line, const char* caller) const = 0;
   /**
-   * @brief TxOut配列のIndex範囲をチェックする.
    * @brief check TxOut array range.
-   * @param[in] index     TxOut配列のIndex値
-   * @param[in] line      行数
-   * @param[in] caller    コール元関数名
+   * @param[in] index     index
+   * @param[in] line      Number of lines
+   * @param[in] caller    Calling function name
    */
   virtual void CheckTxOutIndex(
       uint32_t index, int line, const char* caller) const = 0;
   /**
-   * @brief witness stackに情報を追加する.
-   * @param[in] tx_in_index   TxIn配列のindex値
-   * @param[in] data          witness stackに追加するバイトデータ
+   * @brief Add information to the witness stack.
+   * @param[in] tx_in_index   index
+   * @param[in] data          Byte data to add to the witness stack
    */
   void AddScriptWitnessStack(
       uint32_t tx_in_index, const std::vector<uint8_t>& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       index position of txin
+   * @param[in] witness_index     index position of witness stack
+   * @param[in] data              32byte information to add to the witness stack
    */
   void SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index,
       const std::vector<uint8_t>& data);
   /**
-   * @brief transactionのハッシュ値を取得する.
-   * @param[in] has_witness   witnessを計算に含めるか(wtxid計算を行うかどうか)
-   * @return ハッシュ値
+   * @brief Get the hash value of transaction.
+   * @param[in] has_witness   Whether to include witness in the calculation (whether to perform wtxid calculation)
+   * @return Hash value
    */
   ByteData256 GetHash(bool has_witness) const;
   /**
-   * @brief Transactionのバイトデータを取得する.
-   * @param[in] has_witness   witnessを含めるかのフラグ
-   * @return バイトデータ
+   * @brief Get the byte data of Transaction.
+   * @param[in] has_witness   Flag to include witness
+   * @return byte data
    */
   virtual ByteData GetByteData(bool has_witness) const = 0;
   /**
-   * @brief VariableIntデータを取得する.
-   * @param[in] p_byte_data Byte配列アドレス
-   * @param[in] data_size Byte配列サイズ
-   * @param[out] p_result VariableIntデータ
-   * @param[out] p_size VariableIntデータサイズ
-   * @retval true   成功
-   * @retval false  失敗
+   * @brief Get VariableInt data.
+   * @param[in] p_byte_data Byte array address
+   * @param[in] data_size Byte array size
+   * @param[out] p_result VariableInt data
+   * @param[out] p_size VariableInt data size
+   * @retval true   success
+   * @retval false  fail
    */
   static bool GetVariableInt(
       const uint8_t* p_byte_data, size_t data_size, uint64_t* p_result,
       size_t* p_size);
   /**
-   * @brief VariableIntデータをコピーする.
-   * @param[in] v VariableIntデータ
-   * @param[out] bytes_out コピー先アドレス
-   * @return コピー先アドレス
+   * @brief Copy VariableInt data.
+   * @param[in] v VariableInt data
+   * @param[out] bytes_out Copy destination address
+   * @return Copy destination address
    */
   static uint8_t* CopyVariableInt(uint64_t v, uint8_t* bytes_out);
   /**
-   * @brief VariableBufferデータをコピーする.
-   * @param[in] bytes Byte配列アドレス
-   * @param[in] bytes_len Byte配列サイズ
-   * @param[out] bytes_out コピー先アドレス
-   * @return コピー先アドレス
+   * @brief Copy VariableBuffer data.
+   * @param[in] bytes Byte array address
+   * @param[in] bytes_len Byte array size
+   * @param[out] bytes_out Copy destination address
+   * @return Copy destination address
    */
   static uint8_t* CopyVariableBuffer(
       const uint8_t* bytes, size_t bytes_len, uint8_t* bytes_out);
   /**
-   * @brief libwallyのヒープアドレスを解放する。
-   * @param[in] wally_tx_pointer  アドレス
+   * @brief Free the libwally heap address.
+   * @param[in] wally_tx_pointer  address
    */
   static void FreeWallyAddress(const void* wally_tx_pointer);
 };
 
 /**
- * @brief signature計算を行うクラス.
+ * @brief A class that performs signature calculations.
  */
 class CFD_CORE_EXPORT SignatureUtil {
  public:
   /**
-   * @brief 楕円曲線暗号を用いて、秘密鍵からsignatureを計算する.
-   * @param[in] signature_hash  signatureハッシュ
-   * @param[in] private_key     秘密鍵
-   * @param[in] has_grind_r     EC_FLAG_GRIND_Rフラグ有無
+   * @brief Calculate the signature from the private key using elliptic curve cryptography.
+   * @param[in] signature_hash  signature hash
+   * @param[in] private_key     private key
+   * @param[in] has_grind_r     EC_FLAG_GRIND_R flag
    * @return signature
    */
   static ByteData CalculateEcSignature(

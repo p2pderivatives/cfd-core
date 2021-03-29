@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_bytedata.h
  *
- * @brief ByteData関連クラス定義
+ * @brief The ByteData related class definition.
  */
 
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_BYTEDATA_H_
@@ -22,24 +22,24 @@ class ByteData256;
 
 /**
  * @class ByteData
- * @brief 可変サイズのByte配列データクラス
+ * @brief The variable size byte array data class.
  */
 class CFD_CORE_EXPORT ByteData {
  public:
   /**
-   * @brief デフォルトコンストラクタ
+   * @brief default constructor.
    */
   ByteData();
 
   /**
-   * @brief コンストラクタ
-   * @param[in] vector  格納Byte配列
+   * @brief constructor
+   * @param[in] vector  byte array.
    */
   ByteData(const std::vector<uint8_t>& vector);  // NOLINT
 
   /**
-   * @brief コンストラクタ
-   * @param[in] hex  Byteデータ HEX文字列
+   * @brief constructor
+   * @param[in] hex  hex string.
    */
   explicit ByteData(const std::string& hex);
 
@@ -51,42 +51,48 @@ class CFD_CORE_EXPORT ByteData {
   explicit ByteData(const uint8_t* buffer, uint32_t size);
 
   /**
-   * @brief HEX文字列を取得する.
-   * @return HEX文字列
+   * @brief constructor
+   * @param[in] single_byte    1-Byte data
+   */
+  explicit ByteData(const uint8_t single_byte);
+
+  /**
+   * @brief Get a hex string.
+   * @return hex string.
    */
   std::string GetHex() const;
 
   /**
-   * @brief Byte配列を取得する.
-   * @return Byte配列
+   * @brief Get a byte array.
+   * @return byte array.
    */
   std::vector<uint8_t> GetBytes() const;
 
   /**
-   * @brief データサイズを取得する.
-   * @return Byte配列サイズ
+   * @brief Get a byte data size.
+   * @return byte data size.
    */
   size_t GetDataSize() const;
 
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check is data empty.
+   * @retval true   empty.
+   * @retval false  not empty.
    * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check is data empty.
+   * @retval true   empty.
+   * @retval false  not empty.
    */
   bool IsEmpty() const;
 
   /**
-   * @brief ByteData比較
-   * @param bytedata 比較対象のオブジェクト
-   * @retval true 一致した場合
-   * @retval false 不一致の場合
+   * @brief Check equals.
+   * @param bytedata  compare target object.
+   * @retval true   equals.
+   * @retval false  not equals.
    */
   bool Equals(const ByteData& bytedata) const;
 
@@ -98,13 +104,13 @@ class CFD_CORE_EXPORT ByteData {
   uint8_t GetHeadData() const;
 
   /**
-   * @brief byte data情報をserializeする.
+   * @brief Serialize byte data.
    * @return serialize data
    */
   ByteData Serialize() const;
 
   /**
-   * @brief serializeされたbyte dataのサイズを取得する。
+   * @brief Get the serialized size.
    * @return serialize data size
    */
   size_t GetSerializeSize() const;
@@ -178,65 +184,70 @@ class CFD_CORE_EXPORT ByteData {
   /**
    * @brief Push to back.
    * @param[in] back_insert_data  back insert data.
-   * @return joined byte data.
    */
   void Push(const ByteData& back_insert_data);
   /**
    * @brief Push to back.
    * @param[in] back_insert_data  back insert data.
-   * @return joined byte data.
    */
   void Push(const ByteData160& back_insert_data);
   /**
    * @brief Push to back.
    * @param[in] back_insert_data  back insert data.
-   * @return joined byte data.
    */
   void Push(const ByteData256& back_insert_data);
 
   /**
-   * @brief 可変長サイズ情報(バッファ)を取得する.
+   * @brief Equals operator.
+   * @param[in] object  target object.
+   * @retval true   equals
+   * @retval false  not equals
+   */
+  bool operator==(const ByteData& object) const;
+
+  /**
+   * @brief Get the variable integer buffer.
    * @param[in] value    size value
    * @return variable size buffer
    */
   static ByteData GetVariableInt(uint64_t value);
 
   /**
-   * @brief 指定された2つのバッファのHEX値を比較する.
+   * @brief Compare the HEX values ​​of the two specified buffers.
    * @param[in] source        source target
    * @param[in] destination   destination target
-   * @retval true   大きい
-   * @retval false  小さい
+   * @retval true   Large
+   * @retval false  Small or equals.
    */
   static bool IsLarge(const ByteData& source, const ByteData& destination);
 
  private:
   /**
-   * @brief データ格納Byte配列
+   * @brief データbyte array.
    */
   std::vector<uint8_t> data_;
 };
 
 /**
  * @class ByteData160
- * @brief サイズ固定(20byte)のByte配列データクラス
+ * @brief Fixed size (20 bytes) Byte array data class
  */
 class CFD_CORE_EXPORT ByteData160 {
  public:
   /**
-   * @brief デフォルトコンストラクタ
+   * @brief default constructor
    */
   ByteData160();
 
   /**
-   * @brief コンストラクタ
-   * @param[in] vector  20byteデータ格納Byte配列
+   * @brief constructor
+   * @param[in] vector  byte array(20byte).
    */
   ByteData160(const std::vector<uint8_t>& vector);  // NOLINT
 
   /**
-   * @brief コンストラクタ
-   * @param[in] hex  ByteデータHEX文字列
+   * @brief constructor
+   * @param[in] hex  hex string.
    */
   explicit ByteData160(const std::string& hex);
 
@@ -247,41 +258,41 @@ class CFD_CORE_EXPORT ByteData160 {
   explicit ByteData160(const ByteData& byte_data);
 
   /**
-   * @brief HEX文字列を取得する.
-   * @return HEX文字列
+   * @brief Get a hex string.
+   * @return hex string.
    */
   std::string GetHex() const;
 
   /**
-   * @brief Byte配列を取得する.
-   * @return Byte配列
+   * @brief Get a byte array.
+   * @return byte array.
    */
   std::vector<uint8_t> GetBytes() const;
 
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check is data empty.
+   * @retval true   empty.
+   * @retval false  not empty.
    * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check is data empty.
+   * @retval true   empty.
+   * @retval false  not empty.
    */
   bool IsEmpty() const;
 
   /**
-   * @brief ByteData比較
-   * @param bytedata 比較対象のオブジェクト
-   * @retval true 一致した場合
-   * @retval false 不一致の場合
+   * @brief Check equals.
+   * @param bytedata  compare target object.
+   * @retval true   equals.
+   * @retval false  not equals.
    */
   bool Equals(const ByteData160& bytedata) const;
 
   /**
-   * @brief byte data情報を取得する.
+   * @brief Get a byte data object.
    * @return byte data
    */
   ByteData GetData() const;
@@ -360,38 +371,46 @@ class CFD_CORE_EXPORT ByteData160 {
   }
 
   /**
-   * @brief byte data情報をserializeする.
+   * @brief Serialize byte data.
    * @return serialize data
    */
   ByteData Serialize() const;
 
+  /**
+   * @brief Equals operator.
+   * @param[in] object  target object.
+   * @retval true   equals
+   * @retval false  not equals
+   */
+  bool operator==(const ByteData160& object) const;
+
  private:
   /**
-   * @brief 20byte固定データ格納Byte配列
+   * @brief 20byte fixed data.
    */
   std::vector<uint8_t> data_;
 };
 
 /**
  * @class ByteData256
- * @brief サイズ固定(32byte)のByte配列データクラス
+ * @brief Fixed size (32 bytes) Byte array data class.
  */
 class CFD_CORE_EXPORT ByteData256 {
  public:
   /**
-   * @brief デフォルトコンストラクタ
+   * @brief default constructor
    */
   ByteData256();
 
   /**
-   * @brief コンストラクタ
-   * @param[in] vector  32byteデータ格納Byte配列
+   * @brief constructor
+   * @param[in] vector  byte array(32byte).
    */
   ByteData256(const std::vector<uint8_t>& vector);  // NOLINT
 
   /**
-   * @brief コンストラクタ
-   * @param[in] hex  ByteデータHEX文字列
+   * @brief constructor
+   * @param[in] hex  hex string.
    */
   explicit ByteData256(const std::string& hex);
 
@@ -402,41 +421,41 @@ class CFD_CORE_EXPORT ByteData256 {
   explicit ByteData256(const ByteData& byte_data);
 
   /**
-   * @brief HEX文字列を取得する.
-   * @return HEX文字列
+   * @brief Get a hex string.
+   * @return hex string.
    */
   std::string GetHex() const;
 
   /**
-   * @brief Byte配列を取得する.
-   * @return Byte配列
+   * @brief Get a byte array.
+   * @return byte array.
    */
   std::vector<uint8_t> GetBytes() const;
 
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check is data empty.
+   * @retval true   empty.
+   * @retval false  not empty.
    * @deprecated replace to IsEmpty .
    */
   bool Empty() const;
   /**
-   * @brief データが空か取得する.
-   * @retval true  データが空
-   * @retval false データが存在
+   * @brief Check is data empty.
+   * @retval true   empty.
+   * @retval false  not empty.
    */
   bool IsEmpty() const;
 
   /**
-   * @brief ByteData比較
-   * @param bytedata 比較対象のオブジェクト
-   * @retval true 一致した場合
-   * @retval false 不一致の場合
+   * @brief Check equals.
+   * @param bytedata  compare target object.
+   * @retval true   equals.
+   * @retval false  not equals.
    */
   bool Equals(const ByteData256& bytedata) const;
 
   /**
-   * @brief byte data情報を取得する.
+   * @brief Get a byte data object.
    * @return byte data
    */
   ByteData GetData() const;
@@ -515,16 +534,289 @@ class CFD_CORE_EXPORT ByteData256 {
   }
 
   /**
-   * @brief byte data情報をserializeする.
+   * @brief Serialize byte data.
    * @return serialize data
    */
   ByteData Serialize() const;
 
+  /**
+   * @brief Equals operator.
+   * @param[in] object  target object.
+   * @retval true   equals
+   * @retval false  not equals
+   */
+  bool operator==(const ByteData256& object) const;
+
  private:
   /**
-   * @brief 32byte固定データ格納Byte配列
+   * @brief 32byte fixed data.
    */
   std::vector<uint8_t> data_;
+};
+
+/**
+ * @class Serializer
+ * @brief A class that serializes a byte array.
+ */
+class CFD_CORE_EXPORT Serializer {
+ public:
+  static constexpr uint8_t kViTag16 = 253;  //!< VarInt16
+  static constexpr uint8_t kViTag32 = 254;  //!< VarInt32
+  static constexpr uint8_t kViTag64 = 255;  //!< VarInt64
+  static constexpr uint8_t kViMax8 = 252;   //!< VarInt8
+
+  /**
+   * @brief get variable integer size.
+   * @param[in] value  value
+   * @return variable integer size
+   */
+  static uint32_t GetVariableIntSize(uint64_t value);
+
+  /**
+   * @brief constructor.
+   */
+  Serializer();
+  /**
+   * @brief constructor.
+   * @param[in] initial_size  initial buffer size.
+   */
+  explicit Serializer(uint32_t initial_size);
+  /**
+   * @brief destructor.
+   */
+  virtual ~Serializer() {}
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  Serializer(const Serializer& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  Serializer& operator=(const Serializer& object);
+
+  /**
+   * @brief add variable integer.
+   * @param[in] value  value
+   */
+  void AddVariableInt(uint64_t value);
+
+  /**
+   * @brief add variable buffer.
+   * @param[in] buffer   buffer
+   */
+  void AddVariableBuffer(const ByteData& buffer);
+  /**
+   * @brief add prefix buffer.
+   * @param[in] prefix        prefix
+   * @param[in] buffer        buffer
+   */
+  void AddPrefixBuffer(uint64_t prefix, const ByteData& buffer);
+  /**
+   * @brief add direct byte array.
+   * @param[in] buffer        buffer
+   */
+  void AddDirectBytes(const ByteData& buffer);
+  /**
+   * @brief add direct byte array.
+   * @param[in] buffer        buffer
+   */
+  void AddDirectBytes(const ByteData256& buffer);
+
+  /**
+   * @brief add variable buffer.
+   * @param[in] buffer        buffer
+   * @param[in] buffer_size   buffer size
+   */
+  void AddVariableBuffer(const uint8_t* buffer, uint32_t buffer_size);
+  /**
+   * @brief add prefix buffer.
+   * @param[in] prefix        prefix
+   * @param[in] buffer        buffer
+   * @param[in] buffer_size   buffer size
+   */
+  void AddPrefixBuffer(
+      uint64_t prefix, const uint8_t* buffer, uint32_t buffer_size);
+  /**
+   * @brief add direct byte array.
+   * @param[in] buffer        buffer
+   * @param[in] buffer_size   buffer size
+   */
+  void AddDirectBytes(const uint8_t* buffer, uint32_t buffer_size);
+
+  /**
+   * @brief add direct byte data.
+   * @param[in] byte_data     byte data
+   */
+  void AddDirectByte(uint8_t byte_data);
+  /**
+   * @brief add direct number.
+   * @param[in] number     value
+   */
+  void AddDirectNumber(uint32_t number);
+  /**
+   * @brief add direct number.
+   * @param[in] number     value
+   */
+  void AddDirectNumber(uint64_t number);
+  /**
+   * @brief add direct number.
+   * @param[in] number     value
+   */
+  void AddDirectNumber(int64_t number);
+
+  /**
+   * @brief add direct byte array.
+   * @param[in] buffer        buffer
+   * @return serializer object.
+   */
+  Serializer& operator<<(const ByteData& buffer);
+  /**
+   * @brief add direct byte array.
+   * @param[in] buffer        buffer
+   * @return serializer object.
+   */
+  Serializer& operator<<(const ByteData256& buffer);
+  /**
+   * @brief add direct byte data.
+   * @param[in] byte_data     byte data
+   * @return serializer object.
+   */
+  Serializer& operator<<(uint8_t byte_data);
+  /**
+   * @brief add direct number.
+   * @param[in] number     value
+   * @return serializer object.
+   */
+  Serializer& operator<<(uint32_t number);
+  /**
+   * @brief add direct number.
+   * @param[in] number     value
+   * @return serializer object.
+   */
+  Serializer& operator<<(uint64_t number);
+  /**
+   * @brief add direct number.
+   * @param[in] number     value
+   * @return serializer object.
+   */
+  Serializer& operator<<(int64_t number);
+
+  /**
+   * @brief Output byte array.
+   * @return byte array.
+   */
+  ByteData Output();
+
+ protected:
+  std::vector<uint8_t> buffer_;  //!< buffer
+  uint32_t offset_;              //!< offset
+
+  /**
+   * @brief check need buffer size.
+   * @param[in] need_size  need buffer size
+   */
+  void CheckNeedSize(uint32_t need_size);
+};
+
+/**
+ * @class Deserializer
+ * @brief A class that analyze a serialized byte array.
+ */
+class CFD_CORE_EXPORT Deserializer {
+ public:
+  /**
+   * @brief constructor.
+   */
+  Deserializer() : offset_(0) {}
+  /**
+   * @brief constructor.
+   * @param[in] buffer     buffer
+   */
+  explicit Deserializer(const std::vector<uint8_t>& buffer);
+  /**
+   * @brief constructor.
+   * @param[in] buffer     buffer
+   */
+  explicit Deserializer(const ByteData& buffer);
+  /**
+   * @brief destructor.
+   */
+  virtual ~Deserializer() {}
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  Deserializer(const Deserializer& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  Deserializer& operator=(const Deserializer& object);
+
+  /**
+   * @brief read uint64.
+   * @return uint64
+   */
+  uint64_t ReadUint64();
+  /**
+   * @brief read uint32.
+   * @return uint32
+   */
+  uint32_t ReadUint32();
+  /**
+   * @brief read uint8.
+   * @return uint8
+   */
+  uint8_t ReadUint8();
+
+  /**
+   * @brief read variable integer.
+   * @return uint64
+   */
+  uint64_t ReadVariableInt();
+  /**
+   * @brief read buffer.
+   * @param[in] size   read size.
+   * @return buffer
+   */
+  std::vector<uint8_t> ReadBuffer(uint32_t size);
+  /**
+   * @brief read array.
+   * @param[in,out] output   write array.
+   * @param[in] size   read size.
+   */
+  void ReadArray(uint8_t* output, size_t size);
+
+  /**
+   * @brief read variable buffer.
+   * @return buffer
+   */
+  std::vector<uint8_t> ReadVariableBuffer();
+  /**
+   * @brief read variable buffer.
+   * @return buffer
+   */
+  ByteData ReadVariableData();
+
+  /**
+   * @brief get all read size.
+   * @return size (offset)
+   */
+  uint32_t GetReadSize();
+
+ protected:
+  std::vector<uint8_t> buffer_;  //!< buffer
+  uint32_t offset_;              //!< offset
+
+  /**
+   * @brief check read offset size.
+   * @param[in] size  need size
+   */
+  void CheckReadSize(uint64_t size);
 };
 
 }  // namespace core

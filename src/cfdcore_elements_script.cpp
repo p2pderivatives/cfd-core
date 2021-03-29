@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_elements_script.cpp
  *
- * @brief \~japanese Elements対応したScriptクラス定義
- *   \~english definition of script class that supports Elements
+ * @brief definition of script class that supports Elements
  */
 #ifndef CFD_DISABLE_ELEMENTS
 

@@ -126,6 +126,32 @@ TEST(ScriptBuilder, AppendFunctionTest1) {
   EXPECT_EQ(expect_size, actual.GetElementList().size());
 }
 
+TEST(ScriptBuilder, AppendFunctionTest1ByOperator) {
+  std::string sig =
+  "304402203dd0c408e173d6b7252eabc7e3f6a0c632d930a7b343eaf60e7ebee9eb01adcc02204a567cb6a941c88f24f4c4201633468d53810fae9cdb90f35571e6b52bed005e";  // NOLINT
+  std::string pubkey =
+  "042322ed12f2779cae32ca89f15d61d10e3bd725d74d45269b05a34abb91b45a2ca19cc8734300deaf74d006871b5cd0730f2384037d16843663a0327fce24aef0";// NOLINT
+  std::string pubkey_hash = "aea58b2d64af22fe06b95c46af4e471e6280226c";
+
+  // ref: https://en.bitcoin.it/wiki/Script#Script_examples
+  // Freezing funds until a time in the future
+  Script actual = (ScriptBuilder() << sig << Pubkey(pubkey) << 144
+      << ScriptType::kOpCheckLockTimeVerify
+      << ScriptOperator::OP_DROP << ScriptOperator::OP_DUP
+      << ScriptOperator::OP_HASH160 << ByteData160(pubkey_hash)
+      << ScriptOperator::OP_EQUALVERIFY << ScriptOperator::OP_CHECKSIG).Build();
+
+  std::string expect_hex =
+  "46304402203dd0c408e173d6b7252eabc7e3f6a0c632d930a7b343eaf60e7ebee9eb01adcc02204a567cb6a941c88f24f4c4201633468d53810fae9cdb90f35571e6b52bed005e41042322ed12f2779cae32ca89f15d61d10e3bd725d74d45269b05a34abb91b45a2ca19cc8734300deaf74d006871b5cd0730f2384037d16843663a0327fce24aef0029000b17576a914aea58b2d64af22fe06b95c46af4e471e6280226c88ac";// NOLINT
+  std::string expect_asm =
+  "304402203dd0c408e173d6b7252eabc7e3f6a0c632d930a7b343eaf60e7ebee9eb01adcc02204a567cb6a941c88f24f4c4201633468d53810fae9cdb90f35571e6b52bed005e 042322ed12f2779cae32ca89f15d61d10e3bd725d74d45269b05a34abb91b45a2ca19cc8734300deaf74d006871b5cd0730f2384037d16843663a0327fce24aef0 144 OP_CHECKLOCKTIMEVERIFY OP_DROP OP_DUP OP_HASH160 aea58b2d64af22fe06b95c46af4e471e6280226c OP_EQUALVERIFY OP_CHECKSIG";// NOLINT
+  size_t expect_size = 10;
+
+  EXPECT_STREQ(expect_hex.c_str(), actual.GetHex().c_str());
+  EXPECT_STREQ(expect_asm.c_str(), actual.ToString().c_str());
+  EXPECT_EQ(expect_size, actual.GetElementList().size());
+}
+
 TEST(ScriptBuilder, AppendFunctionTest2) {
   ScriptBuilder sb = ScriptBuilder();
   std::string sig =
@@ -254,3 +280,43 @@ TEST(ScriptBuilder, StringBuildTest) {
     "0 17 8738 3355443");
 }
 
+TEST(ScriptBuilder, StringBuildByOperator) {
+  Script script = (ScriptBuilder() << "5" << "2" << "OP_ADD" << "OP_CHECKSIG").Build();
+  EXPECT_STREQ(script.GetHex().c_str(), "555293ac");
+  EXPECT_STREQ(script.ToString().c_str(), "5 2 OP_ADD OP_CHECKSIG");
+
+  script = (ScriptBuilder() << "0" << "17" << "8738"
+     << "3355443" << "17476" << "85" << "26214" << "7829367"
+     << "-2184" << "-25").Build();
+  EXPECT_STREQ(script.GetHex().c_str(),
+    "000111022222033333330244440155026666037777770288880199");
+  EXPECT_STREQ(script.ToString().c_str(),
+    "0 17 8738 3355443 17476 85 26214 7829367 -2184 -25");
+
+  std::string expect_hex =
+  "46304402203dd0c408e173d6b7252eabc7e3f6a0c632d930a7b343eaf60e7ebee9eb01adcc02204a567cb6a941c88f24f4c4201633468d53810fae9cdb90f35571e6b52bed005e41042322ed12f2779cae32ca89f15d61d10e3bd725d74d45269b05a34abb91b45a2ca19cc8734300deaf74d006871b5cd0730f2384037d16843663a0327fce24aef0029000b1750455529357a820f6116d61351c05df34e116f1cc63fcacbd4f1a3882d2f629e7a0986ac03005c488ac";// NOLINT
+  std::string expect_asm =
+  "304402203dd0c408e173d6b7252eabc7e3f6a0c632d930a7b343eaf60e7ebee9eb01adcc02204a567cb6a941c88f24f4c4201633468d53810fae9cdb90f35571e6b52bed005e 042322ed12f2779cae32ca89f15d61d10e3bd725d74d45269b05a34abb91b45a2ca19cc8734300deaf74d006871b5cd0730f2384037d16843663a0327fce24aef0 144 OP_CHECKLOCKTIMEVERIFY OP_DROP 1469272661 OP_SHA256 f6116d61351c05df34e116f1cc63fcacbd4f1a3882d2f629e7a0986ac03005c4 OP_EQUALVERIFY OP_CHECKSIG";// NOLINT
+
+  script = (ScriptBuilder()
+     << "304402203dd0c408e173d6b7252eabc7e3f6a0c632d930a7b343eaf60e7ebee9eb01adcc02204a567cb6a941c88f24f4c4201633468d53810fae9cdb90f35571e6b52bed005e"
+     << "042322ed12f2779cae32ca89f15d61d10e3bd725d74d45269b05a34abb91b45a2ca19cc8734300deaf74d006871b5cd0730f2384037d16843663a0327fce24aef0"
+     << "144"
+     << "OP_CHECKLOCKTIMEVERIFY" << "OP_DROP" << "1469272661"
+     << "OP_SHA256"
+     << "f6116d61351c05df34e116f1cc63fcacbd4f1a3882d2f629e7a0986ac03005c4"
+     << "OP_EQUALVERIFY" << "OP_CHECKSIG").Build();
+  EXPECT_STREQ(script.GetHex().c_str(), expect_hex.c_str());
+  EXPECT_STREQ(script.ToString().c_str(), expect_asm.c_str());
+
+  // hex test
+  script = (ScriptBuilder()
+     << "0x00"
+     << "0x11"
+     << "0x2222"
+     << "0x333333").Build();
+  EXPECT_STREQ(script.GetHex().c_str(),
+    "0100011102222203333333");
+  EXPECT_STREQ(script.ToString().c_str(),
+    "0 17 8738 3355443");
+}

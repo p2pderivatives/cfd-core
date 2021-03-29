@@ -1,8 +1,7 @@
 // Copyright 2019 CryptoGarage
 /**
  * @file cfdcore_logger.cpp
- * @brief \~japanese ログ機能を実装するファイルです。
- *   \~english implementation of logger
+ * @brief implementation of logger
  */
 #include <iostream>
 #include <memory>

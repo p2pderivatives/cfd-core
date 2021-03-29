@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_transaction.cpp
  *
- * @brief \~japanese Transaction関連クラスの実装ファイルです。
- *   \~english implementation of Transaction related class
+ * @brief implementation of Transaction related class
  */
 #include "cfdcore/cfdcore_transaction.h"
 
@@ -14,8 +13,11 @@
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
+#include "cfdcore/cfdcore_schnorrsig.h"
+#include "cfdcore/cfdcore_taproot.h"
 #include "cfdcore/cfdcore_util.h"
-#include "cfdcore_wally_util.h"  // NOLINT
+#include "cfdcore_transaction_internal.h"  // NOLINT
+#include "cfdcore_wally_util.h"            // NOLINT
 
 namespace cfd {
 namespace core {
@@ -74,6 +76,7 @@ uint32_t TxIn::EstimateTxInSize(
     uint32_t *no_witness_area_size, const Script *scriptsig_template) {
   bool is_pubkey = false;
   bool is_witness = true;
+  bool is_taproot = false;
   bool use_unlocking_script = true;
   uint32_t size = kMinimumTxInSize;
   uint32_t witness_size = 0;
@@ -99,6 +102,10 @@ uint32_t TxIn::EstimateTxInSize(
     case AddressType::kP2shP2wpkhAddress:
       is_pubkey = true;
       break;
+    case AddressType::kTaprootAddress:
+      is_taproot = true;
+      use_unlocking_script = false;
+      break;
     default:
       if (redeem_script.IsEmpty()) {
         warn(CFD_LOG_SOURCE, "unknown address type, and empty redeem script.");
@@ -116,6 +123,9 @@ uint32_t TxIn::EstimateTxInSize(
       (scriptsig_template != nullptr) && (!scriptsig_template->IsEmpty())) {
     script_size = static_cast<uint32_t>(
         scriptsig_template->GetData().GetSerializeSize());
+  } else if (is_taproot) {
+    // signature(64byte) + sighash type(1byte) + serialized(1byte)
+    script_size = SchnorrSignature::kSchnorrSignatureSize + 2;
   } else {
     // Forehead is a big size
     script_size = (EC_SIGNATURE_DER_MAX_LEN - 2) * 2;
@@ -142,19 +152,16 @@ uint32_t TxIn::EstimateTxInSize(
   }
 
   if (is_witness) {
-    if (is_pubkey) {
-      witness_size = script_size;
-      if (use_unlocking_script) {
-        size += 22;  // wpkh locking script length
-      }
+    witness_size = script_size + 1;  // witness stack count area(1byte)
+    if (!use_unlocking_script) {
+      // do nothing
+    } else if (is_pubkey) {
+      size += 23;  // wpkh locking script length + serialize size(1byte)
     } else {
-      witness_size = script_size;
-      if (use_unlocking_script) {
-        size += 34;  // wsh locking script length
-      }
+      size += 35;  // wsh locking script length + serialize size(1byte)
     }
   } else {
-    size += script_size;
+    size += script_size + 1;  // serialize size(1byte)
   }
   if (witness_area_size != nullptr) {
     *witness_area_size = static_cast<uint32_t>(witness_size);
@@ -447,7 +454,9 @@ void Transaction::SetFromHex(const std::string &hex_string) {
 }
 
 Transaction &Transaction::operator=(const Transaction &transaction) & {
-  SetFromHex(transaction.GetHex());
+  if (this != &transaction) {
+    SetFromHex(transaction.GetHex());
+  }
   return *this;
 }
 
@@ -740,6 +749,11 @@ ByteData256 Transaction::GetSignatureHash(
     throw CfdException(
         kCfdIllegalArgumentError, "Failed to GetSignatureHash. empty script.");
   }
+  if (version >= WitnessVersion::kVersion1) {
+    warn(CFD_LOG_SOURCE, "unsupport witness version on ECDSA.");
+    throw CfdException(
+        kCfdIllegalArgumentError, "unsupport witness version on ECDSA.");
+  }
   std::vector<uint8_t> buffer(SHA256_LEN);
   const std::vector<uint8_t> &bytes = script_data.GetBytes();
   struct wally_tx *tx_pointer = NULL;
@@ -785,6 +799,120 @@ ByteData256 Transaction::GetSignatureHash(
   return ByteData256(buffer);
 }
 
+ByteData256 Transaction::GetSchnorrSignatureHash(
+    uint32_t txin_index, SigHashType sighash_type,
+    const std::vector<TxOut> &utxo_list, const TapScriptData *script_data,
+    const ByteData &annex) const {
+  CheckTxInIndex(txin_index, __LINE__, __FUNCTION__);
+  if (this->vin_.size() > utxo_list.size()) {
+    warn(CFD_LOG_SOURCE, "not enough utxo list.");
+    throw CfdException(kCfdIllegalArgumentError, "not enough utxo list.");
+  }
+  if ((!annex.IsEmpty()) && (annex.GetHeadData() != TaprootUtil::kAnnexTag)) {
+    warn(CFD_LOG_SOURCE, "invalid annex tag.");
+    throw CfdException(kCfdIllegalArgumentError, "invalid annex tag");
+  }
+
+  const Script locking_script = utxo_list[txin_index].GetLockingScript();
+  if (!locking_script.IsWitnessProgram()) {
+    warn(CFD_LOG_SOURCE, "target vin is not segwit.");
+    throw CfdException(kCfdIllegalArgumentError, "target vin is not segwit.");
+  } else if (locking_script.GetWitnessVersion() != WitnessVersion::kVersion1) {
+    warn(CFD_LOG_SOURCE, "target vin is not segwit v1.");
+    throw CfdException(
+        kCfdIllegalArgumentError, "target vin is not segwit v1.");
+  }
+
+  uint8_t sighash_type_value =
+      static_cast<uint8_t>(sighash_type.GetSigHashFlag());
+  bool is_anyone_can_pay = sighash_type.IsAnyoneCanPay();
+  if (!SchnorrSignature::IsValidSigHashType(sighash_type_value)) {
+    warn(CFD_LOG_SOURCE, "Invalid sighash type on segwit v1.");
+    throw CfdException(
+        kCfdIllegalArgumentError, "Invalid sighash type on segwit v1.");
+  } else if (sighash_type_value == 0) {
+    sighash_type_value = 0x01;  // SIGHASH_ALL
+  }
+  bool has_sighash_all = ((sighash_type_value & 0x0f) == 1) ? true : false;
+
+  uint8_t ext_flag = 0;  // 0 - 127
+  uint8_t has_tap_script = 0;
+  uint8_t key_version = 0;
+  if ((script_data != nullptr) && (!script_data->tap_leaf_hash.IsEmpty())) {
+    has_tap_script = 1;
+  }
+  ext_flag |= has_tap_script;
+
+  Serializer builder;
+  auto top = HashUtil::Sha256("TapSighash");
+  builder.AddDirectBytes(top);
+  builder.AddDirectBytes(top);  // double data
+  builder.AddDirectByte(0);     // EPOCH
+  builder.AddDirectByte(static_cast<uint8_t>(sighash_type.GetSigHashFlag()));
+  builder.AddDirectNumber(static_cast<uint32_t>(GetVersion()));
+  builder.AddDirectNumber(GetLockTime());
+  if (!is_anyone_can_pay) {
+    Serializer prevouts_buf;
+    Serializer amounts_buf;
+    Serializer scripts_buf;
+    Serializer sequences_buf;
+    for (size_t index = 0; index < vin_.size(); ++index) {
+      prevouts_buf.AddDirectBytes(vin_[index].GetTxid().GetData());
+      prevouts_buf.AddDirectNumber(vin_[index].GetVout());
+      amounts_buf.AddDirectNumber(
+          utxo_list[index].GetValue().GetSatoshiValue());
+      scripts_buf.AddVariableBuffer(
+          utxo_list[index].GetLockingScript().GetData());
+      sequences_buf.AddDirectNumber(vin_[index].GetSequence());
+    }
+    builder.AddDirectBytes(HashUtil::Sha256(prevouts_buf.Output()));
+    builder.AddDirectBytes(HashUtil::Sha256(amounts_buf.Output()));
+    builder.AddDirectBytes(HashUtil::Sha256(scripts_buf.Output()));
+    builder.AddDirectBytes(HashUtil::Sha256(sequences_buf.Output()));
+  }
+  if (has_sighash_all) {
+    Serializer outputs_buf;
+    for (const auto &txout : vout_) {
+      outputs_buf.AddDirectNumber(txout.GetValue().GetSatoshiValue());
+      outputs_buf.AddVariableBuffer(txout.GetLockingScript().GetData());
+    }
+    builder.AddDirectBytes(HashUtil::Sha256(outputs_buf.Output()));
+  }
+
+  uint8_t spend_type = (ext_flag << 1) + (annex.IsEmpty() ? 0 : 1);
+  builder.AddDirectByte(spend_type);
+  if (is_anyone_can_pay) {
+    builder.AddDirectBytes(vin_[txin_index].GetTxid().GetData());
+    builder.AddDirectNumber(vin_[txin_index].GetVout());
+    builder.AddDirectNumber(
+        utxo_list[txin_index].GetValue().GetSatoshiValue());
+    builder.AddVariableBuffer(
+        utxo_list[txin_index].GetLockingScript().GetData());
+    builder.AddDirectNumber(vin_[txin_index].GetSequence());
+  } else {
+    builder.AddDirectNumber(txin_index);
+  }
+
+  if (!annex.IsEmpty()) builder.AddDirectBytes(HashUtil::Sha256(annex));
+
+  if (sighash_type.GetSigHashAlgorithm() == SigHashAlgorithm::kSigHashSingle) {
+    CheckTxOutIndex(txin_index, __LINE__, __FUNCTION__);
+    Serializer outputs_buf;
+    outputs_buf.AddDirectNumber(
+        vout_[txin_index].GetValue().GetSatoshiValue());
+    outputs_buf.AddVariableBuffer(
+        vout_[txin_index].GetLockingScript().GetData());
+    builder.AddDirectBytes(HashUtil::Sha256(outputs_buf.Output()));
+  }
+
+  if (has_tap_script == 1) {
+    builder.AddDirectBytes(script_data->tap_leaf_hash.GetData());
+    builder.AddDirectByte(key_version);
+    builder.AddDirectNumber(script_data->code_separator_position);
+  }
+  return HashUtil::Sha256(builder.Output());
+}
+
 bool Transaction::HasWitness() const {
   for (const TxIn &txin : vin_) {
     if (!txin.GetScriptWitness().GetWitness().empty()) {
@@ -797,138 +925,7 @@ bool Transaction::HasWitness() const {
 ByteData Transaction::GetByteData(bool has_witness) const {
   struct wally_tx *tx_pointer =
       static_cast<struct wally_tx *>(wally_tx_pointer_);
-  size_t size = 0;
-  uint32_t flag = 0;
-  if (has_witness) {
-    flag = WALLY_TX_FLAG_USE_WITNESS;
-  }
-
-  int ret = wally_tx_get_length(tx_pointer, flag, &size);
-  if (ret != WALLY_OK) {
-    warn(CFD_LOG_SOURCE, "wally_tx_get_length NG[{}].", ret);
-    throw CfdException(kCfdIllegalStateError, "tx length calc error.");
-  }
-  if (size < kTransactionMinimumHexSize) {
-    ret = WALLY_EINVAL;
-  }
-  std::vector<uint8_t> buffer(size);
-  if (ret != WALLY_EINVAL) {
-    ret = wally_tx_to_bytes(
-        tx_pointer, flag, buffer.data(), buffer.size(), &size);
-  }
-  if (ret == WALLY_EINVAL) {
-    /* TODO: About conversion to the object.
-     * In libwally, txin / txout does not allow empty data.
-     * Therefore, if txin / txout is empty, object to byte is an error.
-     * Therefore, it performs its own processing under certain circumstances.
-     */
-    if ((tx_pointer->num_inputs == 0) || (tx_pointer->num_outputs == 0)) {
-      info(CFD_LOG_SOURCE, "wally_tx_get_length size[{}]", size);
-      // Necessary size calculation because wally_tx_get_length may be
-      // an invalid value (reserved more)
-      size_t need_size = sizeof(struct wally_tx);
-      need_size += tx_pointer->num_inputs * sizeof(struct wally_tx_input);
-      need_size += tx_pointer->num_outputs * sizeof(struct wally_tx_output);
-      for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
-        const struct wally_tx_input *input = tx_pointer->inputs + i;
-        need_size += input->script_len + 10;
-      }
-      for (uint32_t i = 0; i < tx_pointer->num_outputs; ++i) {
-        const struct wally_tx_output *output = tx_pointer->outputs + i;
-        need_size += output->script_len + 10;
-      }
-      if (flag) {
-        for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
-          const struct wally_tx_input *input = tx_pointer->inputs + i;
-          size_t num_items = input->witness ? input->witness->num_items : 0;
-          for (uint32_t j = 0; j < num_items; ++j) {
-            const struct wally_tx_witness_item *stack;
-            stack = input->witness->items + j;
-            need_size += stack->witness_len + 10;
-          }
-          need_size += 10;
-        }
-      }
-      if (need_size > buffer.size()) {
-        buffer.resize(need_size);
-        info(CFD_LOG_SOURCE, "buffer.resize[{}]", need_size);
-      }
-
-      uint8_t *address_pointer = buffer.data();
-      memcpy(
-          address_pointer, &tx_pointer->version, sizeof(tx_pointer->version));
-      address_pointer += sizeof(tx_pointer->version);
-      if (flag && (tx_pointer->num_inputs != 0)) {  // witness
-        *address_pointer = 0;                       // marker is 0
-        ++address_pointer;
-        *address_pointer = 1;  // flag is 1(witness)
-        ++address_pointer;
-      }
-
-      // txin
-      address_pointer =
-          CopyVariableInt(tx_pointer->num_inputs, address_pointer);
-      for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
-        const struct wally_tx_input *input = tx_pointer->inputs + i;
-        memcpy(address_pointer, input->txhash, sizeof(input->txhash));
-        address_pointer += sizeof(input->txhash);
-        memcpy(address_pointer, &input->index, sizeof(input->index));
-        address_pointer += sizeof(input->index);
-        address_pointer = CopyVariableBuffer(
-            input->script, input->script_len, address_pointer);
-        memcpy(address_pointer, &input->sequence, sizeof(input->sequence));
-        address_pointer += sizeof(input->sequence);
-      }
-
-      // txout
-      address_pointer =
-          CopyVariableInt(tx_pointer->num_outputs, address_pointer);
-      for (uint32_t i = 0; i < tx_pointer->num_outputs; ++i) {
-        const struct wally_tx_output *output = tx_pointer->outputs + i;
-        memcpy(address_pointer, &output->satoshi, sizeof(output->satoshi));
-        address_pointer += sizeof(output->satoshi);
-        address_pointer = CopyVariableBuffer(
-            output->script, output->script_len, address_pointer);
-      }
-
-      // witness
-      if (flag) {
-        for (uint32_t i = 0; i < tx_pointer->num_inputs; ++i) {
-          const struct wally_tx_input *input = tx_pointer->inputs + i;
-          size_t num_items = input->witness ? input->witness->num_items : 0;
-          address_pointer = CopyVariableInt(num_items, address_pointer);
-          for (uint32_t j = 0; j < num_items; ++j) {
-            const struct wally_tx_witness_item *stack;
-            stack = input->witness->items + j;
-            address_pointer = CopyVariableBuffer(
-                stack->witness, stack->witness_len, address_pointer);
-          }
-        }
-      }
-
-      // locktime
-      memcpy(
-          address_pointer, &tx_pointer->locktime,
-          sizeof(tx_pointer->locktime));
-      address_pointer += sizeof(tx_pointer->locktime);
-
-      unsigned char *start_address = buffer.data();
-      size = address_pointer - start_address;
-      if (buffer.size() > size) {
-        buffer.resize(size);
-        info(CFD_LOG_SOURCE, "set buffer size[{}]", size);
-      }
-    } else {
-      // Exception
-      warn(CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}].", ret);
-      throw CfdException(kCfdIllegalStateError, "tx hex convert error.");
-    }
-  } else if (ret != WALLY_OK) {
-    warn(CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}].", ret);
-    throw CfdException(kCfdIllegalStateError, "tx hex convert error.");
-  }
-
-  return ByteData(buffer);
+  return ConvertBitcoinTxFromWally(tx_pointer, !has_witness);
 }
 
 uint32_t Transaction::GetWallyFlag() const {
@@ -950,6 +947,138 @@ void Transaction::CheckTxOutIndex(
     spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
     warn(location, "vout[{}] out_of_range.", index);
     throw CfdException(kCfdOutOfRangeError, "vin out_of_range error.");
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Internal API
+// -----------------------------------------------------------------------------
+ByteData ConvertBitcoinTxFromWally(
+    const struct wally_tx *tx, bool force_exclude_witness) {
+  int ret;
+  size_t witness_count = 0;
+  ret = wally_tx_get_witness_count(tx, &witness_count);
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_get_witness_count NG[{}]", ret);
+    throw CfdException(kCfdIllegalStateError, "psbt witness count get error.");
+  }
+
+  uint32_t flags = (witness_count != 0) ? WALLY_TX_FLAG_USE_WITNESS : 0;
+  if (force_exclude_witness) flags = 0;
+
+  size_t size = 0;
+  ret = wally_tx_get_length(tx, flags, &size);
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_tx_get_length NG[{}]", ret);
+    throw CfdException(kCfdIllegalStateError, "psbt tx size get error.");
+  }
+
+  try {
+    std::vector<uint8_t> buf(size);
+    size_t tx_size = 0;
+
+    if (size < kTransactionMinimumHexSize) {
+      ret = WALLY_EINVAL;
+    } else {
+      ret = wally_tx_to_bytes(tx, flags, buf.data(), buf.size(), &tx_size);
+    }
+
+    if (ret == WALLY_OK) {
+      return ByteData(buf.data(), static_cast<uint32_t>(tx_size));
+    } else if (ret == WALLY_EINVAL) {
+      /* TODO: About conversion to the object.
+      * In libwally, txin / txout does not allow empty data.
+      * Therefore, if txin / txout is empty, object to byte is an error.
+      * Therefore, it performs its own processing under certain circumstances.
+      */
+      if ((tx->num_inputs == 0) || (tx->num_outputs == 0)) {
+        info(CFD_LOG_SOURCE, "wally_tx_get_length size[{}]", size);
+        // Necessary size calculation because wally_tx_get_length may be
+        // an invalid value (reserved more)
+        size_t need_size = sizeof(struct wally_tx);
+        need_size += tx->num_inputs * sizeof(struct wally_tx_input);
+        need_size += tx->num_outputs * sizeof(struct wally_tx_output);
+        for (uint32_t i = 0; i < tx->num_inputs; ++i) {
+          const struct wally_tx_input *input = tx->inputs + i;
+          need_size += input->script_len + 10;
+        }
+        for (uint32_t i = 0; i < tx->num_outputs; ++i) {
+          const struct wally_tx_output *output = tx->outputs + i;
+          need_size += output->script_len + 10;
+        }
+        if (flags != 0) {
+          for (uint32_t i = 0; i < tx->num_inputs; ++i) {
+            const struct wally_tx_input *input = tx->inputs + i;
+            size_t num_items = input->witness ? input->witness->num_items : 0;
+            for (uint32_t j = 0; j < num_items; ++j) {
+              const struct wally_tx_witness_item *stack;
+              stack = input->witness->items + j;
+              need_size += stack->witness_len + 10;
+            }
+            need_size += 10;
+          }
+        }
+
+        Serializer builder(static_cast<uint32_t>(need_size));
+        builder.AddDirectNumber(tx->version);
+        if ((flags != 0) && (tx->num_inputs != 0)) {  // witness
+          builder.AddDirectByte(0);                   // marker is 0
+          builder.AddDirectByte(1);                   // flag is 1(witness)
+        }
+
+        builder.AddVariableInt(tx->num_inputs);
+        for (uint32_t i = 0; i < tx->num_inputs; ++i) {
+          const struct wally_tx_input *input = tx->inputs + i;
+          builder.AddDirectBytes(input->txhash, sizeof(input->txhash));
+          builder.AddDirectNumber(input->index);
+          builder.AddVariableBuffer(
+              input->script, static_cast<uint32_t>(input->script_len));
+          builder.AddDirectNumber(input->sequence);
+        }
+
+        builder.AddVariableInt(tx->num_outputs);
+        for (uint32_t i = 0; i < tx->num_outputs; ++i) {
+          const struct wally_tx_output *output = tx->outputs + i;
+          builder.AddDirectNumber(output->satoshi);
+          builder.AddVariableBuffer(
+              output->script, static_cast<uint32_t>(output->script_len));
+        }
+
+        if (flags != 0) {  // witness
+          for (uint32_t i = 0; i < tx->num_inputs; ++i) {
+            const struct wally_tx_input *input = tx->inputs + i;
+            uint32_t num_items =
+                input->witness
+                    ? static_cast<uint32_t>(input->witness->num_items)
+                    : 0;
+            builder.AddVariableInt(num_items);
+            for (uint32_t j = 0; j < num_items; ++j) {
+              const struct wally_tx_witness_item *stack;
+              stack = input->witness->items + j;
+              builder.AddVariableBuffer(
+                  stack->witness, static_cast<uint32_t>(stack->witness_len));
+            }
+          }
+        }
+
+        builder.AddDirectNumber(tx->locktime);
+        return builder.Output();
+      } else {
+        warn(CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}].", ret);
+        throw CfdException(kCfdIllegalStateError, "tx hex convert error.");
+      }
+    } else {
+      warn(CFD_LOG_SOURCE, "wally_tx_to_bytes NG[{}].", ret);
+      throw CfdException(kCfdIllegalStateError, "psbt tx hex convert error.");
+    }
+  } catch (const CfdError &except) {
+    throw except;
+  } catch (const std::exception &except) {
+    warn(CFD_LOG_SOURCE, "unknown exception.");
+    throw CfdException(kCfdUnknownError, std::string(except.what()));
+  } catch (...) {
+    warn(CFD_LOG_SOURCE, "unknown error.");
+    throw CfdException();
   }
 }
 

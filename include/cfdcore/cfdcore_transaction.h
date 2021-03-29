@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_transaction.h
  *
- * @brief Transaction関連クラスを定義する。
+ * @brief This file that defines Transaction related classes.
  *
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_TRANSACTION_H_
@@ -24,6 +24,18 @@
 namespace cfd {
 namespace core {
 
+//! OP_CODESEPARATOR default position
+constexpr const uint32_t kDefaultCodeSeparatorPosition = 0xffffffff;
+
+/**
+ * @brief Tapscript data struct.
+ */
+struct TapScriptData {
+  ByteData256 tap_leaf_hash;  //!< tapleaf hash
+  //! OP_CODESEPARATOR position
+  uint32_t code_separator_position = kDefaultCodeSeparatorPosition;
+};
+
 //! transaction callback type: add txin
 constexpr const uint32_t kStateChangeAddTxIn = 0x00000001;
 //! transaction callback type: update txin
@@ -40,28 +52,28 @@ constexpr const uint32_t kStateChangeUpdateTxOut = 0x00000200;
 constexpr const uint32_t kStateChangeRemoveTxOut = 0x00000400;
 
 /**
- * @brief TxOut情報を保持するクラス
+ * @brief Class that holds TxOut information
  */
 class CFD_CORE_EXPORT TxOut : public AbstractTxOut {
  public:
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    */
   TxOut();
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    * @param[in] value             amount value.
    * @param[in] locking_script    locking script.
    */
   TxOut(const Amount& value, const Script& locking_script);
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    * @param[in] value             amount value.
    * @param[in] address           out address.
    */
   TxOut(const Amount& value, const Address& address);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~TxOut() {
     // do nothing
@@ -69,25 +81,23 @@ class CFD_CORE_EXPORT TxOut : public AbstractTxOut {
 };
 
 /**
- * @brief TxOut情報を参照するためのクラス
+ * @brief Class for referencing TxOut information.
  */
 class CFD_CORE_EXPORT TxOutReference : public AbstractTxOutReference {
  public:
   /**
-   * @brief コンストラクタ
-   * @param[in] tx_out 参照するTxOutインスタンス
+   * @brief constructor
+   * @param[in] tx_out  TxOut instance
    */
   explicit TxOutReference(const TxOut& tx_out);
   /**
-   * @brief デフォルトコンストラクタ.
-   *
-   * リスト作成用。
+   * @brief default constructor.
    */
   TxOutReference() : TxOutReference(TxOut()) {
     // do nothing
   }
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~TxOutReference() {
     // do nothing
@@ -95,13 +105,13 @@ class CFD_CORE_EXPORT TxOutReference : public AbstractTxOutReference {
 };
 
 /**
- * @brief TxIn情報を保持するクラス
+ * @brief Class that holds TxIn information
  */
 class CFD_CORE_EXPORT TxIn : public AbstractTxIn {
  public:
   /**
-   * @brief 最小のTxInサイズ
-   * @details 対象サイズ：txid(64), vout(4), sequence(4), scriptLength(1(仮))
+   * @brief Minimum TxIn size
+   * @details txid(32), vout(4), sequence(4), scriptLength(1)
    */
   static constexpr const size_t kMinimumTxInSize = 41;
 
@@ -132,24 +142,24 @@ class CFD_CORE_EXPORT TxIn : public AbstractTxIn {
       const Script* scriptsig_template = nullptr);
 
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid        txid
-   * @param[in] index       txidのトランザクションのTxOutのIndex情報(vout)
-   * @param[in] sequence    sequence情報
+   * @param[in] index       tx output index(vout)
+   * @param[in] sequence    sequence
    */
   TxIn(const Txid& txid, uint32_t index, uint32_t sequence);
   /**
-   * @brief コンストラクタ.
+   * @brief constructor.
    * @param[in] txid              txid
-   * @param[in] index             txidのトランザクションのTxOutのIndex情報(vout)
-   * @param[in] sequence          sequence情報
+   * @param[in] index       tx output index(vout)
+   * @param[in] sequence          sequence
    * @param[in] unlocking_script  unlocking script
    */
   TxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
       const Script& unlocking_script);
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~TxIn() {
     // do nothing
@@ -157,26 +167,24 @@ class CFD_CORE_EXPORT TxIn : public AbstractTxIn {
 };
 
 /**
- * @brief TxIn情報を参照するためのクラス
+ * @brief Class for referencing TxIn information
  */
 class CFD_CORE_EXPORT TxInReference : public AbstractTxInReference {
  public:
   /**
-   * @brief コンストラクタ.
-   * @param[in] tx_in 参照するTxInインスタンス
+   * @brief constructor.
+   * @param[in] tx_in TxIn instance to reference
    */
   explicit TxInReference(const TxIn& tx_in);
   /**
-   * @brief デフォルトコンストラクタ.
-   *
-   * リスト作成用。
+   * @brief default constructor.
    */
   TxInReference() : TxInReference(TxIn(Txid(), 0, 0)) {
     // do nothing
   }
 
   /**
-   * @brief デストラクタ
+   * @brief destructor
    */
   virtual ~TxInReference() {
     // do nothing
@@ -184,18 +192,16 @@ class CFD_CORE_EXPORT TxInReference : public AbstractTxInReference {
 };
 
 /**
- * @brief トランザクション情報クラス
+ * @brief Transaction class
  */
 class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
  public:
   /**
-   * @brief コンストラクタ.
-   *
-   * リスト作成用。
+   * @brief constructor.
    */
   Transaction();
   /**
-   * @brief コンストラクタ
+   * @brief constructor
    * @param[in] version       version
    * @param[in] lock_time     lock time
    */
@@ -206,194 +212,194 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    */
   explicit Transaction(const ByteData& byte_data);
   /**
-   * @brief コンストラクタ
-   * @param[in] hex_string    txバイトデータのHEX文字列
+   * @brief constructor
+   * @param[in] hex_string    HEX string
    */
   explicit Transaction(const std::string& hex_string);
   /**
-   * @brief コンストラクタ
-   * @param[in] transaction   トランザクション情報
+   * @brief copy constructor.
+   * @param[in] transaction   transaction object.
    */
-  explicit Transaction(const Transaction& transaction);
+  Transaction(const Transaction& transaction);
   /**
-   * @brief デストラクタ
+   * @brief destructor.
    */
   virtual ~Transaction() {
     // do nothing
   }
   /**
-   * @brief コピーコンストラクタ.
-   * @param[in] transaction   トランザクション情報
-   * @return Transactionオブジェクト
+   * @brief copy constructor.
+   * @param[in] transaction   transaction object.
+   * @return transaction object.
    */
   Transaction& operator=(const Transaction& transaction) &;
 
   /**
-   * @brief Transactionの合計バイトサイズを取得する.
-   * @return 合計バイトサイズ
+   * @brief Get the total byte size of Transaction.
+   * @return total byte size
    */
   virtual uint32_t GetTotalSize() const;
   /**
-   * @brief Transactionのvsize情報を取得する.
+   * @brief Get vsize information of Transaction.
    * @return vsize
    */
   virtual uint32_t GetVsize() const;
   /**
-   * @brief TransactionのWeight情報を取得する.
+   * @brief Get the Weight information of Transaction.
    * @return weight
    */
   virtual uint32_t GetWeight() const;
 
   /**
-   * @brief TxInを取得する.
-   * @param[in] index   取得するindex位置
-   * @return 指定indexのTxInインスタンス
+   * @brief Get TxIn.
+   * @param[in] index   txin index.
+   * @return TxIn object.
    */
   const TxInReference GetTxIn(uint32_t index) const;
   /**
-   * @brief TxInのindexを取得する.
-   * @param[in] txid   取得するTxInのtxid
-   * @param[in] vout   取得するTxInのvout
-   * @return 条件に合致するTxInのindex番号
+   * @brief Get the index of TxIn.
+   * @param[in] txid   txid
+   * @param[in] vout   vout
+   * @return TxIn index
    */
   virtual uint32_t GetTxInIndex(const Txid& txid, uint32_t vout) const;
   /**
-   * @brief 保持しているTxInの数を取得する.
-   * @return TxIn数
+   * @brief Get the count of TxIn.
+   * @return TxIn count.
    */
   uint32_t GetTxInCount() const;
   /**
-   * @brief TxIn一覧を取得する.
-   * @return TxInReference一覧
+   * @brief Get the TxIn list.
+   * @return TxInReference list
    */
   const std::vector<TxInReference> GetTxInList() const;
   /**
-   * @brief TxInを追加する.
+   * @brief Add TxIn.
    * @param[in] txid                txid
    * @param[in] index               vout
    * @param[in] sequence            sequence
-   * @param[in] unlocking_script    unlocking script (未指定時はEmptyを設定する. default Script::Empty)
-   * @return 追加したTxInのindex位置
+   * @param[in] unlocking_script    unlocking script
+   * @return Index position of added TxIn
    */
   uint32_t AddTxIn(
       const Txid& txid, uint32_t index, uint32_t sequence,
       const Script& unlocking_script = Script::Empty);
   /**
-   * @brief TxIn情報を削除する.
-   * @param[in] index     削除するindex位置
+   * @brief Delete the TxIn information.
+   * @param[in] index     index
    */
   void RemoveTxIn(uint32_t index);
   /**
-   * @brief unlocking scriptを設定する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] unlocking_script  TxInに設定するunlocking script (Push Op Only)
+   * @brief Set the unlocking script.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] unlocking_script  unlocking script (Push Op Only)
    */
   void SetUnlockingScript(
       uint32_t tx_in_index, const Script& unlocking_script);
   /**
-   * @brief unlocking scriptを設定する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] unlocking_script  TxInに設定するunlocking scriptの構成要素リスト
+   * @brief Set the unlocking script.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] unlocking_script  Unlocking script component list
    */
   void SetUnlockingScript(
       uint32_t tx_in_index, const std::vector<ByteData>& unlocking_script);
   /**
-   * @brief witness stackの現在の個数を取得する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @return witness stackの個数
+   * @brief Get the count of witness stacks.
+   * @param[in] tx_in_index       TxIn index
+   * @return count of witness stacks.
    */
   uint32_t GetScriptWitnessStackNum(uint32_t tx_in_index) const;
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const ByteData& data);
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する20byte情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const ByteData160& data);
   /**
-   * @brief witness stackに追加する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Add to witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] data              Data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const ByteData256& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する20byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData160& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              Data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index, const ByteData256& data);
   /**
-   * @brief script witnessを全て削除する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
+   * @brief Remove all script witness.
+   * @param[in] tx_in_index       TxIn index
    */
   void RemoveScriptWitnessStackAll(uint32_t tx_in_index);
 
   /**
-   * @brief TxOutを取得する.
-   * @param[in] index     取得するindex位置
+   * @brief Get TxOut.
+   * @param[in] index     txout index
    * @return TxOutReference
    */
   const TxOutReference GetTxOut(uint32_t index) const;
   /**
-   * @brief TxOutのindexを取得する.
+   * @brief Get the index of TxOut.
    * @param[in] locking_script  locking script
-   * @return 条件に合致するTxOutのindex番号
+   * @return txout index
    */
   virtual uint32_t GetTxOutIndex(const Script& locking_script) const;
   /**
-   * @brief TxOutのindexを一括取得する.
+   * @brief Get the TxOut index all at once.
    * @param[in] locking_script  locking script
-   * @return 条件に合致するTxOutのindex番号の一覧
+   * @return txout index list.
    */
   virtual std::vector<uint32_t> GetTxOutIndexList(
       const Script& locking_script) const;
   /**
-   * @brief 保持しているTxOutの数を取得する.
-   * @return TxOut数
+   * @brief Get the count of TxOuts.
+   * @return count of TxOuts
    */
   uint32_t GetTxOutCount() const;
   /**
-   * @brief TxOut一覧を取得する.
-   * @return TxOutReference一覧
+   * @brief Get the TxOut list.
+   * @return TxOutReference list
    */
   const std::vector<TxOutReference> GetTxOutList() const;
   /**
-   * @brief TxOut情報を追加する.
+   * @brief Add TxOut information.
    * @param[in] value           amount
    * @param[in] locking_script  locking script
-   * @return 追加したTxOutのindex位置
+   * @return Index position of added TxOut
    */
   uint32_t AddTxOut(const Amount& value, const Script& locking_script);
   /**
@@ -403,105 +409,119 @@ class CFD_CORE_EXPORT Transaction : public AbstractTransaction {
    */
   void SetTxOutValue(uint32_t index, const Amount& value);
   /**
-   * @brief TxOut情報を削除する.
-   * @param[in] index     取得するindex位置
+   * @brief Delete the TxOut information.
+   * @param[in] index     txout index
    */
   void RemoveTxOut(uint32_t index);
   /**
-   * @brief signatureハッシュを取得する.
-   * @param[in] txin_index    TxInのindex値
-   * @param[in] script_data   unlocking script もしくは witness_program.
+   * @brief Get the signature hash.
+   * @param[in] txin_index    TxIn index
+   * @param[in] script_data   unlocking script or witness program.
    * @param[in] sighash_type  SigHashType(@see cfdcore_util.h)
-   * @param[in] value         TxInのAmount値.
+   * @param[in] value         TxIn Amount.
    * @param[in] version       Witness version
-   * @return signatureハッシュ
+   * @return signature hash
    */
   ByteData256 GetSignatureHash(
       uint32_t txin_index, const ByteData& script_data,
       SigHashType sighash_type, const Amount& value = Amount(),
       WitnessVersion version = WitnessVersion::kVersionNone) const;
   /**
-   * @brief witness情報かどうかを取得する.
-   * @retval true   witness
-   * @retval false  witnessではない
+   * @brief Get signature hash by schnorr.
+   * @param[in] txin_index    TxIn's index
+   * @param[in] sighash_type  SigHashType(@see cfdcore_util.h)
+   * @param[in] utxo_list     utxo list (for amount & scriptPubkey)
+   * @param[in] script_data   tap script data
+   * @param[in] annex         annex data
+   * @return signature hash
+   */
+  ByteData256 GetSchnorrSignatureHash(
+      uint32_t txin_index, SigHashType sighash_type,
+      const std::vector<TxOut>& utxo_list,
+      const TapScriptData* script_data = nullptr,
+      const ByteData& annex = ByteData()) const;
+  /**
+   * @brief Whether it holds witness information.
+   * @retval true   witness exist.
+   * @retval false  witness not found.
    */
   virtual bool HasWitness() const;
 
+  // internal
   /**
-   * @brief libwally処理用フラグを取得する。
-   * @return libwally用フラグ
+   * @brief libwally Get the processing flag.
+   * @return Flag for libwally
    */
   virtual uint32_t GetWallyFlag() const;
 
  protected:
-  std::vector<TxIn> vin_;    ///< TxIn配列
-  std::vector<TxOut> vout_;  ///< TxOut配列
+  std::vector<TxIn> vin_;    ///< TxIn array
+  std::vector<TxOut> vout_;  ///< TxOut array
 
   /**
-   * @brief HEX文字列からTransaction情報を設定する.
-   * @param[in] hex_string    TransactionバイトデータのHEX文字列
+   * @brief Set Transaction information from HEX string.
+   * @param[in] hex_string    HEX string of Transaction byte data
    */
   void SetFromHex(const std::string& hex_string);
 
  private:
   /**
-   * @brief TxIn配列のIndex範囲をチェックする.
-   * @param[in] index     TxIn配列のIndex値
-   * @param[in] line      行数
-   * @param[in] caller    コール元関数名
+   * @brief check TxIn array range.
+   * @param[in] index     TxIn Index
+   * @param[in] line      Number of lines
+   * @param[in] caller    Calling function name
    */
   virtual void CheckTxInIndex(
       uint32_t index, int line, const char* caller) const;
   /**
-   * @brief TxOut配列のIndex範囲をチェックする.
    * @brief check TxOut array range.
-   * @param[in] index     TxOut配列のIndex値
-   * @param[in] line      行数
-   * @param[in] caller    コール元関数名
+   * @param[in] index     TxOut Index
+   * @param[in] line      Number of lines
+   * @param[in] caller    Calling function name
    */
   virtual void CheckTxOutIndex(
       uint32_t index, int line, const char* caller) const;
   /**
-   * @brief witness stackに情報を追加する.
-   * @param[in] tx_in_index   TxIn配列のindex値
-   * @param[in] data          witness stackに追加するバイトデータ
+   * @brief Add information to the witness stack.
+   * @param[in] tx_in_index   TxIn index
+   * @param[in] data          data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness AddScriptWitnessStack(
       uint32_t tx_in_index, const std::vector<uint8_t>& data);
   /**
-   * @brief witness stackの指定index位置を更新する.
-   * @param[in] tx_in_index       設定するTxInのindex位置
-   * @param[in] witness_index     witness stackのindex位置
-   * @param[in] data              witness stackに追加する32byte情報
+   * @brief Update the specified index position of the witness stack.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] witness_index     witness stack index
+   * @param[in] data              data to add to the witness stack
    * @return witness stack
    */
   const ScriptWitness SetScriptWitnessStack(
       uint32_t tx_in_index, uint32_t witness_index,
       const std::vector<uint8_t>& data);
   /**
-   * @brief Transactionのバイトデータを取得する.
-   * @param[in] has_witness   witnessを含めるかのフラグ
-   * @return バイトデータ
+   * @brief Get the byte data of Transaction.
+   * @param[in] has_witness   Flag to include witness
+   * @return ByteData
    */
   ByteData GetByteData(bool has_witness) const;
   /**
-   * @brief TxOut領域のByteDataの整合性チェックと、TxOutへの設定を行う.
+   * @brief Check the consistency of ByteData in the TxOut area and set to TxOut.
    *
-   * tx_pointerがNULLではない場合のみ、TxOutへの設定を行う.
-   * tx_pointerがNULLの場合は整合性チェックのみ行う.
-   * @param[in] buffer         TxOut領域のByteData
-   * @param[in] buf_size       TxOut領域のByteDataサイズ
-   * @param[in] txout_num      TxOut領域のTxOut情報数
-   * @param[in] txout_num_size TxOut情報領域サイズ
-   * @param[out] tx_pointer    Transaction情報バッファ(NULL可)
-   * @param[out] txout_list    TxOut配列(nullptr可)
-   * @retval true   整合性チェックOK、およびTxOut情報コピーOK
-   * @retval false  整合性チェックNG、もしくはTxOut情報コピー失敗
+   * Set to TxOut only if tx_pointer is not NULL.
+   * If tx_pointer is NULL, only consistency check is performed.
+   * @param[in] buffer         ByteData in the TxOut area
+   * @param[in] buf_size       ByteData size in the TxOut area
+   * @param[in] txout_num      Number of TxOut information in the TxOut area
+   * @param[in] txout_num_size TxOut information area size
+   * @param[out] tx_pointer    Transaction information buffer (nullable)
+   * @param[out] txout_list    TxOut array (nullable)
+   * @retval true   Consistency check OK, TxOut information copy OK
+   * @retval false  Consistency check NG or TxOut information copy failure
    */
   static bool CheckTxOutBuffer(
       const uint8_t* buffer, size_t buf_size, uint64_t txout_num,
-      size_t txout_num_size, void* tx_pointer = NULL,
+      size_t txout_num_size, void* tx_pointer = nullptr,
       std::vector<TxOut>* txout_list = nullptr);
 };
 

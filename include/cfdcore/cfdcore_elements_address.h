@@ -2,7 +2,7 @@
 /**
  * @file cfdcore_elements_address.h
  *
- * @brief Elements対応したAddressクラス定義
+ * @brief The address class definition file used in Elements (liquid network).
  */
 #ifndef CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ELEMENTS_ADDRESS_H_
 #define CFD_CORE_INCLUDE_CFDCORE_CFDCORE_ELEMENTS_ADDRESS_H_
@@ -21,32 +21,32 @@ namespace cfd {
 namespace core {
 
 /**
- * @brief ConfidentialKey(= Pubkey)の型定義
+ * @brief Type definition of ConfidentialKey (= Pubkey)
  * @see Pubkey
  */
 using ConfidentialKey = Pubkey;
 
 /**
  * @typedef ElementsNetType
- * @brief Elements Networkの定義
+ * @brief Elements Network definition
  */
 using ElementsNetType = NetType;
 
 /**
  * @typedef ElementsAddressType
- * @brief ElementsのAddress種別の定義
+ * @brief Definition of Address type of Elements
  */
 using ElementsAddressType = AddressType;
 
 /**
- * @brief Elements のデフォルトのアドレスフォーマットリストを取得する.
- * @return Elementsデフォルトのアドレスフォーマットリスト
+ * @brief Get the default address format list for Elements.
+ * @return default address format list for Elements.
  */
 CFD_CORE_API std::vector<AddressFormatData> GetElementsAddressFormatList();
 
 /**
  * @class ElementsConfidentialAddress
- * @brief ElementsのConfidentialアドレスを表現するクラス
+ * @brief A class that represents the Confidential address of Elements
  */
 class CFD_CORE_EXPORT ElementsConfidentialAddress {
  public:
@@ -60,91 +60,103 @@ class CFD_CORE_EXPORT ElementsConfidentialAddress {
       const Privkey& master_blinding_key, const Script& locking_script);
 
   /**
-   * @brief デフォルトコンストラクタ
+   * @brief default constructor.
    */
   ElementsConfidentialAddress();
 
   /**
-   * @brief コンストラクタ(UnblindedAddressからConfidentialAddress生成)
-   * @param unblinded_address UnblindedAddress インスタンス
-   * @param confidential_key  ConfidentialKey インスタンス
+   * @brief constructor. (Generate Confidential Address from Unblinded Address)
+   * @param unblinded_address UnblindedAddress instance
+   * @param confidential_key  ConfidentialKey instance
    */
-  ElementsConfidentialAddress(
+  explicit ElementsConfidentialAddress(
       const Address& unblinded_address,
       const ConfidentialKey& confidential_key);
 
   /**
-   * @brief コンストラクタ(ConfidentialAddress文字列からのデコード)
-   * @param[in] confidential_address confidential アドレス文字列
+   * @brief constructor. (Decoding from the ConfidentialAddress string)
+   * @param[in] confidential_address confidential address string.
    */
   explicit ElementsConfidentialAddress(
       const std::string& confidential_address);
 
   /**
-   * @brief コンストラクタ(ConfidentialAddress文字列からのデコード)
-   * @param[in] confidential_address confidential アドレス文字列
+   * @brief constructor. (Decoding from the ConfidentialAddress string)
+   * @param[in] confidential_address confidential address string.
    * @param[in] prefix_list  address prefix list
    */
   explicit ElementsConfidentialAddress(
       const std::string& confidential_address,
       const std::vector<AddressFormatData>& prefix_list);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   */
+  ElementsConfidentialAddress(const ElementsConfidentialAddress& object);
+  /**
+   * @brief copy constructor.
+   * @param[in] object    object
+   * @return object
+   */
+  ElementsConfidentialAddress& operator=(
+      const ElementsConfidentialAddress& object) &;
 
   /**
-   * @brief UnblindedAddressを取得
-   * @return ConfidentialAddressに紐づくUnblindedAddressインスタンス
+   * @brief Get UnblindedAddress
+   * @return UnblindedAddress instance associated with ConfidentialAddress
    */
   Address GetUnblindedAddress() const;
 
   /**
-   * @brief ConfidentialKeyを取得
-   * @return ConfidentialAddressに紐づくConfidentialKeyインスタンス
+   * @brief Get Confidential Key
+   * @return Confidential Key instance associated with Confidential Address
    */
   ConfidentialKey GetConfidentialKey() const;
 
   /**
-   * @brief アドレスのhex文字列を取得する.
-   * @return アドレス文字列
+   * @brief Get the address string.
+   * @return address string.
    */
   std::string GetAddress() const;
 
   /**
-   * @brief AddressのElementsNetTypeを取得する.
+   * @brief Get the ElementsNetType of Address.
    * @return ElementsNetType
    */
   ElementsNetType GetNetType() const;
 
   /**
-   * @brief Address種別を取得する.
-   * @return Elements Address種別
+   * @brief Get the Address type.
+   * @return Address type.
    */
   ElementsAddressType GetAddressType() const;
 
   /**
-   * @brief アドレスHashを取得する.
-   * @return アドレスHashのByteDataインスタンス
+   * @brief Get the address Hash.
+   * @return address Hash.
    */
   ByteData GetHash() const;
 
   /**
-   * @brief LockingScriptを取得する
+   * @brief Get LockingScript
    * @return locking script
    */
   Script GetLockingScript() const;
 
   /**
-   * @brief 引数で指定されたアドレスがBlindされているアドレスであるかを判定する
-   * @param address アドレス(base58)文字列
-   * @retval true Blindされているアドレスの場合
-   * @retval false Blindされていないアドレスの場合
+   * @brief Determines if the specified address is a Blinded address
+   * @param address     address string
+   * @retval true   has blind address
+   * @retval false  not blind address
    */
   static bool IsConfidentialAddress(const std::string& address);
 
   /**
-   * @brief 引数で指定されたアドレスがBlindされているアドレスであるかを判定する
-   * @param[in] address アドレス文字列
-   * @param[in] prefix_list アドレス文字列
-   * @retval true Blindされているアドレスの場合
-   * @retval false Blindされていないアドレスの場合
+   * @brief Determines if the specified address is a Blinded address
+   * @param[in] address     address string
+   * @param[in] prefix_list     address prefix list
+   * @retval true   has blind address
+   * @retval false  not blind address
    */
   static bool IsConfidentialAddress(
       const std::string& address,
@@ -152,7 +164,7 @@ class CFD_CORE_EXPORT ElementsConfidentialAddress {
 
  private:
   /**
-   * @brief confidentialアドレス文字列からモデルのデコードを行う
+   * @brief Decode the model from the confidential address string
    * @param[in] confidential_address  confidential address string
    * @param[in] prefix_list           address prefix list
    */
@@ -161,10 +173,11 @@ class CFD_CORE_EXPORT ElementsConfidentialAddress {
       const std::vector<AddressFormatData>& prefix_list);
 
   /**
-   * @brief unblinded_addressとconfidential_keyから、confidential_addressを計算する.
-   * @details Elementsのネットワーク種別については、ublinded_addressと同種のネットワークで計算を行う.
-   * @param unblinded_address UnblindedAddressインスタンス
-   * @param confidential_key Blindに利用するConfidentialKeyインスタンス
+   * @brief Calculate the confidential_address from the unblinded_address and confidential_key.
+   * @details For the network type of Elements, the calculation is performed \
+   *   on the same type of network as connected_address.
+   * @param unblinded_address UnblindedAddress
+   * @param confidential_key Confidential Key instance used for Blind
    */
   void CalculateAddress(
       const Address& unblinded_address,
@@ -176,7 +189,7 @@ class CFD_CORE_EXPORT ElementsConfidentialAddress {
   /// Confidential Key
   ConfidentialKey confidential_key_;
 
-  /// アドレス文字列
+  /// address string
   std::string address_;
 };
 

@@ -1,6 +1,6 @@
 {
   "name": "cfd-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "cfd-core",
   "scripts": {
     "code_format": "clang-format -i --style=file src/*.cpp src/*.h src/include/cfdcore/*.h include/cfdcore/*.h",

@@ -2,8 +2,7 @@
 /**
  * @file cfdcore_util.cpp
  *
- * @brief \~japanese Utility関連クラス定義
- *   \~english definition related to Utility classes
+ * @brief definition related to Utility classes
  */
 
 #include "cfdcore/cfdcore_util.h"
@@ -24,6 +23,26 @@ namespace core {
 
 using logger::info;
 using logger::warn;
+
+//////////////////////////////////
+/// Inner File Definition
+//////////////////////////////////
+/**
+ * @brief support hash format data.
+ */
+struct SupportHashFormat {
+  std::string name;  //!< hash name
+  uint8_t type;      //!< hash type
+};
+
+/**
+ * @brief support hash format list.
+ */
+static const SupportHashFormat kFormatList[] = {
+    {"ripemd160", HashUtil::kRipemd160}, {"hash160", HashUtil::kHash160},
+    {"sha256", HashUtil::kSha256},       {"sha256d", HashUtil::kSha256D},
+    {"sha512", HashUtil::kSha512},       {"", 0},
+};
 
 //////////////////////////////////
 /// SigHashType
@@ -50,10 +69,21 @@ SigHashType::SigHashType(const SigHashType &sighash_type) {
 }
 
 SigHashType &SigHashType::operator=(const SigHashType &sighash_type) {
-  hash_algorithm_ = sighash_type.hash_algorithm_;
-  is_anyone_can_pay_ = sighash_type.is_anyone_can_pay_;
-  is_fork_id_ = sighash_type.is_fork_id_;
+  if (this != &sighash_type) {
+    hash_algorithm_ = sighash_type.hash_algorithm_;
+    is_anyone_can_pay_ = sighash_type.is_anyone_can_pay_;
+    is_fork_id_ = sighash_type.is_fork_id_;
+  }
   return *this;
+}
+
+SigHashType SigHashType::Create(
+    uint8_t flag, bool is_append_anyone_can_pay, bool is_append_fork_id) {
+  SigHashType obj;
+  obj.SetFromSigHashFlag(flag);
+  if (is_append_anyone_can_pay) obj.is_anyone_can_pay_ = true;
+  if (is_append_fork_id) obj.is_fork_id_ = true;
+  return obj;
 }
 
 uint32_t SigHashType::GetSigHashFlag() const {
@@ -92,9 +122,81 @@ void SigHashType::SetFromSigHashFlag(uint8_t flag) {
   is_fork_id_ = is_fork_id;
 }
 
+void SigHashType::SetAnyoneCanPay(bool is_anyone_can_pay) {
+  is_anyone_can_pay_ = is_anyone_can_pay;
+}
+
+std::string SigHashType::ToString() const {
+  std::string result;
+  if (hash_algorithm_ == kSigHashAll) {
+    result = "ALL";
+  } else if (hash_algorithm_ == kSigHashNone) {
+    result = "NONE";
+  } else if (hash_algorithm_ == kSigHashSingle) {
+    result = "SINGLE";
+  } else {
+    return "";
+  }
+  if (is_anyone_can_pay_) result += "|ANYONECANPAY";
+  return result;
+}
+
+bool SigHashType::IsValid() const {
+  if (hash_algorithm_ <= kSigHashSingle) return true;
+  return false;
+}
+
 //////////////////////////////////
 /// HashUtil
 //////////////////////////////////
+// Ripemd160 --------------------------------------------------------------
+ByteData160 HashUtil::Ripemd160(const std::string &str) {
+  std::vector<uint8_t> output(RIPEMD160_LEN);
+  int ret = wally_ripemd160(
+      reinterpret_cast<const uint8_t *>(str.data()), str.size(), output.data(),
+      output.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_hash160 NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "hash160 calc error.");
+  }
+
+  ByteData160 byte160(output);
+  return byte160;
+}
+
+ByteData160 HashUtil::Ripemd160(const std::vector<uint8_t> &bytes) {
+  std::vector<uint8_t> output(RIPEMD160_LEN);
+  int ret = wally_ripemd160(
+      bytes.data(), bytes.size(), output.data(), output.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_hash160 NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "hash160 calc error.");
+  }
+
+  ByteData160 byte160(output);
+  return byte160;
+}
+
+ByteData160 HashUtil::Ripemd160(const ByteData &data) {
+  return Ripemd160(data.GetBytes());
+}
+
+ByteData160 HashUtil::Ripemd160(const ByteData160 &data) {
+  return Ripemd160(data.GetBytes());
+}
+
+ByteData160 HashUtil::Ripemd160(const ByteData256 &data) {
+  return Ripemd160(data.GetBytes());
+}
+
+ByteData160 HashUtil::Ripemd160(const Pubkey &pubkey) {
+  return Ripemd160(pubkey.GetData().GetBytes());
+}
+
+ByteData160 HashUtil::Ripemd160(const Script &script) {
+  return Ripemd160(script.GetData().GetBytes());
+}
+
 // Hash160 -----------------------------------------------------------------
 ByteData160 HashUtil::Hash160(const std::string &str) {
   std::vector<uint8_t> output(HASH160_LEN);
@@ -297,6 +399,135 @@ ByteData HashUtil::Sha512(const Script &script) {
   return Sha512(script.GetData());
 }
 
+HashUtil::HashUtil(uint8_t hash_type) : hash_type_(hash_type) {
+  for (const auto &item : kFormatList) {
+    if (item.type == 0) break;
+    if (hash_type == item.type) return;
+  }
+  throw CfdException(kCfdInternalError, "unknown hash type.");
+}
+
+HashUtil::HashUtil(const std::string &hash_type) {
+  if (hash_type.length() > 20)
+    throw CfdException(kCfdIllegalArgumentError, "unsupported hash type.");
+
+  std::string name = hash_type;
+  for (size_t index = 0; index < name.length(); ++index) {
+    if ((name[index] >= 'A') && (name[index] <= 'Z')) {
+      name[index] += 'a' - 'A';
+    }
+  }
+  for (const auto &item : kFormatList) {
+    if (item.type == 0) break;
+    if (name == item.name) {
+      hash_type_ = item.type;
+      return;
+    }
+  }
+  throw CfdException(kCfdIllegalArgumentError, "unsupported hash type.");
+}
+
+HashUtil::HashUtil(const HashUtil &object) {
+  hash_type_ = object.hash_type_;
+  buffer_ = object.buffer_;
+}
+
+HashUtil &HashUtil::operator=(const HashUtil &object) {
+  if (this != &object) {
+    hash_type_ = object.hash_type_;
+    buffer_ = object.buffer_;
+  }
+  return *this;
+}
+
+HashUtil &HashUtil::operator<<(const std::string &str) {
+  buffer_.Push(ByteData(
+      reinterpret_cast<const uint8_t *>(str.data()),
+      static_cast<uint32_t>(str.size())));
+  return *this;
+}
+
+HashUtil &HashUtil::operator<<(const std::vector<uint8_t> &bytes) {
+  if (!bytes.empty()) buffer_.Push(ByteData(bytes));
+  return *this;
+}
+
+HashUtil &HashUtil::operator<<(const ByteData &data) {
+  if (!data.IsEmpty()) buffer_.Push(data);
+  return *this;
+}
+
+HashUtil &HashUtil::operator<<(const ByteData160 &data) {
+  buffer_.Push(data);
+  return *this;
+}
+
+HashUtil &HashUtil::operator<<(const ByteData256 &data) {
+  buffer_.Push(data);
+  return *this;
+}
+
+HashUtil &HashUtil::operator<<(const Pubkey &pubkey) {
+  buffer_.Push(pubkey.GetData());
+  return *this;
+}
+
+HashUtil &HashUtil::operator<<(const Script &script) {
+  buffer_.Push(script.GetData());
+  return *this;
+}
+
+ByteData HashUtil::Output() {
+  switch (hash_type_) {
+    case kRipemd160:
+      return Ripemd160(buffer_.GetBytes()).GetData();
+    case kHash160:
+      return Hash160(buffer_.GetBytes()).GetData();
+    case kSha256:
+      return Sha256(buffer_.GetBytes()).GetData();
+    case kSha256D:
+      return Sha256D(buffer_.GetBytes()).GetData();
+    case kSha512:
+      return Sha512(buffer_.GetBytes());
+    default:
+      throw CfdException(kCfdInternalError, "unknown hash type.");
+  }
+}
+
+ByteData160 HashUtil::Output160() {
+  switch (hash_type_) {
+    case kRipemd160:
+      return Ripemd160(buffer_.GetBytes());
+    case kHash160:
+      return Hash160(buffer_.GetBytes());
+    case kSha256:
+      // fall-through
+    case kSha256D:
+      // fall-through
+    case kSha512:
+      // fall-through
+    default:
+      throw CfdException(kCfdInternalError, "unknown hash type.");
+  }
+}
+
+ByteData256 HashUtil::Output256() {
+  switch (hash_type_) {
+    case kSha256:
+      return Sha256(buffer_);
+    case kSha256D:
+      return Sha256D(buffer_);
+    case kRipemd160:
+      // fall-through
+    case kHash160:
+      // fall-through
+    case kSha512:
+      // fall-through
+    default:
+      throw CfdException(kCfdInternalError, "unknown hash type.");
+  }
+}
+
 //////////////////////////////////
 /// CrytoUtil
 //////////////////////////////////
@@ -331,6 +562,44 @@ ByteData CryptoUtil::EncryptAes256(
   return ByteData(output);
 }
 
+ByteData CryptoUtil::EncryptAes256(const ByteData &key, const ByteData &data) {
+  if (key.GetDataSize() != AES_KEY_LEN_256) {
+    warn(CFD_LOG_SOURCE, "wally_aes key size NG.");
+    throw CfdException(
+        kCfdIllegalStateError, "EncryptAes256Cbc key size error.");
+  }
+
+  if (data.IsEmpty()) {
+    warn(CFD_LOG_SOURCE, "wally_aes data is Empty.");
+    throw CfdException(
+        kCfdIllegalStateError, "EncryptAes256Cbc data isEmpty.");
+  }
+
+  size_t data_size = data.GetDataSize();
+  if (data.GetDataSize() % kAesBlockLength != 0) {
+    data_size = ((data.GetDataSize() / kAesBlockLength) + 1) * kAesBlockLength;
+  }
+  std::vector<uint8_t> output(data_size);
+  std::vector<uint8_t> key_data = key.GetBytes();
+  std::vector<uint8_t> value_data = data.GetBytes();
+  std::vector<uint8_t> input(data_size);
+  // To fill the end with 0
+  memcpy(
+      input.data(), reinterpret_cast<const uint8_t *>(value_data.data()),
+      value_data.size());
+
+  // Encrypt data using AES (ECB mode, no padding).
+  int ret = wally_aes(
+      key_data.data(), key_data.size(), input.data(), input.size(),
+      AES_FLAG_ENCRYPT, output.data(), output.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_aes NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "EncryptAes256 error.");
+  }
+
+  return ByteData(output);
+}
+
 std::string CryptoUtil::DecryptAes256ToString(
     const std::vector<uint8_t> &key, const ByteData &data) {
   if (key.size() != AES_KEY_LEN_256) {
@@ -340,7 +609,7 @@ std::string CryptoUtil::DecryptAes256ToString(
 
   std::vector<uint8_t> output(data.GetDataSize());
 
-  // Encrypt data using AES (ECB mode, no padding).
+  // Decrypt data using AES (ECB mode, no padding).
   int ret = wally_aes(
       key.data(), key.size(), data.GetBytes().data(), data.GetDataSize(),
       AES_FLAG_DECRYPT, output.data(), output.size());
@@ -352,6 +621,29 @@ std::string CryptoUtil::DecryptAes256ToString(
   std::string ret_str;
   ret_str.append(reinterpret_cast<const char *>(output.data()), output.size());
   return ret_str;
+}
+
+ByteData CryptoUtil::DecryptAes256(const ByteData &key, const ByteData &data) {
+  if (key.GetDataSize() != AES_KEY_LEN_256) {
+    warn(CFD_LOG_SOURCE, "wally_aes key size NG.");
+    throw CfdException(
+        kCfdIllegalStateError, "DecryptAes256Cbc key size error.");
+  }
+
+  std::vector<uint8_t> output(data.GetDataSize());
+  std::vector<uint8_t> key_data = key.GetBytes();
+  std::vector<uint8_t> value_data = data.GetBytes();
+
+  // Decrypt data using AES (ECB mode, no padding).
+  int ret = wally_aes(
+      key_data.data(), key_data.size(), value_data.data(), value_data.size(),
+      AES_FLAG_DECRYPT, output.data(), output.size());
+  if (ret != WALLY_OK) {
+    warn(CFD_LOG_SOURCE, "wally_aes NG[{}].", ret);
+    throw CfdException(kCfdIllegalStateError, "DecryptAes256 error.");
+  }
+
+  return ByteData(output);
 }
 
 ByteData CryptoUtil::EncryptAes256Cbc(
@@ -913,6 +1205,16 @@ bool RandomNumberUtil::GetRandomBool(std::vector<bool> *random_cache) {
 //////////////////////////////////
 /// StringUtil
 //////////////////////////////////
+bool StringUtil::IsValidHexString(const std::string &hex_str) {
+  if (hex_str.empty()) return true;
+
+  std::vector<uint8_t> buffer(hex_str.size() + 1);
+  size_t buf_size = 0;
+  int ret = wally_hex_to_bytes(
+      hex_str.data(), buffer.data(), buffer.size(), &buf_size);
+  return (ret == WALLY_OK);
+}
+
 std::vector<uint8_t> StringUtil::StringToByte(const std::string &hex_str) {
   if (hex_str.empty()) {
     info(CFD_LOG_SOURCE, "hex_str empty. return empty buffer.");

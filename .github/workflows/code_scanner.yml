@@ -14,11 +14,6 @@ on:
     - '**.h'
     - '**/code_scanner.yml'
     - '**/external_project_local_setting.config'
-  pull_request:
-    branches:
-    - master
-    - develop
-    - features/sprint*
 
 jobs:
   analyze-CodeQL:
