@@ -25,9 +25,7 @@ jobs:
     - name: cmake_version
       run: cmake --version
     - name: cmake_generage
-      run: cmake -S . -B build -G "${{ matrix.generator }}"
-    - name: cmake_configure
-      run: cmake -DENABLE_SHARED=${{ matrix.shared }} --build build
+      run: cmake -S . -B build -G "${{ matrix.generator }}" -DENABLE_SHARED=${{ matrix.shared }}
     - name: cmake_build
       run: cmake --build build --config Release --parallel 4
     - name: ctest
@@ -48,9 +46,7 @@ jobs:
     - name: cmake_version
       run: cmake --version
     - name: cmake_generage-macos
-      run: cmake -S . -B build -G "Unix Makefiles"
-    - name: cmake_configure-enable
-      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on --build build
+      run: cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on
     - name: cmake_build
       run: cmake --build build --config Release --parallel 4
     - name: ctest
@@ -81,9 +77,7 @@ jobs:
         cmake --version
         gcc --version
     - name: cmake_configure
-      run: |
-        cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=${{ matrix.shared }} -DENABLE_ELEMENTS=${{ matrix.elements }} -DTARGET_RPATH=./build/Release --build build
+      run: cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=${{ matrix.shared }} -DENABLE_ELEMENTS=${{ matrix.elements }} -DTARGET_RPATH=./build/Release
     - name: cmake-build
       run: cmake --build build --config Release --parallel 4
     - name: lint_check
