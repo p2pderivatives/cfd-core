@@ -6,12 +6,6 @@
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore/cfdcore_exception.h"
 
-// https://qiita.com/yohm/items/477bac065f4b772127c7
-
-// The main function are using gtest's main().
-
-// TEST(test_suite_name, test_name)
-
 using cfd::core::StringUtil;
 using cfd::core::ByteData;
 
@@ -70,6 +64,11 @@ TEST(StringUtil, ByteToStringEmpty) {
   std::string result = StringUtil::ByteToString(bytes);
 
   EXPECT_STREQ(result.c_str(), "");
+}
+
+TEST(StringUtil, ToLower) {
+  std::string result = StringUtil::ToLower("AbCdE_1fg");
+  EXPECT_STREQ(result.c_str(), "abcde_1fg");
 }
 
 TEST(StringUtil, SplitAndJoinTest) {

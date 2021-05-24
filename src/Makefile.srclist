@@ -26,3 +26,37 @@ CFDCORE_SOURCES = \
   cfdcore_ecdsa_adaptor.cpp \
   ${CFDCORE_ELEMENTS_SOURCES}
 
+FMT_SOURCES = \
+  fmt/src/format.cc \
+  fmt/src/os.cc
+
+QUILL_SOURCES = \
+  quill/src/detail/backend/BackendWorker.cpp \
+  quill/src/detail/backend/BacktraceLogRecordStorage.cpp \
+  quill/src/detail/backend/FreeListAllocator.cpp \
+  quill/src/detail/backend/TimestampFormatter.cpp \
+  quill/src/detail/backend/StringFromTime.cpp \
+  quill/src/detail/misc/FileUtilities.cpp \
+  quill/src/detail/misc/Os.cpp \
+  quill/src/detail/misc/RdtscClock.cpp \
+  quill/src/detail/misc/RecursiveSpinlock.cpp \
+  quill/src/detail/misc/Spinlock.cpp \
+  quill/src/detail/misc/Utilities.cpp \
+  quill/src/detail/Config.cpp \
+  quill/src/detail/Deserialize.cpp \
+  quill/src/detail/HandlerCollection.cpp \
+  quill/src/detail/LoggerCollection.cpp \
+  quill/src/detail/LogManagerSingleton.cpp \
+  quill/src/detail/SignalHandler.cpp \
+  quill/src/detail/ThreadContextCollection.cpp \
+  quill/src/handlers/ConsoleHandler.cpp \
+  quill/src/handlers/FileHandler.cpp \
+  quill/src/handlers/Handler.cpp \
+  quill/src/handlers/RotatingFileHandler.cpp \
+  quill/src/handlers/StreamHandler.cpp \
+  quill/src/handlers/TimeRotatingFileHandler.cpp \
+  quill/src/LogLevel.cpp \
+  quill/src/PatternFormatter.cpp \
+  quill/src/Quill.cpp \
+  quill/src/Utility.cpp
+

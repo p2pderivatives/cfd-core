@@ -8,24 +8,18 @@ using cfd::core::logger::IsEnableLogLevel;
 using cfd::core::logger::WriteLog;
 using cfd::core::logger::CfdLogLevel;
 using cfd::core::logger::CfdLogger;
+using cfd::core::logger::CfdSourceLocation;
 using cfd::core::InitializeLogger;
 using cfd::core::FinalizeLogger;
 using cfd::core::SetLogger;
-using spdlog::details::log_msg;
 
 TEST(CfdLogger, IsEnableLogLevel) {
   EXPECT_FALSE(IsEnableLogLevel(CfdLogLevel::kCfdLogLevelTrace));
 }
 
 TEST(CfdLogger, WriteLog) {
-  spdlog::source_loc source;
-  using spdlog::details::fmt_helper::to_string_view;
-  fmt::memory_buffer buf;
-  std::string log_name = "cfd";
-  spdlog::details::log_msg log_msg(source, &log_name,
-                                   (spdlog::level::level_enum) CfdLogLevel::kCfdLogLevelTrace,
-                                   to_string_view(buf));
-  EXPECT_NO_THROW((WriteLog(log_msg)));
+  CfdSourceLocation loc {"", 0, ""};
+  EXPECT_NO_THROW((WriteLog(loc, CfdLogLevel::kCfdLogLevelInfo, "")));
 }
 
 

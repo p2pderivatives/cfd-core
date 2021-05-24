@@ -5,17 +5,13 @@
 #include "cfdcore/cfdcore_transaction.h"
 #include "cfdcore/cfdcore_exception.h"
 
-// https://qiita.com/yohm/items/477bac065f4b772127c7
-
-// The main function are using gtest's main().
-
-// TEST(test_suite_name, test_name)
-
 using cfd::core::Txid;
 using cfd::core::ByteData256;
 using cfd::core::CfdException;
 
 TEST(Txid, TxidEmpty) {
+  // cfd::core::CfdCoreHandle handle = nullptr;
+  // cfd::core::Initialize(&handle);
   Txid txid;
   EXPECT_STREQ(txid.GetHex().c_str(), "");
   EXPECT_EQ(txid.GetData().GetDataSize(), 0);

@@ -16,6 +16,7 @@
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_exception.h"
 #include "cfdcore/cfdcore_logger.h"
+#include "cfdcore/cfdcore_schnorrsig.h"
 #include "cfdcore/cfdcore_util.h"
 #include "cfdcore_wally_util.h"  // NOLINT
 
@@ -1165,7 +1166,8 @@ KeyData::KeyData(
   // do nothing
 }
 
-KeyData::KeyData(const std::string& path_info, int32_t child_num) {
+KeyData::KeyData(
+    const std::string& path_info, int32_t child_num, bool has_schnorr_pubkey) {
   auto key_info = path_info;
   if (path_info[0] == '[') {
     // key origin information check. cut to ']'
@@ -1270,6 +1272,9 @@ KeyData::KeyData(const std::string& path_info, int32_t child_num) {
     ByteData bytes(key_info);
     if (Pubkey::IsValid(bytes)) {
       pubkey_ = Pubkey(bytes);
+    } else if (has_schnorr_pubkey) {
+      SchnorrPubkey schnorr_pubkey(bytes);
+      pubkey_ = schnorr_pubkey.CreatePubkey();
     } else {
       privkey_ = Privkey(bytes);
       pubkey_ = privkey_.GetPubkey();

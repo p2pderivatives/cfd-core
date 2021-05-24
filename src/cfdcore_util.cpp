@@ -7,6 +7,8 @@
 
 #include "cfdcore/cfdcore_util.h"
 
+#include <algorithm>
+#include <ctime>
 #include <iterator>
 #include <random>
 #include <set>
@@ -105,6 +107,8 @@ bool SigHashType::IsAnyoneCanPay() const { return is_anyone_can_pay_; }
 
 bool SigHashType::IsForkId() const { return is_fork_id_; }
 
+bool SigHashType::IsRangeproof() const { return is_fork_id_; }
+
 void SigHashType::SetFromSigHashFlag(uint8_t flag) {
   uint32_t sighash_byte = flag;
   bool is_anyone_can_pay = false;
@@ -126,6 +130,10 @@ void SigHashType::SetAnyoneCanPay(bool is_anyone_can_pay) {
   is_anyone_can_pay_ = is_anyone_can_pay;
 }
 
+void SigHashType::SetRangeproof(bool is_rangeproof) {
+  is_fork_id_ = is_rangeproof;
+}
+
 std::string SigHashType::ToString() const {
   std::string result;
   if (hash_algorithm_ == kSigHashAll) {
@@ -138,6 +146,7 @@ std::string SigHashType::ToString() const {
     return "";
   }
   if (is_anyone_can_pay_) result += "|ANYONECANPAY";
+  if (is_fork_id_) result += "|RANGEPROOF";
   return result;
 }
 
@@ -1250,6 +1259,16 @@ std::string StringUtil::ByteToString(const std::vector<uint8_t> &bytes) {
     }
   }
   return byte_str;
+}
+
+std::string StringUtil::ToLower(const std::string &str) {
+  static auto tolower_func = [](const char &c_value) -> char {
+    return static_cast<char>(std::tolower(static_cast<char>(c_value)));
+  };
+
+  std::string value = str;
+  std::transform(value.begin(), value.end(), value.begin(), tolower_func);
+  return value;
 }
 
 std::vector<std::string> StringUtil::Split(

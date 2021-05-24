@@ -47,7 +47,7 @@ Useful when developing applications for cryptocurrencies.
 ## Dependencies
 
 - C/C++ Compiler
-  - can compile c++11
+  - can compile c++11 or upper (default is c++11. use STD_CPP_VERSION option)
 - CMake (3.14.3 or higher)
 - When using npm scripts and cmake-js
   - node.js (stable version)
@@ -133,7 +133,11 @@ cmake --build build
 - `-DTARGET_RPATH=xxxxx;yyyyy`: Set rpath (Linux, MacOS). Separator is ';'.
 - `-DCMAKE_BUILD_TYPE=Release`: Enable release build.
 - `-DCMAKE_BUILD_TYPE=Debug`: Enable debug build.
+- `-DSTD_CPP_VERSION=xx`: Set the C++ version. [11,14,17,20] (default:11)
 - `-DCFDCORE_DEBUG=on`: Enable cfd debug mode and loggings log files. [ON/OFF] (default:OFF)
+  - Enable debug mode is need `STD_CPP_VERSION` upper 14.
+- `-DCFDCORE_LOG_LEVEL=xxxx`: Set log level. [trace/debug/info/warn] (default:info)
+- `-DCFDCORE_LOG_CONSOLE=on`: Enable cfd loggings console output mode. [ON/OFF] (default:OFF)
 
 ---
 
@@ -208,7 +212,9 @@ npm run ctest
 - [libwally-core](https://github.com/cryptogarageinc/libwally-core/tree/cfd-develop) (forked from [ElementsProject/libwally-core](https://github.com/ElementsProject/libwally-core))
   - [secp256k1-zkp](https://github.com/cryptogarageinc/secp256k1-zkp/tree/cfd-develop) (forked from [ElementsProject/secp256k1-zkp](https://github.com/ElementsProject/secp256k1-zkp))
 - [univalue](https://github.com/jgarzik/univalue) (for JSON encoding and decoding)
-- [googletest](https://github.com/google/googletest) (for testing)
+- logger
+  - [fmtlib](https://github.com/fmtlib/fmt) (for logging format tool)
+  - [quill](https://github.com/odygrd/quill) (for logging)
 
 ### formatter
 

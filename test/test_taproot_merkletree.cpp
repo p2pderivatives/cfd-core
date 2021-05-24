@@ -41,6 +41,8 @@ TEST(TaprootScriptTree, Empty) {
       tree.GetTweakedPubkey(schnorr_pubkey).GetHex());
   EXPECT_EQ("023534977a61f3167b576ee7e636a4041d6451a58f708da24fac8bbd2d9e6b25",
       tree.GetTweakedPrivkey(key).GetHex());
+  EXPECT_FALSE(tree.IsValid());
+  EXPECT_EQ("tl()", tree.ToString());
 
   ByteData256 msg("e5b11ddceab1e4fc49a8132ae589a39b07acf49cabb2b0fbf6104bc31da12c02");
   auto pk = tree.GetTweakedPubkey(schnorr_pubkey);
