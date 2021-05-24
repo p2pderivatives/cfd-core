@@ -57,6 +57,7 @@ static const DescriptorNodeScriptData kDescriptorNodeScriptTable[] = {
      true, true},
     {"addr", DescriptorScriptType::kDescriptorScriptAddr, true, false, false},
     {"raw", DescriptorScriptType::kDescriptorScriptRaw, true, false, false},
+    {"tr", DescriptorScriptType::kDescriptorScriptTaproot, true, true, false},
 };
 
 // -----------------------------------------------------------------------------
@@ -132,14 +133,15 @@ DescriptorKeyInfo::DescriptorKeyInfo(
         // pubkey
         pubkey_ = Pubkey(bytes);
       } else {
-        // privkey
-        Privkey privkey(bytes);
-        privkey_ = privkey;
-        key_string_ = privkey_.GetHex();
+        // schnorr pubkey
+        SchnorrPubkey schnorr(bytes);
+        schnorr_pubkey_ = schnorr;
+        key_string_ = schnorr_pubkey_.GetHex();
+        key_type_ = DescriptorKeyType::kDescriptorKeySchnorr;
       }
     } catch (const CfdException& except) {
       std::string errmsg(except.what());
-      if (errmsg.find("hex to byte convert error.") != std::string::npos) {
+      if (Privkey::HasWif(key)) {
         is_wif = true;
       } else {
         throw except;
@@ -159,7 +161,7 @@ DescriptorKeyInfo::DescriptorKeyInfo(
       if (!privkey_.IsValid()) {
         privkey_ = Privkey::FromWif(key, NetType::kTestnet);
       }
-      key_string_ = privkey_.GetHex();
+      key_string_ = privkey_.GetWif();
     }
   }
 
@@ -177,13 +179,23 @@ DescriptorKeyInfo::DescriptorKeyInfo(
 }
 
 DescriptorKeyInfo::DescriptorKeyInfo(
-    const Privkey& privkey, bool wif, NetType net_type, bool is_compressed,
+    const SchnorrPubkey& schnorr_pubkey,
     const std::string parent_key_information)
+    : key_type_(DescriptorKeyType::kDescriptorKeySchnorr),
+      schnorr_pubkey_(schnorr_pubkey) {
+  if (!parent_key_information.empty()) {
+    parent_info_ = parent_key_information;
+  }
+}
+
+DescriptorKeyInfo::DescriptorKeyInfo(
+    const Privkey& privkey, bool use_wif_parameter, NetType net_type,
+    bool is_compressed, const std::string parent_key_information)
     : key_type_(DescriptorKeyType::kDescriptorKeyPublic), privkey_(privkey) {
-  if (wif) {
+  if (use_wif_parameter) {
     key_string_ = privkey.ConvertWif(net_type, is_compressed);
   } else {
-    key_string_ = privkey.GetHex();
+    key_string_ = privkey.GetWif();
   }
   if (!parent_key_information.empty()) {
     parent_info_ = parent_key_information;
@@ -227,6 +239,7 @@ DescriptorKeyInfo::DescriptorKeyInfo(
 DescriptorKeyInfo::DescriptorKeyInfo(const DescriptorKeyInfo& object) {
   key_type_ = object.key_type_;
   pubkey_ = object.pubkey_;
+  schnorr_pubkey_ = object.schnorr_pubkey_;
   privkey_ = object.privkey_;
   extprivkey_ = object.extprivkey_;
   extpubkey_ = object.extpubkey_;
@@ -240,6 +253,7 @@ DescriptorKeyInfo& DescriptorKeyInfo::operator=(
   if (this != &object) {
     key_type_ = object.key_type_;
     pubkey_ = object.pubkey_;
+    schnorr_pubkey_ = object.schnorr_pubkey_;
     privkey_ = object.privkey_;
     extprivkey_ = object.extprivkey_;
     extpubkey_ = object.extpubkey_;
@@ -251,6 +265,10 @@ DescriptorKeyInfo& DescriptorKeyInfo::operator=(
 }
 
 Pubkey DescriptorKeyInfo::GetPubkey() const { return pubkey_; }
+
+SchnorrPubkey DescriptorKeyInfo::GetSchnorrPubkey() const {
+  return schnorr_pubkey_;
+}
 
 Privkey DescriptorKeyInfo::GetPrivkey() const { return privkey_; }
 
@@ -268,6 +286,10 @@ bool DescriptorKeyInfo::HasExtPubkey() const { return extpubkey_.IsValid(); }
 
 bool DescriptorKeyInfo::HasPrivkey() const { return privkey_.IsValid(); }
 
+bool DescriptorKeyInfo::HasSchnorrPubkey() const {
+  return schnorr_pubkey_.IsValid();
+}
+
 std::string DescriptorKeyInfo::ToString() const {
   if (key_type_ == DescriptorKeyType::kDescriptorKeyPublic) {
     if (privkey_.IsValid()) {
@@ -279,6 +301,8 @@ std::string DescriptorKeyInfo::ToString() const {
     return parent_info_ + extpubkey_.ToString() + path_;
   } else if (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv) {
     return parent_info_ + extprivkey_.ToString() + path_;
+  } else if (key_type_ == DescriptorKeyType::kDescriptorKeySchnorr) {
+    return parent_info_ + schnorr_pubkey_.GetHex() + path_;
   } else {
     return "";
   }
@@ -291,21 +315,34 @@ DescriptorKeyReference::DescriptorKeyReference()
     : key_type_(DescriptorKeyType::kDescriptorKeyNull) {}
 
 DescriptorKeyReference::DescriptorKeyReference(const Pubkey& pubkey)
-    : key_type_(DescriptorKeyType::kDescriptorKeyPublic), pubkey_(pubkey) {}
+    : key_type_(DescriptorKeyType::kDescriptorKeyPublic), pubkey_(pubkey) {
+  schnorr_pubkey_ = SchnorrPubkey::FromPubkey(pubkey_);
+}
+
+DescriptorKeyReference::DescriptorKeyReference(
+    const SchnorrPubkey& schnorr_pubkey)
+    : key_type_(DescriptorKeyType::kDescriptorKeySchnorr),
+      schnorr_pubkey_(schnorr_pubkey) {
+  pubkey_ = schnorr_pubkey.CreatePubkey();
+}
 
 DescriptorKeyReference::DescriptorKeyReference(
     const ExtPrivkey& ext_privkey, const std::string* arg)
     : key_type_(DescriptorKeyType::kDescriptorKeyBip32Priv),
       pubkey_(ext_privkey.GetExtPubkey().GetPubkey()),
       extprivkey_(ext_privkey),
-      argument_((arg) ? *arg : "") {}
+      argument_((arg) ? *arg : "") {
+  schnorr_pubkey_ = SchnorrPubkey::FromPubkey(pubkey_);
+}
 
 DescriptorKeyReference::DescriptorKeyReference(
     const ExtPubkey& ext_pubkey, const std::string* arg)
     : key_type_(DescriptorKeyType::kDescriptorKeyBip32),
       pubkey_(ext_pubkey.GetPubkey()),
       extpubkey_(ext_pubkey),
-      argument_((arg) ? *arg : "") {}
+      argument_((arg) ? *arg : "") {
+  schnorr_pubkey_ = SchnorrPubkey::FromPubkey(pubkey_);
+}
 
 DescriptorKeyReference::DescriptorKeyReference(
     const KeyData& key, const std::string* arg)
@@ -320,12 +357,14 @@ DescriptorKeyReference::DescriptorKeyReference(
     extpubkey_ = key_data_.GetExtPubkey();
     key_type_ = DescriptorKeyType::kDescriptorKeyBip32;
   }
+  schnorr_pubkey_ = SchnorrPubkey::FromPubkey(pubkey_);
 }
 
 DescriptorKeyReference::DescriptorKeyReference(
     const DescriptorKeyReference& object) {
   key_type_ = object.key_type_;
   pubkey_ = object.pubkey_;
+  schnorr_pubkey_ = object.schnorr_pubkey_;
   extprivkey_ = object.extprivkey_;
   extpubkey_ = object.extpubkey_;
   key_data_ = object.key_data_;
@@ -337,6 +376,7 @@ DescriptorKeyReference& DescriptorKeyReference::operator=(
   if (this != &object) {
     key_type_ = object.key_type_;
     pubkey_ = object.pubkey_;
+    schnorr_pubkey_ = object.schnorr_pubkey_;
     extprivkey_ = object.extprivkey_;
     extpubkey_ = object.extpubkey_;
     key_data_ = object.key_data_;
@@ -346,6 +386,10 @@ DescriptorKeyReference& DescriptorKeyReference::operator=(
 }
 
 Pubkey DescriptorKeyReference::GetPubkey() const { return pubkey_; }
+
+SchnorrPubkey DescriptorKeyReference::GetSchnorrPubkey() const {
+  return schnorr_pubkey_;
+}
 
 std::string DescriptorKeyReference::GetArgument() const { return argument_; }
 
@@ -457,6 +501,20 @@ DescriptorScriptReference::DescriptorScriptReference(
 }
 
 DescriptorScriptReference::DescriptorScriptReference(
+    const Script& locking_script, DescriptorScriptType script_type,
+    const std::vector<DescriptorKeyReference>& key_list,
+    const TaprootScriptTree& script_tree,
+    const std::vector<AddressFormatData>& address_prefixes)
+    : script_type_(script_type),
+      locking_script_(locking_script),
+      is_script_(false),
+      script_tree_(script_tree),
+      keys_(key_list),
+      addr_prefixes_(address_prefixes) {
+  // do nothing
+}
+
+DescriptorScriptReference::DescriptorScriptReference(
     const DescriptorScriptReference& object) {
   locking_script_ = object.locking_script_;
   script_type_ = object.script_type_;
@@ -466,6 +524,7 @@ DescriptorScriptReference::DescriptorScriptReference(
   child_script_ = object.child_script_;
   keys_ = object.keys_;
   req_num_ = object.req_num_;
+  script_tree_ = object.script_tree_;
   addr_prefixes_ = object.addr_prefixes_;
 }
 
@@ -480,6 +539,7 @@ DescriptorScriptReference& DescriptorScriptReference::operator=(
     child_script_ = object.child_script_;
     keys_ = object.keys_;
     req_num_ = object.req_num_;
+    script_tree_ = object.script_tree_;
     addr_prefixes_ = object.addr_prefixes_;
   }
   return *this;
@@ -548,6 +608,10 @@ Address DescriptorScriptReference::GenerateAddress(NetType net_type) const {
     case DescriptorScriptType::kDescriptorScriptWsh:
       is_witness = true;
       break;
+    case DescriptorScriptType::kDescriptorScriptTaproot:
+      return Address(
+          net_type, locking_script_.GetWitnessVersion(),
+          locking_script_.GetElementList()[1].GetBinaryData(), addr_prefixes_);
     default:
       // case DescriptorScriptType::kDescriptorScriptSh:
       break;
@@ -703,6 +767,14 @@ std::vector<DescriptorKeyReference> DescriptorScriptReference::GetKeyList()
   return keys_;
 }
 
+bool DescriptorScriptReference::HasScriptTree() const {
+  return !script_tree_.GetScript().IsEmpty();
+}
+
+TaprootScriptTree DescriptorScriptReference::GetScriptTree() const {
+  return script_tree_;
+}
+
 DescriptorScriptType DescriptorScriptReference::GetScriptType() const {
   return script_type_;
 }
@@ -731,6 +803,7 @@ DescriptorNode::DescriptorNode(const DescriptorNode& object) {
   tweak_sum_ = object.tweak_sum_;
   number_ = object.number_;
   child_node_ = object.child_node_;
+  tree_node_ = object.tree_node_;
   checksum_ = object.checksum_;
   depth_ = object.depth_;
   need_arg_num_ = object.need_arg_num_;
@@ -738,6 +811,7 @@ DescriptorNode::DescriptorNode(const DescriptorNode& object) {
   script_type_ = object.script_type_;
   key_type_ = object.key_type_;
   addr_prefixes_ = object.addr_prefixes_;
+  parent_kind_ = object.parent_kind_;
 }
 
 DescriptorNode& DescriptorNode::operator=(const DescriptorNode& object) {
@@ -750,6 +824,7 @@ DescriptorNode& DescriptorNode::operator=(const DescriptorNode& object) {
     tweak_sum_ = object.tweak_sum_;
     number_ = object.number_;
     child_node_ = object.child_node_;
+    tree_node_ = object.tree_node_;
     checksum_ = object.checksum_;
     depth_ = object.depth_;
     need_arg_num_ = object.need_arg_num_;
@@ -757,6 +832,7 @@ DescriptorNode& DescriptorNode::operator=(const DescriptorNode& object) {
     script_type_ = object.script_type_;
     key_type_ = object.key_type_;
     addr_prefixes_ = object.addr_prefixes_;
+    parent_kind_ = object.parent_kind_;
   }
   return *this;
 }
@@ -818,6 +894,15 @@ void DescriptorNode::AnalyzeChild(
           node.node_type_ = DescriptorNodeType::kDescriptorTypeKey;
         }
         node.depth_ = depth + 1;
+        node.parent_kind_ = parent_kind_;
+        child_node_.push_back(node);
+        offset = idx + 1;
+      } else if (name_ == "tr") {
+        DescriptorNode node(addr_prefixes_);
+        node.value_ = descriptor.substr(offset, idx - offset);
+        node.node_type_ = DescriptorNodeType::kDescriptorTypeKey;
+        node.depth_ = depth + 1;
+        node.parent_kind_ = parent_kind_;
         child_node_.push_back(node);
         offset = idx + 1;
       } else {
@@ -850,7 +935,12 @@ void DescriptorNode::AnalyzeChild(
           // do nothing
         } else {
           DescriptorNode node(addr_prefixes_);
-          if (exist_child_node) {
+          if (name_ == "tr") {
+            node.node_type_ = DescriptorNodeType::kDescriptorTypeScript;
+            node.value_ = value_;
+            node.depth_ = depth + 1;
+            exist_child_node = false;
+          } else if (exist_child_node) {
             node.node_type_ = DescriptorNodeType::kDescriptorTypeScript;
             node.AnalyzeChild(value_, depth + 1);
             exist_child_node = false;
@@ -859,6 +949,7 @@ void DescriptorNode::AnalyzeChild(
             node.value_ = value_;
             node.depth_ = depth + 1;
           }
+          node.parent_kind_ = parent_kind_;
           child_node_.push_back(node);
           info(
               CFD_LOG_SOURCE, "Target`)` depth_work={}, child.value={}",
@@ -1053,6 +1144,7 @@ void DescriptorNode::AnalyzeKey() {
     key_type_ = DescriptorKeyType::kDescriptorKeyPublic;
     bool is_wif = false;
     Pubkey pubkey;
+    SchnorrPubkey schnorr_pubkey;
     Privkey privkey;
     try {
       // pubkey format check
@@ -1060,14 +1152,23 @@ void DescriptorNode::AnalyzeKey() {
       if (Pubkey::IsValid(bytes)) {
         // pubkey
         pubkey = Pubkey(bytes);
-      } else {
-        // privkey
-        if (bytes.GetDataSize() == 64) {
-          privkey = Privkey(bytes);
-          pubkey = privkey.GeneratePubkey();
-        } else {
-          is_wif = true;
+        if (parent_kind_ == "tr") {
+          warn(
+              CFD_LOG_SOURCE,
+              "Failed to taproot key. taproot is xonly pubkey only.");
+          throw CfdException(
+              CfdError::kCfdIllegalArgumentError,
+              "Failed to taproot key. taproot is xonly pubkey only.");
         }
+      } else if (
+          (parent_kind_ == "tr") &&
+          (bytes.GetDataSize() == SchnorrPubkey::kSchnorrPubkeySize)) {
+        // xonly pubkey
+        schnorr_pubkey = SchnorrPubkey(bytes);
+        pubkey = schnorr_pubkey.CreatePubkey();
+        key_type_ = DescriptorKeyType::kDescriptorKeySchnorr;
+      } else {
+        is_wif = true;
       }
       if (!is_wif) {
         key_info_ = pubkey.GetHex();
@@ -1131,14 +1232,17 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
     }
   }
   if (p_data == nullptr) {
-    if ((parent_name == "wsh") || (parent_name == "sh")) {
+    if ((parent_name == "wsh") || (parent_name == "sh") ||
+        (parent_name == "tr")) {
       size_t max_size = (parent_name == "sh") ? Script::kMaxRedeemScriptSize
                                               : Script::kMaxScriptSize;
       std::string miniscript = name_ + "(" + value_ + ")";
       std::vector<unsigned char> script(max_size);
       size_t written = 0;
+      uint32_t flags = WALLY_MINISCRIPT_WITNESS_SCRIPT;
+      if (parent_name == "tr") flags = WALLY_MINISCRIPT_TAPSCRIPT;
       int ret = wally_descriptor_parse_miniscript(
-          miniscript.c_str(), nullptr, nullptr, 0, 0, 0, script.data(),
+          miniscript.c_str(), nullptr, nullptr, 0, 0, flags, script.data(),
           script.size(), &written);
       if (ret == WALLY_OK) {
         script_type_ = DescriptorScriptType::kDescriptorScriptMiniscript;
@@ -1148,6 +1252,13 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
         need_arg_num_ = (miniscript.find("*") != std::string::npos) ? 1 : 0;
         child_node_.clear();
         return;
+      } else {
+        warn(
+            CFD_LOG_SOURCE,
+            "Failed to analyze descriptor. parse miniscript fail.");
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            "Failed to analyze descriptor. parse miniscript fail.");
       }
     }
 
@@ -1181,6 +1292,12 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
   }
 
   if (p_data->multisig) {
+    if (parent_kind_ == "tr") {
+      warn(CFD_LOG_SOURCE, "Failed to multisig. taproot is unsupported.");
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError,
+          "Failed to multisig. taproot is unsupported.");
+    }
     if (child_node_.size() < 2) {
       warn(
           CFD_LOG_SOURCE, "Failed to multisig node low. size={}",
@@ -1247,6 +1364,42 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
   } else if (name_ == "raw") {
     Script script(value_);
     info(CFD_LOG_SOURCE, "script size={}", script.GetData().GetDataSize());
+  } else if (name_ == "tr") {
+    if ((child_node_.size() != 1) && (child_node_.size() != 2)) {
+      warn(
+          CFD_LOG_SOURCE, "Failed to taproot node num. size={}",
+          child_node_.size());
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError, "Failed to taproot node num.");
+    }
+    child_node_[0].node_type_ = DescriptorNodeType::kDescriptorTypeKey;
+    child_node_[0].parent_kind_ = "tr";
+    child_node_[0].AnalyzeAll(name_);
+
+    std::vector<std::string> temp_args;
+    temp_args.push_back("0");
+    if (!child_node_[0].GetPubkey(&temp_args).IsCompress()) {
+      warn(
+          CFD_LOG_SOURCE,
+          "Failed to taproot pubkey. taproot is compress only.");
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError,
+          "Failed to taproot uncompress pubkey. taproot is compress only.");
+    }
+    if (child_node_.size() == 2) {
+      child_node_[1].parent_kind_ = "tr";
+      child_node_[1].AnalyzeScriptTree();
+      for (uint32_t index = 0; index < child_node_[1].GetNeedArgumentNum();
+           ++index) {
+        temp_args.push_back("0");
+      }
+      if (child_node_[1].GetScriptTree(&temp_args).ToString().empty()) {
+        warn(CFD_LOG_SOURCE, "Failed to analyze tapscript tree.");
+        throw CfdException(
+            CfdError::kCfdIllegalArgumentError,
+            "Failed to analyze tapscript tree.");
+      }
+    }
   } else if (child_node_.size() != 1) {
     warn(
         CFD_LOG_SOURCE, "Failed to child node num. size={}",
@@ -1259,13 +1412,12 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
       throw CfdException(
           CfdError::kCfdIllegalArgumentError,
           "Failed to wsh parent. only top or sh.");
-    } else if ((name_ == "wpkh") && (parent_name == "wsh")) {
-      warn(
-          CFD_LOG_SOURCE,
-          "Failed to check wpkh. wpkh cannot be a child of wsh.");
+    } else if (
+        (name_ == "wpkh") && (!parent_name.empty()) && (parent_name != "sh")) {
+      warn(CFD_LOG_SOURCE, "Failed to wpkh parent. only top or sh.");
       throw CfdException(
           CfdError::kCfdIllegalArgumentError,
-          "Failed to check wpkh. wpkh cannot be a child of wsh.");
+          "Failed to wpkh parent. only top or sh.");
     } else if (
         ((name_ == "wsh") || (name_ == "sh")) &&
         (child_node_[0].node_type_ !=
@@ -1288,6 +1440,11 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
       throw CfdException(
           CfdError::kCfdIllegalArgumentError,
           "Failed to check key-hash type. child is key only.");
+    } else if ((parent_name == "tr") && (name_ == "pkh")) {
+      warn(CFD_LOG_SOURCE, "Failed to taproot. pkh is unsupported.");
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError,
+          "Failed to taproot. pkh is unsupported.");
     }
     child_node_[0].AnalyzeAll(name_);
 
@@ -1304,6 +1461,62 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
     }
   }
   script_type_ = p_data->type;
+}
+
+void DescriptorNode::AnalyzeScriptTree() {
+  auto desc = value_;
+
+  uint32_t script_depth = 0;
+  size_t offset = 0;
+  std::string tapscript;
+  uint32_t tapleaf_count = 0;
+  std::string temp_name;
+  for (size_t idx = 0; idx < desc.size(); ++idx) {
+    const char& str = desc[idx];
+    if ((str == ' ') || (str == ',') || (str == '{') || (str == '}')) {
+      if (script_depth == 0) ++offset;
+    } else if (str == '(') {
+      if (script_depth == 0) {
+        temp_name = desc.substr(offset, idx - offset);
+        // offset = idx + 1;
+      }
+      info(
+          CFD_LOG_SOURCE, "Target`(` script_depth={}, name={}", script_depth,
+          temp_name);
+      ++script_depth;
+    } else if (str == ')') {
+      --script_depth;
+      info(CFD_LOG_SOURCE, "Target`)` script_depth = {}", script_depth);
+      if (script_depth == 0) {
+        tapscript = desc.substr(offset, idx - offset + 1);
+        offset = idx + 1;
+        DescriptorNode node(addr_prefixes_);
+        node.name_ = temp_name;
+        node.node_type_ = DescriptorNodeType::kDescriptorTypeScript;
+        node.value_ = tapscript;
+        node.depth_ = 1;
+        node.parent_kind_ = "tr";
+        if (!temp_name.empty()) {
+          node.AnalyzeChild(tapscript, 2);
+        }
+        node.AnalyzeAll("tr");
+        tree_node_.emplace(tapscript, node);
+        child_node_.emplace_back(node);
+        ++tapleaf_count;
+        tapscript = "";
+        temp_name = "";
+        info(
+            CFD_LOG_SOURCE, "Target`)` script_depth={}, child.value={}",
+            script_depth, node.value_);
+      }
+    }
+  }
+  if (tree_node_.empty()) {
+    warn(CFD_LOG_SOURCE, "Failed to taproot. empty script.");
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Failed to taproot. empty script.");
+  }
 }
 
 DescriptorScriptReference DescriptorNode::GetReference(
@@ -1365,8 +1578,10 @@ std::vector<DescriptorScriptReference> DescriptorNode::GetReferences(
       }
       std::vector<uint8_t> script(number_);
       size_t written = 0;
+      uint32_t flags = 0;
+      if (parent_kind_ == "tr") flags = WALLY_MINISCRIPT_TAPSCRIPT;
       int ret = wally_descriptor_parse_miniscript(
-          value_.c_str(), nullptr, nullptr, 0, child_num, 0, script.data(),
+          value_.c_str(), nullptr, nullptr, 0, child_num, flags, script.data(),
           script.size(), &written);
       if ((ret == WALLY_OK) && (written <= script.size())) {
         locking_script = Script(script);
@@ -1423,6 +1638,25 @@ std::vector<DescriptorScriptReference> DescriptorNode::GetReferences(
         locking_script = ScriptUtil::CreateP2shLockingScript(script);
       }
       result.emplace_back(locking_script, script_type_, ref, addr_prefixes_);
+    } else if (
+        script_type_ == DescriptorScriptType::kDescriptorScriptTaproot) {
+      std::vector<DescriptorKeyReference> keys;
+      DescriptorKeyReference ref =
+          child_node_[0].GetKeyReferences(array_argument);
+      SchnorrPubkey pubkey = ref.GetSchnorrPubkey();
+      keys.push_back(ref);
+      if (child_node_.size() < 2) {
+        locking_script =
+            ScriptUtil::CreateTaprootLockingScript(pubkey.GetByteData256());
+        result.emplace_back(
+            locking_script, script_type_, keys, addr_prefixes_);
+      } else {
+        auto tree = child_node_[1].GetScriptTree(array_argument);
+        TaprootUtil::CreateTapScriptControl(
+            pubkey, tree, nullptr, &locking_script);
+        result.emplace_back(
+            locking_script, script_type_, keys, tree, addr_prefixes_);
+      }
     } else {
       std::vector<DescriptorKeyReference> keys;
       DescriptorKeyReference ref =
@@ -1482,6 +1716,52 @@ Pubkey DescriptorNode::GetPubkey(
   return ref.GetPubkey();
 }
 
+SchnorrPubkey DescriptorNode::GetSchnorrPubkey(
+    std::vector<std::string>* array_argument) const {
+  DescriptorKeyReference ref = GetKeyReferences(array_argument);
+  return ref.GetSchnorrPubkey();
+}
+
+TaprootScriptTree DescriptorNode::GetScriptTree(
+    std::vector<std::string>* array_argument) const {
+  static auto sort_func = [](const std::string& src, const std::string& dest) {
+    return src.length() > dest.length();
+  };
+  std::vector<std::string> key_list;
+  for (const auto& tree_node : tree_node_) {
+    key_list.emplace_back(tree_node.first);
+  }
+  std::sort(key_list.begin(), key_list.end(), sort_func);
+
+  std::string desc = value_;
+  Script first_script;
+  for (const auto& script_str : key_list) {
+    const auto& node_ref = tree_node_.at(script_str);
+    const auto obj = node_ref.GetReference(array_argument);
+    Script script =
+        obj.HasRedeemScript() ? obj.GetRedeemScript() : obj.GetLockingScript();
+    if (first_script.IsEmpty()) first_script = script;
+    const auto tapscript = "tl(" + script.GetHex() + ")";
+    auto offset = desc.find(script_str);
+    while (offset != std::string::npos) {
+      desc = desc.replace(offset, script_str.length(), tapscript);
+      offset = desc.find(script_str);
+    }
+  }
+
+  TapBranch tree;
+  if ((!desc.empty()) && (desc[0] != '{')) {
+    tree = TapBranch::FromString(desc);
+  } else {
+    tree = TapBranch::FromString(desc);
+    if (!tree.HasTapLeaf()) {
+      tree = tree.ChangeTapLeaf(first_script);
+    }
+  }
+
+  return TaprootScriptTree(tree);
+}
+
 DescriptorKeyReference DescriptorNode::GetKeyReferences(
     std::vector<std::string>* array_argument) const {
   DescriptorKeyReference result;
@@ -1497,6 +1777,16 @@ DescriptorKeyReference DescriptorNode::GetKeyReferences(
     } catch (const CfdException& except) {
       if (value_[0] == '[') throw except;
     }
+  } else if (key_type_ == DescriptorKeyType::kDescriptorKeySchnorr) {
+    SchnorrPubkey schnorr_pubkey = SchnorrPubkey(key_info_);
+    result = DescriptorKeyReference(schnorr_pubkey);
+    try {
+      key_data = KeyData(value_, -1, true);
+      result = DescriptorKeyReference(key_data);
+    } catch (const CfdException& except) {
+      if (value_[0] == '[') throw except;
+    }
+    pubkey = schnorr_pubkey.CreatePubkey();
   } else if (
       (key_type_ == DescriptorKeyType::kDescriptorKeyBip32) ||
       (key_type_ == DescriptorKeyType::kDescriptorKeyBip32Priv)) {
@@ -1505,7 +1795,7 @@ DescriptorKeyReference DescriptorNode::GetKeyReferences(
     uint32_t need_arg_num = need_arg_num_;
     bool has_base = false;
     if (need_arg_num == 0) {
-      // 指定キー。強化鍵の場合、xprv/tprvの必要あり。
+      // Fixed key. For strengthened keys, xprv/tprv is required.
     } else if ((array_argument == nullptr) || array_argument->empty()) {
       warn(CFD_LOG_SOURCE, "Failed to generate pubkey from hdkey.");
       throw CfdException(
@@ -1514,13 +1804,13 @@ DescriptorKeyReference DescriptorNode::GetKeyReferences(
     } else if (
         (array_argument != nullptr) && (!array_argument->empty()) &&
         (array_argument->at(0) == std::string(kArgumentBaseExtkey))) {
-      // baseを取得する
       using_key = base_extkey_;
       need_arg_num = 0;
       has_base = true;
     } else {
-      // 動的キー生成。強化鍵の場合、xprv/tprvの必要あり。
-      // array_argumentがnullptrの場合、仮で0を設定する。（生成テスト用）
+      // Dynamic key generation. For strengthened keys, xprv/tprv is required.
+      // If array_argument is nullptr, set it to 0 temporarily.
+      // (For generate test)
       arg_value = "0";
       if (array_argument != nullptr) {
         arg_value = array_argument->back();

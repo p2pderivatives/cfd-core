@@ -935,7 +935,8 @@ uint32_t Transaction::GetWallyFlag() const {
 void Transaction::CheckTxInIndex(
     uint32_t index, int line, const char *caller) const {
   if (vin_.size() <= index) {
-    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    cfd::core::logger::CfdSourceLocation location = {
+        CFD_LOG_FILE, line, caller};
     warn(location, "vin[{}] out_of_range.", index);
     throw CfdException(kCfdOutOfRangeError, "vin out_of_range error.");
   }
@@ -944,7 +945,8 @@ void Transaction::CheckTxInIndex(
 void Transaction::CheckTxOutIndex(
     uint32_t index, int line, const char *caller) const {
   if (vout_.size() <= index) {
-    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    cfd::core::logger::CfdSourceLocation location = {
+        CFD_LOG_FILE, line, caller};
     warn(location, "vout[{}] out_of_range.", index);
     throw CfdException(kCfdOutOfRangeError, "vin out_of_range error.");
   }

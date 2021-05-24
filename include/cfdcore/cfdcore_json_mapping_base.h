@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <functional>
 #include <limits>
 #include <list>

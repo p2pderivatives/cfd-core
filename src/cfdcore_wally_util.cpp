@@ -40,9 +40,10 @@ static constexpr size_t kWordlistLength = BIP39_WORDLIST_LEN;
 /// length of bytes for bip39 seed binary
 static constexpr size_t kSeedBytesLen = BIP39_SEED_LEN_512;
 /// delimiter for libwally mnemonic_sentence
-static const char* kMnemonicDelimiter = u8"\u0020";
+static const char kMnemonicDelimiter[] = {0x20, 0};  // u8"\u0020";
 /// delimiter for libwally mnemonic_sentence (jp language specific)
-static const char* kMnemonicIdeographicDelimiter = u8"\u3000";
+static const char kMnemonicIdeographicDelimiter[] = {
+    0x30, 0x00, 0};  // u8"\u3000";
 
 /**
  * @brief get libwally words object

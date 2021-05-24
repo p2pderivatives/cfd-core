@@ -329,7 +329,7 @@ uint32_t AbstractTransaction::GetLockTime() const {
 
 void AbstractTransaction::CallbackStateChange(uint32_t type) {
   // please override this function
-  trace(CFD_LOG_SOURCE, "type[%#x]", type);
+  trace(CFD_LOG_SOURCE, "type[{}]", type);
 }
 
 void AbstractTransaction::AddTxIn(

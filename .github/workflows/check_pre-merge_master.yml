@@ -4,9 +4,11 @@ on:
   push:
     branches:
     - master
+    - stable_v*
   pull_request:
     branches:
     - master
+    - stable_v*
 
 env:
   CMAKE_VERSION: 3.17.2

@@ -218,6 +218,13 @@ class CFD_CORE_EXPORT TaprootScriptTree : public TapBranch {
   void AddBranch(const TaprootScriptTree& tree);
 
   /**
+   * @brief Valid that the script tree.
+   * @retval true   valid format
+   * @retval false  invalid format
+   */
+  bool IsValid() const;
+
+  /**
    * @brief Get a tapleaf hash.
    * @return tapleaf hash.
    */

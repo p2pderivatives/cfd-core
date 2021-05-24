@@ -27,6 +27,7 @@
 namespace cfd {
 namespace core {
 
+using logger::CfdSourceLocation;
 using logger::info;
 using logger::warn;
 
@@ -3314,11 +3315,11 @@ void Psbt::CheckTxInIndex(uint32_t index, int line, const char *caller) const {
     warn(CFD_LOG_SOURCE, "psbt base tx is null");
     throw CfdException(kCfdIllegalStateError, "psbt base tx is null.");
   } else if (psbt_pointer->num_inputs <= index) {
-    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    CfdSourceLocation location = {CFD_LOG_FILE, line, caller};
     warn(location, "psbt vin[{}] out_of_range.", index);
     throw CfdException(kCfdOutOfRangeError, "psbt vin out_of_range error.");
   } else if (psbt_pointer->tx->num_inputs <= index) {
-    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    CfdSourceLocation location = {CFD_LOG_FILE, line, caller};
     warn(location, "tx vin[{}] out_of_range.", index);
     throw CfdException(kCfdOutOfRangeError, "tx vin out_of_range error.");
   }
@@ -3335,11 +3336,11 @@ void Psbt::CheckTxOutIndex(
     warn(CFD_LOG_SOURCE, "psbt base tx is null");
     throw CfdException(kCfdIllegalStateError, "psbt base tx is null.");
   } else if (psbt_pointer->num_outputs <= index) {
-    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    CfdSourceLocation location = {CFD_LOG_FILE, line, caller};
     warn(location, "psbt vout[{}] out_of_range.", index);
     throw CfdException(kCfdOutOfRangeError, "psbt vout out_of_range error.");
   } else if (psbt_pointer->tx->num_outputs <= index) {
-    spdlog::source_loc location = {CFD_LOG_FILE, line, caller};
+    CfdSourceLocation location = {CFD_LOG_FILE, line, caller};
     warn(location, "tx vout[{}] out_of_range.", index);
     throw CfdException(kCfdOutOfRangeError, "tx vout out_of_range error.");
   }

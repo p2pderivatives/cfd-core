@@ -100,6 +100,30 @@ jobs:
         name: output-lcov-cfdcore-${{ matrix.os }}
         path: ./build/lcov_cfdcore_output.zip
 
+  cmake-cpp-support-test:
+    name: cmake build-ubuntu C++ support test
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        cppversion: [11, 14, 17, 20]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: dump version
+      run: |
+        cmake --version
+        gcc --version
+    - name: cmake-build
+      run: |
+        cmake --version
+        cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_TYPE=Release -DSTD_CPP_VERSION=${{ matrix.cppversion }} -DTARGET_RPATH=./build/Release
+        cmake --build build --config Debug --parallel 4
+    - name: test
+      run: |
+        cd build
+        ctest -C Release --output-on-failure
+        cd ..
+
   ubuntu-valgrind:
     name: valgrind-ubuntu
     runs-on: ${{ matrix.os }}

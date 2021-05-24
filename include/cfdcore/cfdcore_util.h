@@ -54,10 +54,10 @@ class CFD_CORE_EXPORT SigHashType {
    * @brief SIGHASH_FORKID flag
    */
   const uint8_t kSigHashForkId = 0x40;
-  /*
+  /**
    * @brief SIGHASH_RANGEPROOF flag
    */
-  // const uint8_t kSigHashRangeproof = 0x40;
+  const uint8_t kSigHashRangeproof = 0x40;
 
   // for feature
   /**
@@ -125,6 +125,12 @@ class CFD_CORE_EXPORT SigHashType {
    * @retval false unuse SIGHASH_FORKID
    */
   bool IsForkId() const;
+  /**
+   * @brief has SIGHASH_RANGEPROOF flag.
+   * @retval true  set SIGHASH_RANGEPROOF
+   * @retval false unuse SIGHASH_RANGEPROOF
+   */
+  bool IsRangeproof() const;
 
   /**
    * @brief Valid sighash state.
@@ -143,6 +149,11 @@ class CFD_CORE_EXPORT SigHashType {
    * @param[in] is_anyone_can_pay SIGHASH_ANYONECANPAY flag
    */
   void SetAnyoneCanPay(bool is_anyone_can_pay);
+  /**
+   * @brief Set SIGHASH_RANGEPROOF flag.
+   * @param[in] is_rangeproof SIGHASH_RANGEPROOF flag
+   */
+  void SetRangeproof(bool is_rangeproof);
 
   /**
    * @brief Get string.
@@ -737,6 +748,12 @@ class CFD_CORE_EXPORT StringUtil {
    * @return HEX string
    */
   static std::string ByteToString(const std::vector<uint8_t> &bytes);
+  /**
+   * @brief Convert to lower character.
+   * @param[in] str     Character string
+   * @return lower string.
+   */
+  static std::string ToLower(const std::string &str);
   /**
    * @brief Divide the string by the delimiter.
    * @param[in] str     Character string to be divided

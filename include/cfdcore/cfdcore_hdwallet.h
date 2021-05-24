@@ -788,8 +788,11 @@ class CFD_CORE_EXPORT KeyData {
    * @brief Get key text information from string.
    * @param[in] path_info   key-path info.
    * @param[in] child_num   child number to use if an asterisk is used.
+   * @param[in] has_schnorr_pubkey   schnorr(xonly) pubkey used.
    */
-  explicit KeyData(const std::string& path_info, int32_t child_num = -1);
+  explicit KeyData(
+      const std::string& path_info, int32_t child_num = -1,
+      bool has_schnorr_pubkey = false);
 
   /**
    * @brief exist ext-privkey.

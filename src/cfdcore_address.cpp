@@ -985,7 +985,9 @@ void Address::CalculateBech32m(
   std::vector<uint8_t> pubkey_hash = hash_data.GetBytes();
   pubkey_hash.insert(
       pubkey_hash.begin(), static_cast<uint8_t>(kByteData256Length));
-  pubkey_hash.insert(pubkey_hash.begin(), witness_ver_ + kOp_1 - 1);
+  uint8_t op_code = static_cast<uint8_t>(witness_ver_);
+  op_code += static_cast<uint8_t>(kOp_1) - 1;
+  pubkey_hash.insert(pubkey_hash.begin(), op_code);
 
   std::string human_code = bech32_hrp;
   if (human_code.empty() && (kMainnet <= type_) && (type_ <= kRegtest)) {
