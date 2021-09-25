@@ -915,7 +915,8 @@ TEST(ConfidentialTransaction, BlindTxOutIgnorePegoutAndEnptyTest) {
   // blind txout[0]
   pubkeys[0] = pubkey1;
   EXPECT_NO_THROW((tx.BlindTxOut(blind_list, pubkeys)));
-  // 乱数が混ざるため、サイズだけチェック
+  // EXPECT_EQ(tx.GetHex(), "");
+  // Check is size only
   EXPECT_EQ(tx.GetHex().length(), 9348);
   std::string blind_tx = tx.GetHex();
 
@@ -1935,6 +1936,13 @@ TEST(ConfidentialTransaction, GetPegoutPubkeyDataTest) {
     EXPECT_STREQ(
         addr.GetAddress().c_str(),
         testdata.address.c_str());
+
+    auto pegout_addr = ConfidentialTransaction::GetPegoutAddressFromDescriptor(
+        bitcoin_descriptor, bip32_counter, net_type,
+        NetType::kElementsRegtest);
+    EXPECT_STREQ(
+        pegout_addr.GetAddress().c_str(),
+        testdata.address.c_str());
     ++bip32_counter;
   }
 }
@@ -1972,6 +1980,15 @@ TEST(ConfidentialTransaction, GetPegoutPubkeyDataPkhNoCounterTest) {
   EXPECT_STREQ(
       addr.GetAddress().c_str(),
       testdata.address.c_str());
+}
+
+TEST(ConfidentialTransaction, SetTxInSequence) {
+  std::string tx_hex = "020000000101319bff5f4311e6255ecf4dd472650a6ef85fde7d11cd10d3e6ba5974174aeb560100008000ffffffff6f1a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f36f2a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f301000000000011223301000000000011224400000000000800110011001100110800110011001100220000";
+  ConfidentialTransaction tx(tx_hex);
+  tx.SetTxInSequence(0, 4294967294);
+  EXPECT_EQ(
+      "020000000101319bff5f4311e6255ecf4dd472650a6ef85fde7d11cd10d3e6ba5974174aeb560100008000feffffff6f1a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f36f2a4b6bd5571b5f08ab79c314dc6483f9b952af2f5ef206cd6f8e68eb1186f301000000000011223301000000000011224400000000000800110011001100110800110011001100220000",
+      tx.GetHex());
 }
 
 #endif  // CFD_DISABLE_ELEMENTS

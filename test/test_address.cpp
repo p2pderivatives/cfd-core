@@ -196,14 +196,15 @@ TEST(Address, TaprootAddressTest) {
     EXPECT_STREQ("51201777701648fa4dd93c74edd9d58cfcc7bdc2fa30a2f6fa908b6fd70c92833cfb",
         address.GetLockingScript().GetHex().c_str());
 
+    auto formats = cfd::core::GetBitcoinAddressFormatList();
     EXPECT_NO_THROW((address = Address(NetType::kTestnet,
-                    WitnessVersion::kVersion1, pubkey)));
+                    WitnessVersion::kVersion1, pubkey, formats[1])));
     EXPECT_STREQ("tb1pzamhq9jglfxaj0r5ahvatr8uc77u973s5tm04yytdltsey5r8naskf8ee6",
                 address.GetAddress().c_str());
     EXPECT_EQ(NetType::kTestnet, address.GetNetType());
 
     EXPECT_NO_THROW((address = Address(NetType::kRegtest,
-                    WitnessVersion::kVersion1, pubkey)));
+                    WitnessVersion::kVersion1, pubkey, formats)));
     EXPECT_STREQ("bcrt1pzamhq9jglfxaj0r5ahvatr8uc77u973s5tm04yytdltsey5r8nasmsdlvq",
                 address.GetAddress().c_str());
     EXPECT_EQ(NetType::kRegtest, address.GetNetType());
@@ -235,14 +236,15 @@ TEST(Address, TaprootScriptAddressTest) {
     EXPECT_STREQ("512088de1a59b38939f58fb4f8c5ffc3d56390d43e9e91c7b1d67f91e070f3108799",
         address.GetLockingScript().GetHex().c_str());
 
+    auto formats = cfd::core::GetBitcoinAddressFormatList();
     EXPECT_NO_THROW((address = Address(NetType::kTestnet,
-                    WitnessVersion::kVersion1, tree, pubkey)));
+                    WitnessVersion::kVersion1, tree, pubkey, formats[1])));
     EXPECT_STREQ("tb1p3r0p5kdn3yultra5lrzlls74vwgdg057j8rmr4nlj8s8pucss7vs7rjr8c",
                 address.GetAddress().c_str());
     EXPECT_EQ(NetType::kTestnet, address.GetNetType());
 
     EXPECT_NO_THROW((address = Address(NetType::kRegtest,
-                    WitnessVersion::kVersion1, tree, pubkey)));
+                    WitnessVersion::kVersion1, tree, pubkey, formats)));
     EXPECT_STREQ("bcrt1p3r0p5kdn3yultra5lrzlls74vwgdg057j8rmr4nlj8s8pucss7vsn6c9jz",
                 address.GetAddress().c_str());
     EXPECT_EQ(NetType::kRegtest, address.GetNetType());
@@ -1018,6 +1020,16 @@ TEST(Address, ElementsInvalidAddressTest) {
               "02d21c625759280111907a06df050cccbc875b11a50bdafa71dae5d1e8695ba82e"));
   // invalid net type
   EXPECT_THROW(Address(ElementsNetType::kNetTypeNum, ElementsAddressType::kP2pkhAddress, hash, GetElementsAddressFormatList()), CfdException)<< "net";
+}
+
+TEST(Address, PegoutAddressTest) {
+  Script pegout_script("6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f17a914a722b257cabc3b8e7d46f8fb293f893f368219da872103700dcb030588ed828d85f645b48971de0d31e8c0244da46710d18681627f5a4a4101044e949dcf8ac2daac82a3e4999ee28e2711661793570c4daab34cd38d76a425d6bfe102f3fea8be12109925fad32c78b65afea4de1d17a826e7375d0e2d0066");
+  Address addr1 = Address::GetPegoutAddress(NetType::kRegtest, pegout_script);
+  EXPECT_EQ("2N8UxQ5u9YXYFn6Ukj5KGXCMDUZTixKTXHo", addr1.GetAddress());
+
+  Address addr2 = Address::GetPegoutAddress(NetType::kMainnet, pegout_script,
+      GetBitcoinAddressFormatList()[0]);
+  EXPECT_EQ("3GvkLLy7w52uaJrD3whPuFMxGDFZDDWg13", addr2.GetAddress());
 }
 
 #endif  // CFD_DISABLE_ELEMENTS

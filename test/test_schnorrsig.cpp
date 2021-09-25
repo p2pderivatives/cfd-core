@@ -13,6 +13,7 @@ using cfd::core::SchnorrPubkey;
 using cfd::core::SchnorrSignature;
 using cfd::core::SchnorrUtil;
 using cfd::core::SigHashType;
+using cfd::core::SigHashAlgorithm;
 
 const ByteData256 msg(
     "e48441762fb75010b2aa31a512b62b4148aa3fb08eb0765d76b252559064a614");
@@ -85,6 +86,15 @@ TEST(SchnorrSig, GetPrivkey) {
 TEST(SchnorrSig, Constructor) {
   SchnorrSignature empty_obj;
   EXPECT_EQ(0, empty_obj.GetData().GetDataSize());
+}
+
+TEST(SchnorrSig, SetSigHashType) {
+  SchnorrSignature sig(
+    "6470fd1303dda4fda717b9837153c24a6eab377183fc438f939e0ed2b620e9ee"
+    "5077c4a8b8dca28963d772a94f5f0ddf598e1c47c137f91933274c7c3edadce8");
+  sig.SetSigHashType(SigHashType(SigHashAlgorithm::kSigHashAll));
+  EXPECT_EQ(SigHashAlgorithm::kSigHashAll,
+      sig.GetSigHashType().GetSigHashAlgorithm());
 }
 
 TEST(SchnorrPubkey, FromPubkey) {

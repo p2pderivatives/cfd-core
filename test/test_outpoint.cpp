@@ -78,19 +78,19 @@ TEST(OutPoint, Operators) {
 
   EXPECT_TRUE((outpoint1 >= outpoint2));
   EXPECT_FALSE((outpoint1 >= outpoint3));
-  EXPECT_FALSE((outpoint1 >= outpoint4));
+  EXPECT_TRUE((outpoint1 >= outpoint4));
 
   EXPECT_FALSE((outpoint1 > outpoint2));
   EXPECT_FALSE((outpoint1 > outpoint3));
-  EXPECT_FALSE((outpoint1 > outpoint4));
+  EXPECT_TRUE((outpoint1 > outpoint4));
 
   EXPECT_TRUE((outpoint1 <= outpoint2));
   EXPECT_TRUE((outpoint1 <= outpoint3));
-  EXPECT_TRUE((outpoint1 <= outpoint4));
+  EXPECT_FALSE((outpoint1 <= outpoint4));
 
   EXPECT_FALSE((outpoint1 < outpoint2));
   EXPECT_TRUE((outpoint1 < outpoint3));
-  EXPECT_TRUE((outpoint1 < outpoint4));
+  EXPECT_FALSE((outpoint1 < outpoint4));
 
   EXPECT_TRUE((outpoint4 < outpoint3));
 }

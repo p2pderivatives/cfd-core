@@ -71,6 +71,11 @@ TEST(StringUtil, ToLower) {
   EXPECT_STREQ(result.c_str(), "abcde_1fg");
 }
 
+TEST(StringUtil, IsValidHexString) {
+  EXPECT_TRUE(StringUtil::IsValidHexString("AbCdEf01"));
+  EXPECT_FALSE(StringUtil::IsValidHexString("AbCdE_1fg"));
+}
+
 TEST(StringUtil, SplitAndJoinTest) {
   std::vector<std::string> expect_vec = {
     "The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"

@@ -42,3 +42,23 @@ TEST(SigHashType, SetFromSigHashFlag) {
   EXPECT_FALSE(type.IsAnyoneCanPay());
   EXPECT_FALSE(type.IsForkId());
 }
+
+TEST(SigHashType, CheckFlag) {
+  SigHashType sighash = SigHashType(SigHashAlgorithm::kSigHashUnknown);
+  EXPECT_FALSE(sighash.IsValid());
+
+  sighash = SigHashType(SigHashAlgorithm::kSigHashAll);
+  sighash.SetRangeproof(true);
+  EXPECT_FALSE(sighash.IsAnyoneCanPay());
+  EXPECT_TRUE(sighash.IsRangeproof());
+  sighash.SetAnyoneCanPay(true);
+  EXPECT_TRUE(sighash.IsAnyoneCanPay());
+  EXPECT_TRUE(sighash.IsRangeproof());
+}
+
+TEST(SigHashType, Create) {
+  auto sighash = SigHashType::Create(0x41);
+  EXPECT_EQ(SigHashAlgorithm::kSigHashAll, sighash.GetSigHashAlgorithm());
+  EXPECT_FALSE(sighash.IsAnyoneCanPay());
+  EXPECT_TRUE(sighash.IsRangeproof());
+}

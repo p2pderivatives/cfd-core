@@ -36,6 +36,7 @@ using cfd::core::AddressType;
 using cfd::core::Privkey;
 using cfd::core::Pubkey;
 using cfd::core::SchnorrPubkey;
+using cfd::core::TapBranch;
 using cfd::core::TaprootScriptTree;
 
 TEST(Descriptor, Parse_pk) {
@@ -882,6 +883,29 @@ TEST(Descriptor, ParseElements_addr) {
   EXPECT_STREQ(locking_script.ToString().c_str(),
       "0 c62982ba62f90e2929b8830cc3c6dc0c38fe7766d178f217f0dbbd0bf2705201");
 }
+
+TEST(Descriptor, ParseElements_raw) {
+  std::string descriptor = "raw(0020ef8110fa7ddefb3e2d02b2c1b1480389b4bc93f606281570cfc20dba18066aee)#2xu4jtw0";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+
+  EXPECT_NO_THROW(desc = Descriptor::ParseElements(descriptor));
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString());
+  EXPECT_STREQ(desc_str.c_str(), descriptor.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(), "0 ef8110fa7ddefb3e2d02b2c1b1480389b4bc93f606281570cfc20dba18066aee");
+
+  std::vector<DescriptorScriptReference> script_list;
+  std::vector<std::string> arg_list1;
+  EXPECT_NO_THROW(script_list = desc.GetReferenceAll(&arg_list1));
+  EXPECT_EQ(script_list.size(), 1);
+  if (script_list.size() == 1) {
+    EXPECT_TRUE(script_list[0].HasAddress());
+    EXPECT_STREQ(script_list[0].GenerateAddress(NetType::kLiquidV1).GetAddress().c_str(),
+      "ex1qa7q3p7nammanutgzktqmzjqr3x6teylkqc5p2ux0cgxm5xqxdthqn90k5w");
+  }
+}
 #endif  // CFD_DISABLE_ELEMENTS
 
 TEST(Descriptor, xpriv_derive_hardened) {
@@ -998,6 +1022,7 @@ TEST(Descriptor, Parse_Taproot_pubkey) {
   DescriptorScriptReference script_ref;
   SchnorrPubkey pubkey;
   NetType nettype = NetType::kRegtest;
+  DescriptorNode node;
 
   try {
     desc = Descriptor::Parse(descriptor1);
@@ -1006,6 +1031,7 @@ TEST(Descriptor, Parse_Taproot_pubkey) {
   }
 
   EXPECT_NO_THROW(script_ref = desc.GetReference());
+  EXPECT_NO_THROW(node = desc.GetNode());
   EXPECT_TRUE(script_ref.HasKey());
   EXPECT_TRUE(script_ref.HasAddress());
   EXPECT_EQ(1, script_ref.GetKeyNum());
@@ -1018,11 +1044,11 @@ TEST(Descriptor, Parse_Taproot_pubkey) {
   EXPECT_EQ(AddressType::kTaprootAddress, script_ref.GetAddressType());
   EXPECT_EQ(HashType::kTaproot, script_ref.GetHashType());
   EXPECT_STREQ(script_ref.GenerateAddress(nettype).GetAddress().c_str(),
-      "bcrt1paag57xhtzja2dnzh4vex37ejnjj5p3yy2nmlgem3a4e3ud962gdqqctzwn");
+      "bcrt1pvv8jm84ye0xr7p9h8l2k58rm287nryk73cnw0nvfxyjfqqpn60gssz7u5f");
   EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetSchnorrPubkey());
   EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
   EXPECT_STREQ(locking_script.ToString().c_str(),
-      "1 ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a");
+      "1 630f2d9ea4cbcc3f04b73fd56a1c7b51fd3192de8e26e7cd893124900033d3d1");
   EXPECT_STREQ(pubkey.GetHex().c_str(),
       pubkey_hex.c_str());
 
@@ -1065,11 +1091,11 @@ TEST(Descriptor, Parse_Taproot_xpubkey) {
   EXPECT_EQ(AddressType::kTaprootAddress, script_ref.GetAddressType());
   EXPECT_EQ(HashType::kTaproot, script_ref.GetHashType());
   EXPECT_STREQ(script_ref.GenerateAddress(nettype).GetAddress().c_str(),
-      "bc1p33h4j4kre3e9r4yrl35rlgrtyt2w9hw8f94zty9vacmvfgcnlqtq0txdxt");
+      "bc1p4jueea9m897g4me0ef8eyqg9x5n02jzpwnl0yydvdtrl459r3fyqg8wvnj");
   EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetSchnorrPubkey());
   EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
   EXPECT_STREQ(locking_script.ToString().c_str(),
-      "1 8c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816");
+      "1 acb99cf4bb397c8aef2fca4f9201053526f5484174fef211ac6ac7fad0a38a48");
   EXPECT_STREQ(pubkey.GetHex().c_str(), pubkey_hex.c_str());
 }
 
@@ -1108,16 +1134,16 @@ TEST(Descriptor, Parse_Taproot_tapleaf_pubkey) {
   EXPECT_EQ(AddressType::kTaprootAddress, script_ref.GetAddressType());
   EXPECT_EQ(HashType::kTaproot, script_ref.GetHashType());
   EXPECT_STREQ(script_ref.GenerateAddress(nettype).GetAddress().c_str(),
-      "bcrt1pnmjdd6u2wjpwv74pc6mclsf036pm56svzpzc7n2xswg4zq06canqc7uvq2");
+      "bcrt1p2druqmxfa49j9ph0ea8d9y4gzrhy2x7u2zj0p2622d9r7k28v02s6x9jx3");
   EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetSchnorrPubkey());
   EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
   EXPECT_STREQ(locking_script.ToString().c_str(),
-      "1 9ee4d6eb8a7482e67aa1c6b78fc12f8e83ba6a0c10458f4d4683915101fac766");
+      "1 5347c06cc9ed4b2286efcf4ed292a810ee451bdc50a4f0ab4a534a3f594763d5");
   EXPECT_STREQ(pubkey.GetHex().c_str(), pubkey_hex.c_str());
   EXPECT_STREQ(tree.ToString().c_str(),
-      "tl(21028c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac)");
+      "tl(208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac)");
   EXPECT_STREQ(tree.GetScript().GetHex().c_str(),
-      "21028c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac");
+      "208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac");
 
   try {
     desc = Descriptor::Parse(descriptor2);
@@ -1174,6 +1200,138 @@ TEST(Descriptor, Parse_Taproot_tapbranch) {
       "208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac");
 }
 
+TEST(Descriptor, Parse_Taproot_tapbranch2) {
+  //   pubkey: '04ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a116bc35b3f8d748aea5dfad083a73961908797c97fc0ca4f8d874aba9778fc77',
+  //   privkey: '5JB4Tt43VA4qbBVRtf88CVKTkJ82pC6mhm9aHywDG27htnFHgqC'
+  std::string internal_pubkey_hex = "ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a";
+  std::string pubkey_hex = "ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a";
+  std::string descriptor1 = "tr(ef514f1aeb14baa6cc57ab3268fb329ca540c48454f7f46771ed731e34ba521a,{1717a480c2e3a474eed8dba83f684731243cff8ef384521936cf3a730dd0a286,{1717a480c2e3a474eed8dba83f684731243cff8ef384521936cf3a730dd0a286,80039cda864c4f2f1c87f161b0038e57fb7a4a59ff37517048696b85cdaaf911}})";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  DescriptorScriptReference script_ref;
+  TapBranch tree;
+  SchnorrPubkey pubkey;
+  NetType nettype = NetType::kRegtest;
+  std::vector<std::string> child_nums = {"1"};
+
+  try {
+    desc = Descriptor::Parse(descriptor1);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+    return;
+  }
+
+  EXPECT_NO_THROW(script_ref = desc.GetReference(&child_nums));
+  EXPECT_TRUE(script_ref.HasKey());
+  EXPECT_TRUE(script_ref.HasAddress());
+  EXPECT_EQ(1, script_ref.GetKeyNum());
+  EXPECT_FALSE(script_ref.HasChild());
+  EXPECT_FALSE(script_ref.HasReqNum());
+  EXPECT_FALSE(script_ref.HasRedeemScript());
+  EXPECT_TRUE(script_ref.HasTapBranch());
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript(child_nums));
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(tree = script_ref.GetTapBranch());
+  EXPECT_EQ(AddressType::kTaprootAddress, script_ref.GetAddressType());
+  EXPECT_EQ(HashType::kTaproot, script_ref.GetHashType());
+  EXPECT_STREQ(script_ref.GenerateAddress(nettype).GetAddress().c_str(),
+      "bcrt1pfuqf4j7ceyzmu3rsmude93ctu948r565hf2ucrn9z7zn7a7hjegskj3rsv");
+  EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetSchnorrPubkey());
+  EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "1 4f009acbd8c905be4470df1b92c70be16a71d354ba55cc0e6517853f77d79651");
+  EXPECT_STREQ(pubkey.GetHex().c_str(), pubkey_hex.c_str());
+  EXPECT_STREQ(tree.ToString().c_str(),
+      "{1717a480c2e3a474eed8dba83f684731243cff8ef384521936cf3a730dd0a286,{1717a480c2e3a474eed8dba83f684731243cff8ef384521936cf3a730dd0a286,80039cda864c4f2f1c87f161b0038e57fb7a4a59ff37517048696b85cdaaf911}}");
+  EXPECT_STREQ(tree.GetCurrentBranchHash().GetHex().c_str(),
+      "2f36d93d14c4cbc292f7fd0f837da92fea69f4b9644acaac62c6bd305e9d63bf");
+}
+
+TEST(Descriptor, Parse_Taproot_tapbranch_simple) {
+  std::string descriptor1 = "tr(c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5,{pk(fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556),pk(e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)})";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  DescriptorScriptReference script_ref;
+  TaprootScriptTree tree;
+  SchnorrPubkey pubkey;
+  NetType nettype = NetType::kRegtest;
+
+  try {
+    desc = Descriptor::Parse(descriptor1);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+  }
+
+  EXPECT_NO_THROW(script_ref = desc.GetReference());
+  EXPECT_TRUE(script_ref.HasKey());
+  EXPECT_TRUE(script_ref.HasAddress());
+  EXPECT_EQ(1, script_ref.GetKeyNum());
+  EXPECT_FALSE(script_ref.HasChild());
+  EXPECT_FALSE(script_ref.HasReqNum());
+  EXPECT_FALSE(script_ref.HasRedeemScript());
+  EXPECT_TRUE(script_ref.HasScriptTree());
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(tree = script_ref.GetScriptTree());
+  EXPECT_EQ(AddressType::kTaprootAddress, script_ref.GetAddressType());
+  EXPECT_EQ(HashType::kTaproot, script_ref.GetHashType());
+  EXPECT_STREQ(script_ref.GenerateAddress(nettype).GetAddress().c_str(),
+      "bcrt1p6r63tl53d930my75e76ncsgw05gyk838e08079kxuuguwxr0yyjssdax9t");
+  EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetSchnorrPubkey());
+  EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "1 d0f515fe916962fd93d4cfb53c410e7d104b1e27cbceff16c6e711c7186f2125");
+  EXPECT_STREQ(tree.ToString().c_str(),
+      "{tl(20e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13ac),tl(20fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac)}");
+  EXPECT_STREQ(tree.GetScript().GetHex().c_str(),
+      "20fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac");
+}
+
+TEST(Descriptor, Parse_Taproot_tapbranch_simple2) {
+  std::string descriptor1 = "tr(c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5,{663e2b115c7bc9af54395266c7c0b0dc6f879c55ecaa0becb2e041ab1cfee294,0e167d3d619d2b16fb08736a6e696eb6814c6d99a578c8c268d4195aeb9f72d1})";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  DescriptorScriptReference script_ref;
+  TapBranch tree;
+  SchnorrPubkey pubkey;
+  NetType nettype = NetType::kRegtest;
+
+  try {
+    desc = Descriptor::Parse(descriptor1);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+    return;
+  }
+
+  EXPECT_NO_THROW(script_ref = desc.GetReference());
+  EXPECT_TRUE(script_ref.HasKey());
+  EXPECT_TRUE(script_ref.HasAddress());
+  EXPECT_EQ(1, script_ref.GetKeyNum());
+  EXPECT_FALSE(script_ref.HasChild());
+  EXPECT_FALSE(script_ref.HasReqNum());
+  EXPECT_FALSE(script_ref.HasRedeemScript());
+  EXPECT_TRUE(script_ref.HasTapBranch());
+  EXPECT_FALSE(script_ref.HasScriptTree());
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(tree = script_ref.GetTapBranch());
+  EXPECT_EQ(AddressType::kTaprootAddress, script_ref.GetAddressType());
+  EXPECT_EQ(HashType::kTaproot, script_ref.GetHashType());
+  EXPECT_STREQ(script_ref.GenerateAddress(nettype).GetAddress().c_str(),
+      "bcrt1p6r63tl53d930my75e76ncsgw05gyk838e08079kxuuguwxr0yyjssdax9t");
+  EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetSchnorrPubkey());
+  EXPECT_STREQ(desc_str.c_str(), descriptor1.c_str());
+  EXPECT_STREQ(locking_script.ToString().c_str(),
+      "1 d0f515fe916962fd93d4cfb53c410e7d104b1e27cbceff16c6e711c7186f2125");
+  EXPECT_STREQ(tree.ToString().c_str(),
+      "{0e167d3d619d2b16fb08736a6e696eb6814c6d99a578c8c268d4195aeb9f72d1,663e2b115c7bc9af54395266c7c0b0dc6f879c55ecaa0becb2e041ab1cfee294}");
+  EXPECT_STREQ(tree.GetCurrentBranchHash().GetHex().c_str(),
+      "6c2c113096e1876557951f05211acde706640f832862fb40549d60d9421c7f14");
+}
+
 TEST(DescriptorKeyInfo, Constructor_Pubkey) {
   Pubkey pubkey("03d3f817091de0bbe51e19b53303b12e463f664894d49cb5bf5bb19c88fbc54d8d");
   std::string parent_info = "[ef57314e/0'/0'/4']";
@@ -1192,6 +1350,56 @@ TEST(DescriptorKeyInfo, Constructor_Pubkey) {
   EXPECT_FALSE(key_info.HasExtPubkey());
   EXPECT_FALSE(key_info.HasExtPrivkey());
   EXPECT_STREQ(key_info.GetPubkey().GetHex().c_str(),  pubkey.GetHex().c_str());
+}
+
+TEST(Descriptor, Parse_Taproot_bip86) {
+  // https://github.com/bitcoin/bips/blob/master/bip-0086.mediawiki
+  // Account 0, second receiving address = m/86'/0'/0'/0/1
+  // xprv         = xprvA449goEeU9okyiF1LmKiDaTgeXvmh87DVyRd35VPbsSop8n8uALpbtrUhUXByPFKK7C2yuqrB1FrhiDkEMC4RGmA5KTwsE1aB5jRu9zHsuQ
+  // xpub         = xpub6H3W6JmYJXN4CCKUSnriaiQRCZmG6aq4sCMDqTu1ACyngw7HShf59hAxYjXgKDuuHThVEUzdHrc3aXCr9kfvQvZPit5dnD3K9xVRBzjK3rX
+  // internal_key = 83dfe85a3151d2517290da461fe2815591ef69f2b18a2ce63f01697a8b313145
+  // output_key   = a82f29944d65b86ae6b5e5cc75e294ead6c59391a1edc5e016e3498c67fc7bbb
+  // scriptPubKey = 5120a82f29944d65b86ae6b5e5cc75e294ead6c59391a1edc5e016e3498c67fc7bbb
+  // address      = bc1p4qhjn9zdvkux4e44uhx8tc55attvtyu358kutcqkudyccelu0was9fqzwh
+  std::string pubkey_hex = "83dfe85a3151d2517290da461fe2815591ef69f2b18a2ce63f01697a8b313145";
+  std::string descriptor1 = "tr(83dfe85a3151d2517290da461fe2815591ef69f2b18a2ce63f01697a8b313145)";
+  Descriptor desc;
+  Script locking_script;
+  std::string desc_str = "";
+  DescriptorScriptReference script_ref;
+  TapBranch tree;
+  SchnorrPubkey pubkey;
+  NetType nettype = NetType::kMainnet;
+
+  try {
+    desc = Descriptor::Parse(descriptor1);
+  } catch (const CfdException& except) {
+    EXPECT_STREQ(except.what(), "");
+    return;
+  }
+
+  EXPECT_NO_THROW(script_ref = desc.GetReference());
+  EXPECT_TRUE(script_ref.HasKey());
+  EXPECT_TRUE(script_ref.HasAddress());
+  EXPECT_EQ(1, script_ref.GetKeyNum());
+  EXPECT_FALSE(script_ref.HasChild());
+  EXPECT_FALSE(script_ref.HasReqNum());
+  EXPECT_FALSE(script_ref.HasRedeemScript());
+  EXPECT_FALSE(script_ref.HasScriptTree());
+  EXPECT_TRUE(script_ref.HasTapBranch());
+  EXPECT_NO_THROW(locking_script = desc.GetLockingScript());
+  EXPECT_NO_THROW(desc_str = desc.ToString(false));
+  EXPECT_NO_THROW(tree = script_ref.GetTapBranch());
+  EXPECT_EQ(AddressType::kTaprootAddress, script_ref.GetAddressType());
+  EXPECT_EQ(HashType::kTaproot, script_ref.GetHashType());
+  EXPECT_EQ(script_ref.GenerateAddress(nettype).GetAddress(),
+      "bc1p4qhjn9zdvkux4e44uhx8tc55attvtyu358kutcqkudyccelu0was9fqzwh");
+  EXPECT_NO_THROW(pubkey = script_ref.GetKeyList()[0].GetSchnorrPubkey());
+  EXPECT_EQ(desc_str, descriptor1);
+  EXPECT_EQ(locking_script.ToString(),
+      "1 a82f29944d65b86ae6b5e5cc75e294ead6c59391a1edc5e016e3498c67fc7bbb");
+  EXPECT_EQ(pubkey.GetHex(), pubkey_hex);
+  EXPECT_EQ(tree.ToString(), "");
 }
 
 TEST(DescriptorKeyInfo, Constructor_Privkey_Testnet_Compress) {
@@ -1343,4 +1551,26 @@ TEST(DescriptorKeyInfo, GetExtPubkeyInformation_root) {
 
   EXPECT_NO_THROW(key_str = DescriptorKeyInfo::GetExtPubkeyInformation(pubkey, path));
   EXPECT_STREQ(key_str.c_str(), ext_path_str.c_str());
+}
+
+TEST(DescriptorKeyInfo, Constructor_SchnorrPubkey) {
+  SchnorrPubkey pubkey("d3f817091de0bbe51e19b53303b12e463f664894d49cb5bf5bb19c88fbc54d8d");
+  std::string parent_info = "[ef57314e/0'/0'/4']";
+  DescriptorKeyInfo key_info;
+  std::string key_str;
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(pubkey));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), pubkey.GetHex().c_str());
+  EXPECT_EQ(key_info.GetKeyType(), DescriptorKeyType::kDescriptorKeySchnorr);
+
+  EXPECT_NO_THROW(key_info = DescriptorKeyInfo(pubkey, parent_info));
+  EXPECT_NO_THROW(key_str = key_info.ToString());
+  EXPECT_STREQ(key_str.c_str(), (parent_info + pubkey.GetHex()).c_str());
+  EXPECT_FALSE(key_info.HasPrivkey());
+  EXPECT_TRUE(key_info.HasSchnorrPubkey());
+  EXPECT_FALSE(key_info.HasExtPubkey());
+  EXPECT_FALSE(key_info.HasExtPrivkey());
+  EXPECT_EQ(key_info.GetSchnorrPubkey().GetHex(), pubkey.GetHex());
+  EXPECT_EQ(key_info.GetSchnorrPubkey().GetHex(), pubkey.GetHex());
 }

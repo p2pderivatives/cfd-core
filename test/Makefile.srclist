@@ -47,6 +47,7 @@ TEST_CFDCORE_SOURCES= \
     test_signatureutil.cpp \
     test_randomnumberutil.cpp \
     test_sighashtype.cpp \
+    test_block.cpp \
     test_schnorrsig.cpp \
     test_ecdsa_adaptor.cpp \
     test_taproot_merkletree.cpp \

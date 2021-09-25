@@ -45,8 +45,8 @@ static constexpr uint32_t kTransactionVersionNoWitness = 0x40000000;
 static constexpr const uint32_t kIssuanceAppendSize = 82;
 /// blind issuance's append size: entity,hash,amount(33),key(33)
 static constexpr const uint32_t kIssuanceBlindSize = 130;
-/// pegin size: btc(9),asset(33),block(33),fedpeg(-),txSize(3),txoutproof(152)
-static constexpr const uint32_t kPeginWitnessSize = 230;
+/// pegin size: btc(9),asset(33),block(33),claim(1),txSize(-),txoutproof(-)
+static constexpr const uint32_t kPeginWitnessSize = 76;
 
 /// Size of asset at unblind
 static constexpr size_t kAssetSize = ASSET_TAG_LEN;
@@ -74,6 +74,23 @@ static constexpr uint8_t kTxInFeaturePegin = WALLY_TX_IS_PEGIN;
 /// Empty data of ByteData256
 static const ByteData256 kEmptyByteData256;
 // @formatter:on
+
+/**
+ * @brief Get serialized size.
+ * @param[in] size      base buffer size.
+ * @return serialized size.
+ */
+static uint32_t GetSerializedSize(uint32_t size) {
+  if (size < 76) {
+    return 1 + size;
+  } else if (size < 256) {
+    return 2 + size;
+  } else if (size < 65536) {
+    return 3 + size;
+  } else {
+    return 5 + size;
+  }
+}
 
 /**
  * @brief rangeProofなどを生成する。
@@ -823,10 +840,10 @@ ByteData256 ConfidentialTxIn::GetWitnessHash() const {
 
 uint32_t ConfidentialTxIn::EstimateTxInSize(
     AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
-    Script fedpeg_script, bool is_issuance, bool is_blind,
+    Script claim_script, bool is_issuance, bool is_blind,
     uint32_t *witness_area_size, uint32_t *no_witness_area_size,
     bool is_reissuance, const Script *scriptsig_template, int exponent,
-    int minimum_bits, uint32_t *rangeproof_size) {
+    int minimum_bits, uint32_t *rangeproof_size, uint32_t txoutproof_size) {
   // TODO(k-matsuzawa): Set amount upper limit and calculate maximum size
   static constexpr const int64_t kIssuanceAmount = kMaxAmount;
   uint32_t witness_size = 0;
@@ -849,10 +866,11 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
     }
 
     if (pegin_btc_tx_size != 0) {
-      witness_size += pegin_btc_tx_size + kPeginWitnessSize;
-      if (!fedpeg_script.IsEmpty()) {
+      witness_size += GetSerializedSize(pegin_btc_tx_size) +
+                      GetSerializedSize(txoutproof_size) + kPeginWitnessSize;
+      if (!claim_script.IsEmpty()) {
         witness_size +=
-            static_cast<uint32_t>(fedpeg_script.GetData().GetSerializeSize());
+            static_cast<uint32_t>(claim_script.GetData().GetSerializeSize());
       }
     }
     witness_size += 1;  // pegin witness num
@@ -888,15 +906,16 @@ uint32_t ConfidentialTxIn::EstimateTxInSize(
 
 uint32_t ConfidentialTxIn::EstimateTxInVsize(
     AddressType addr_type, Script redeem_script, uint32_t pegin_btc_tx_size,
-    Script fedpeg_script, bool is_issuance, bool is_blind, bool is_reissuance,
+    Script claim_script, bool is_issuance, bool is_blind, bool is_reissuance,
     const Script *scriptsig_template, int exponent, int minimum_bits,
-    uint32_t *rangeproof_size) {
+    uint32_t *rangeproof_size, uint32_t txoutproof_size) {
   uint32_t witness_size = 0;
   uint32_t no_witness_size = 0;
   ConfidentialTxIn::EstimateTxInSize(
-      addr_type, redeem_script, pegin_btc_tx_size, fedpeg_script, is_issuance,
+      addr_type, redeem_script, pegin_btc_tx_size, claim_script, is_issuance,
       is_blind, &witness_size, &no_witness_size, is_reissuance,
-      scriptsig_template, exponent, minimum_bits, rangeproof_size);
+      scriptsig_template, exponent, minimum_bits, rangeproof_size,
+      txoutproof_size);
   return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
@@ -923,7 +942,7 @@ ConfidentialTxInReference::ConfidentialTxInReference()
 
 uint32_t ConfidentialTxInReference::EstimateTxInSize(
     AddressType addr_type, Script redeem_script, bool is_blind, int exponent,
-    int minimum_bits, Script fedpeg_script, const Script *scriptsig_template,
+    int minimum_bits, Script claim_script, const Script *scriptsig_template,
     uint32_t *witness_area_size, uint32_t *no_witness_area_size) const {
   uint32_t witness_size = 0;
   uint32_t size = 0;
@@ -941,10 +960,17 @@ uint32_t ConfidentialTxInReference::EstimateTxInSize(
     if ((!pegin_witness_.IsEmpty()) && (pegin_witness_.GetWitnessNum() > 5)) {
       uint32_t pegin_btc_tx_size =
           static_cast<uint32_t>(pegin_witness_.GetWitness()[4].GetDataSize());
-      witness_size += pegin_btc_tx_size + kPeginWitnessSize;
-      if (!fedpeg_script.IsEmpty())
+      uint32_t txoutproof_size =
+          static_cast<uint32_t>(pegin_witness_.GetWitness()[5].GetDataSize());
+      witness_size += GetSerializedSize(pegin_btc_tx_size) +
+                      GetSerializedSize(txoutproof_size) + kPeginWitnessSize;
+      if (!claim_script.IsEmpty()) {
         witness_size +=
-            static_cast<uint32_t>(fedpeg_script.GetData().GetSerializeSize());
+            static_cast<uint32_t>(claim_script.GetData().GetSerializeSize());
+      } else {
+        witness_size += static_cast<uint32_t>(
+            pegin_witness_.GetWitness()[3].GetDataSize());
+      }
     }
     witness_size += 1;  // pegin witness num
 
@@ -973,13 +999,13 @@ uint32_t ConfidentialTxInReference::EstimateTxInSize(
 
 uint32_t ConfidentialTxInReference::EstimateTxInVsize(
     AddressType addr_type, Script redeem_script, bool is_blind, int exponent,
-    int minimum_bits, Script fedpeg_script,
+    int minimum_bits, Script claim_script,
     const Script *scriptsig_template) const {
   uint32_t witness_size = 0;
   uint32_t no_witness_size = 0;
   EstimateTxInSize(
-      addr_type, redeem_script, is_blind, exponent, minimum_bits,
-      fedpeg_script, scriptsig_template, &witness_size, &no_witness_size);
+      addr_type, redeem_script, is_blind, exponent, minimum_bits, claim_script,
+      scriptsig_template, &witness_size, &no_witness_size);
   return AbstractTransaction::GetVsizeFromSize(no_witness_size, witness_size);
 }
 
@@ -1117,6 +1143,17 @@ const RangeProofInfo ConfidentialTxOut::DecodeRangeProofInfo(
   return range_proof_info;
 }
 
+UnblindParameter ConfidentialTxOut::Unblind(
+    const Privkey &blinding_key) const {
+  if (!confidential_value_.HasBlinding()) {
+    throw CfdException(
+        CfdError::kCfdIllegalStateError, "This output is not blinded.");
+  }
+  return ConfidentialTransaction::CalculateUnblindData(
+      nonce_, blinding_key, range_proof_, confidential_value_, locking_script_,
+      asset_);
+}
+
 // -----------------------------------------------------------------------------
 // ConfidentialTxOutReference
 // -----------------------------------------------------------------------------
@@ -1174,7 +1211,7 @@ uint32_t ConfidentialTxOutReference::GetSerializeSize(
       work_proof_size = 4 + static_cast<uint32_t>(range_proof_.GetDataSize());
     } else {
       int64_t amount = confidential_value_.GetAmount().GetSatoshiValue();
-      if (amount == 0) amount = kMaxAmount;
+      if (amount == 0) amount = (nonce_.IsEmpty()) ? kMaxAmount : 1;
       work_proof_size =
           4 + CalculateRangeProofSize(amount, exponent, minimum_bits);
       if (rangeproof_size != nullptr) *rangeproof_size = work_proof_size;
@@ -1517,6 +1554,12 @@ void ConfidentialTransaction::RemoveTxIn(uint32_t index) {
     ite += index;
   }
   vin_.erase(ite);
+}
+
+void ConfidentialTransaction::SetTxInSequence(
+    uint32_t tx_in_index, uint32_t sequence) {
+  AbstractTransaction::SetTxInSequence(tx_in_index, sequence);
+  vin_[tx_in_index].SetSequence(sequence);
 }
 
 void ConfidentialTransaction::SetUnlockingScript(
@@ -3192,6 +3235,19 @@ PegoutKeyData ConfidentialTransaction::GetPegoutPubkeyData(
   return result;
 }
 
+Address ConfidentialTransaction::GetPegoutAddressFromDescriptor(
+    const std::string &bitcoin_descriptor, uint32_t bip32_counter,
+    NetType net_type, NetType elements_net_type) {
+  auto prefix = (net_type == NetType::kMainnet) ? ByteData("0488b21e")
+                                                : ByteData("043587cf");
+  ExtPubkey base_ext_pubkey;
+  Address result;
+  GenerateExtPubkeyFromDescriptor(
+      bitcoin_descriptor, bip32_counter, prefix, net_type, elements_net_type,
+      &base_ext_pubkey, &result);
+  return result;
+}
+
 ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
     const std::string &bitcoin_descriptor, uint32_t bip32_counter,
     const ByteData &prefix, NetType net_type, NetType elements_net_type,
@@ -3287,9 +3343,9 @@ ExtPubkey ConfidentialTransaction::GenerateExtPubkeyFromDescriptor(
   // If it is the same as base, add a default path.
   if (child_xpub.ToString() == base_ext_pubkey->ToString()) {
     std::string xpub_str = base_ext_pubkey->ToString() + "/0/*";
-    if (script_ref.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
+    if (derive_script.GetAddressType() == AddressType::kP2shP2wpkhAddress) {
       xpub_str = "sh(wpkh(" + xpub_str + "))";
-    } else if (script_ref.GetAddressType() == AddressType::kP2wpkhAddress) {
+    } else if (derive_script.GetAddressType() == AddressType::kP2wpkhAddress) {
       xpub_str = "wpkh(" + xpub_str + ")";
     } else {
       xpub_str = "pkh(" + xpub_str + ")";

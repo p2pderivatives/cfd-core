@@ -110,6 +110,29 @@ class CFD_CORE_EXPORT TapBranch {
   virtual std::vector<ByteData256> GetNodeList() const;
 
   /**
+   * @brief Get tweak.
+   * @param[in] internal_pubkey     internal pubkey
+   * @return tweak.
+   */
+  ByteData256 GetTapTweak(const SchnorrPubkey& internal_pubkey) const;
+  /**
+   * @brief Get a tweaked pubkey.
+   * @param[in] internal_pubkey     internal pubkey
+   * @param[out] parity             parity flag.
+   * @return tweaked schnorr pubkey.
+   */
+  SchnorrPubkey GetTweakedPubkey(
+      const SchnorrPubkey& internal_pubkey, bool* parity = nullptr) const;
+  /**
+   * @brief Get a tweaked privkey.
+   * @param[in] internal_privkey    internal privkey
+   * @param[out] parity             parity flag.
+   * @return tweaked privkey.
+   */
+  Privkey GetTweakedPrivkey(
+      const Privkey& internal_privkey, bool* parity = nullptr) const;
+
+  /**
    * @brief find tapscript in this branch.
    * @param[in] tapscript       tapscript
    * @retval true       find this branch.
@@ -229,29 +252,10 @@ class CFD_CORE_EXPORT TaprootScriptTree : public TapBranch {
    * @return tapleaf hash.
    */
   ByteData256 GetTapLeafHash() const;
-  /**
-   * @brief Get tweak.
-   * @param[in] internal_pubkey     internal pubkey
-   * @return tweak.
-   */
-  ByteData256 GetTapTweak(const SchnorrPubkey& internal_pubkey) const;
 
-  /**
-   * @brief Get a tweaked pubkey.
-   * @param[in] internal_pubkey     internal pubkey
-   * @param[out] parity             parity flag.
-   * @return tweaked schnorr pubkey.
-   */
-  SchnorrPubkey GetTweakedPubkey(
-      const SchnorrPubkey& internal_pubkey, bool* parity = nullptr) const;
-  /**
-   * @brief Get a tweaked privkey.
-   * @param[in] internal_privkey    internal privkey
-   * @param[out] parity             parity flag.
-   * @return tweaked privkey.
-   */
-  Privkey GetTweakedPrivkey(
-      const Privkey& internal_privkey, bool* parity = nullptr) const;
+  using TapBranch::GetTapTweak;
+  using TapBranch::GetTweakedPrivkey;
+  using TapBranch::GetTweakedPubkey;
 
   /**
    * @brief Get a node list.
@@ -303,8 +307,7 @@ class CFD_CORE_EXPORT TaprootUtil {
    * @return tapscript control data.
    */
   static ByteData CreateTapScriptControl(
-      const SchnorrPubkey& internal_pubkey,
-      const TaprootScriptTree& merkle_tree,
+      const SchnorrPubkey& internal_pubkey, const TapBranch& merkle_tree,
       SchnorrPubkey* witness_program = nullptr,
       Script* locking_script = nullptr);
 

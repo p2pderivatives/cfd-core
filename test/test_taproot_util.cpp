@@ -38,6 +38,7 @@ using cfd::core::NetType;
 using cfd::core::SchnorrUtil;
 using cfd::core::SchnorrSignature;
 using cfd::core::TapScriptData;
+using cfd::core::TapBranch;
 
 TEST(TaprootUtil, ValidLeafVersion) {
   EXPECT_FALSE(TaprootUtil::IsValidLeafVersion(0));
@@ -288,4 +289,28 @@ TEST(TaprootUtil, ParseAndVerifyTapScriptParityBit) {
       parity, tapleaf_flag,
       SchnorrPubkey("262d16c95b41f6a90a360837b5e9c3e213334deacffaec0413f8b6e98ad40165"),
       pk, nodes, tapscript));
+}
+
+TEST(TaprootUtil, Bip86_1) {
+  // https://github.com/bitcoin/bips/blob/master/bip-0086.mediawiki
+  // Account 0, second receiving address = m/86'/0'/0'/0/1
+  // xprv         = xprvA449goEeU9okyiF1LmKiDaTgeXvmh87DVyRd35VPbsSop8n8uALpbtrUhUXByPFKK7C2yuqrB1FrhiDkEMC4RGmA5KTwsE1aB5jRu9zHsuQ
+  // xpub         = xpub6H3W6JmYJXN4CCKUSnriaiQRCZmG6aq4sCMDqTu1ACyngw7HShf59hAxYjXgKDuuHThVEUzdHrc3aXCr9kfvQvZPit5dnD3K9xVRBzjK3rX
+  // internal_key = 83dfe85a3151d2517290da461fe2815591ef69f2b18a2ce63f01697a8b313145
+  // output_key   = a82f29944d65b86ae6b5e5cc75e294ead6c59391a1edc5e016e3498c67fc7bbb
+  // scriptPubKey = 5120a82f29944d65b86ae6b5e5cc75e294ead6c59391a1edc5e016e3498c67fc7bbb
+  // address      = bc1p4qhjn9zdvkux4e44uhx8tc55attvtyu358kutcqkudyccelu0was9fqzwh
+  SchnorrPubkey pk("83dfe85a3151d2517290da461fe2815591ef69f2b18a2ce63f01697a8b313145");
+  TapBranch branch;
+
+  SchnorrPubkey output_key;
+  Script locking_script;
+  auto ctrl = TaprootUtil::CreateTapScriptControl(
+    pk, branch, &output_key, &locking_script);
+  EXPECT_EQ("a82f29944d65b86ae6b5e5cc75e294ead6c59391a1edc5e016e3498c67fc7bbb",
+      output_key.GetHex());
+  EXPECT_EQ("5120a82f29944d65b86ae6b5e5cc75e294ead6c59391a1edc5e016e3498c67fc7bbb",
+      locking_script.GetHex());
+  EXPECT_EQ("c083dfe85a3151d2517290da461fe2815591ef69f2b18a2ce63f01697a8b313145",
+      ctrl.GetHex());
 }

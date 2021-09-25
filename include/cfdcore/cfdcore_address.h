@@ -531,6 +531,34 @@ class CFD_CORE_EXPORT Address {
    */
   Script GetLockingScript() const;
 
+  /**
+   * @brief Get the pegout address.
+   * @param[in] type            network type
+   * @param[in] locking_script  pegout locking script
+   * @return address
+   */
+  static Address GetPegoutAddress(NetType type, const Script& locking_script);
+  /**
+   * @brief Get the pegout address.
+   * @param[in] type            network type
+   * @param[in] locking_script  pegout locking script
+   * @param[in] network_parameter   network prefix parameter
+   * @return address
+   */
+  static Address GetPegoutAddress(
+      NetType type, const Script& locking_script,
+      const AddressFormatData& network_parameter);
+  /**
+   * @brief Get the pegout address.
+   * @param[in] type            network type
+   * @param[in] locking_script  pegout locking script
+   * @param[in] network_parameters  network prefix list
+   * @return address
+   */
+  static Address GetPegoutAddress(
+      NetType type, const Script& locking_script,
+      const std::vector<AddressFormatData>& network_parameters);
+
  private:
   /**
    * @brief calculate P2SH Address

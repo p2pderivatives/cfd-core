@@ -63,13 +63,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, ubuntu-18.04, ubuntu-16.04]
+        os: [ubuntu-20.04, ubuntu-18.04]
         shared: [on, off]
         elements: [on, off]
         exclude:
           - os: ubuntu-18.04
-            elements: off
-          - os: ubuntu-16.04
             elements: off
 
     steps:

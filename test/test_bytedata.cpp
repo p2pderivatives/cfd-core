@@ -237,3 +237,17 @@ TEST(ByteData, Push) {
   EXPECT_NO_THROW(data.Push(data3));
   EXPECT_STREQ(data.GetHex().c_str(), "0011223344444444444444444444444444444444444444445555555555555555555555555555555555555555555555555555555555555555");
 }
+
+TEST(ByteData, SplitData) {
+  ByteData data("00112233444444444444444444444444444444444444444455555555");
+  auto sub_data = data.SplitData(4);
+  EXPECT_EQ("00112233", sub_data.GetHex());
+  auto list = data.SplitData(std::vector<uint32_t>{4, 20});
+  EXPECT_EQ(2, list.size());
+  if (list.size() == 2) {
+    EXPECT_EQ("00112233", list[0].GetHex());
+    EXPECT_EQ("4444444444444444444444444444444444444444", list[1].GetHex());
+    EXPECT_TRUE(sub_data == list[0]);
+    EXPECT_FALSE(sub_data == list[1]);
+  }
+}

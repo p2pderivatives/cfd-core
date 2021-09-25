@@ -20,6 +20,32 @@ namespace core {
 using logger::warn;
 
 //////////////////////////////////
+/// Internal function
+//////////////////////////////////
+/**
+ * @brief check big endian.
+ * @retval true   big endian.
+ * @retval false  little endian.
+ */
+static bool IsBigEndian() {
+  static const uint32_t k32bitValue = 0x04030201;
+  static bool* is_big_endian = nullptr;
+  static bool kTrue = true;
+  static bool kFalse = false;
+  if (is_big_endian == nullptr) {
+    uint8_t buf[4];
+    memcpy(buf, &k32bitValue, sizeof(buf));
+    if (buf[0] == 1) {
+      // little
+      is_big_endian = &kFalse;
+    } else {
+      is_big_endian = &kTrue;
+    }
+  }
+  return *is_big_endian;
+}
+
+//////////////////////////////////
 /// ByteData
 //////////////////////////////////
 ByteData::ByteData() : data_(0) {
@@ -95,6 +121,30 @@ ByteData ByteData::GetVariableInt(uint64_t v) {
 
 bool ByteData::IsLarge(const ByteData& source, const ByteData& destination) {
   return source.data_ < destination.data_;
+}
+
+std::vector<ByteData> ByteData::SplitData(
+    const std::vector<uint32_t>& split_size_list) const {
+  std::vector<ByteData> result;
+  uint32_t offset = 0;
+  uint32_t max = static_cast<uint32_t>(data_.size());
+  for (uint32_t size : split_size_list) {
+    if (size == 0) {
+      result.emplace_back(ByteData());
+    } else if ((offset + size) > max) {
+      throw CfdException(
+          kCfdIllegalArgumentError, "total size is maximum over.");
+    } else {
+      result.emplace_back(&data_[offset], size);
+      offset += size;
+    }
+  }
+  return result;
+}
+
+ByteData ByteData::SplitData(uint32_t size_from_top) const {
+  auto ret = SplitData(std::vector<uint32_t>{size_from_top});
+  return ret[0];
 }
 
 void ByteData::Push(const ByteData& back_insert_data) {
@@ -280,6 +330,8 @@ Serializer& Serializer::operator=(const Serializer& object) {
   return *this;
 }
 
+bool Serializer::IsBigEndian() { return cfd::core::IsBigEndian(); }
+
 void Serializer::CheckNeedSize(uint32_t need_size) {
   size_t size = buffer_.size() - static_cast<size_t>(offset_);
   if (size < need_size) {
@@ -416,6 +468,23 @@ void Serializer::AddDirectNumber(int64_t number) {
   offset_ += sizeof(number);
 }
 
+void Serializer::AddDirectBigEndianNumber(uint32_t number) {
+  CheckNeedSize(sizeof(number));
+  uint8_t* buf = &buffer_.data()[offset_];
+  if (IsBigEndian()) {
+    memcpy(buf, &number, sizeof(number));
+  } else {
+    uint8_t tmp_buf[4] = {
+        static_cast<uint8_t>((number & 0xff000000) >> 24),
+        static_cast<uint8_t>((number & 0x00ff0000) >> 16),
+        static_cast<uint8_t>((number & 0x0000ff00) >> 8),
+        static_cast<uint8_t>(number & 0x000000ff),
+    };
+    memcpy(buf, tmp_buf, sizeof(tmp_buf));
+  }
+  offset_ += sizeof(number);
+}
+
 Serializer& Serializer::operator<<(const ByteData& buffer) {
   AddDirectBytes(buffer);
   return *this;
@@ -495,6 +564,23 @@ uint8_t Deserializer::ReadUint8() {
   return result;
 }
 
+uint32_t Deserializer::ReadUint32FromBigEndian() {
+  uint32_t result = 0;
+  CheckReadSize(sizeof(result));
+  if (IsBigEndian()) {
+    memcpy(&result, &buffer_.data()[offset_], sizeof(result));
+  } else {
+    uint8_t tmp_buf[4];
+    memcpy(tmp_buf, &buffer_.data()[offset_], sizeof(tmp_buf));
+    result = static_cast<uint32_t>(tmp_buf[3] & 0x000000ff) +
+             static_cast<uint32_t>((tmp_buf[2] << 8) & 0x0000ff00) +
+             static_cast<uint32_t>((tmp_buf[1] << 16) & 0x00ff0000) +
+             static_cast<uint32_t>((tmp_buf[0] << 24) & 0xff000000);
+  }
+  offset_ += sizeof(result);
+  return result;
+}
+
 uint64_t Deserializer::ReadVariableInt() {
   CheckReadSize(1);
   const uint8_t* buf = buffer_.data() + offset_;
@@ -563,6 +649,8 @@ ByteData Deserializer::ReadVariableData() {
 }
 
 uint32_t Deserializer::GetReadSize() { return offset_; }
+
+bool Deserializer::HasEof() { return (buffer_.size() <= offset_); }
 
 void Deserializer::CheckReadSize(uint64_t size) {
   if (size > std::numeric_limits<uint32_t>::max()) {

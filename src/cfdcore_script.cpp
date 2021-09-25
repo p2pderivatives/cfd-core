@@ -470,15 +470,23 @@ ScriptOperator ScriptOperator::Get(const std::string& message) {
   return ite->second;
 }
 
-bool ScriptOperator::IsOpSuccess(ScriptType op_code) {
+bool ScriptOperator::IsOpSuccess(ScriptType op_code, bool is_elements) {
   if ((op_code == kOpSuccess80) || (op_code == kOpSuccess98) ||
       ((op_code >= kOpSuccess126) && (op_code <= kOpSuccess129)) ||
       ((op_code >= kOpSuccess131) && (op_code <= kOpSuccess134)) ||
       ((op_code >= kOpSuccess137) && (op_code <= kOpSuccess138)) ||
       ((op_code >= kOpSuccess141) && (op_code <= kOpSuccess142)) ||
       ((op_code >= kOpSuccess149) && (op_code <= kOpSuccess153)) ||
-      ((op_code >= kOpSuccess187) && (op_code <= kOpSuccess254))) {
+      ((op_code >= kOpSuccess187) && (op_code <= kOpSuccess191)) ||
+      ((op_code >= kOpSuccess195) && (op_code <= kOpSuccess249)) ||
+      (op_code == kOpSuccess252)) {
     return true;
+  } else if (!is_elements) {
+    if (((op_code >= kOpSuccess192) && (op_code <= kOpSuccess194)) ||
+        ((op_code >= kOpSuccess250) && (op_code <= kOpSuccess251)) ||
+        ((op_code >= kOpSuccess253) && (op_code <= kOpSuccess254))) {
+      return true;
+    }
   }
   return false;
 }
@@ -829,6 +837,7 @@ void Script::SetStackData(const ByteData& bytedata) {
   bool is_collect_buffer = false;
   uint32_t collect_buffer_size = 0;
   std::vector<uint8_t> collect_buffer;
+  std::vector<ByteData> top_collect_buffer(2);
   uint32_t offset = 0;
   while (offset < buffer.size()) {
     uint8_t view_data = buffer[offset];
@@ -940,17 +949,31 @@ void Script::SetStackData(const ByteData& bytedata) {
     if (is_collect_buffer) {
       collect_buffer.clear();
       collect_buffer.resize(collect_buffer_size);
+      auto tmp_collect_buffer_size = collect_buffer_size;
       if ((offset + collect_buffer_size) > buffer.size()) {
-        warn(CFD_LOG_SOURCE, "buffer is incorrect size.");
-        throw InvalidScriptException("buffer is incorrect size.");
+        if ((script_stack_.size() >= 2) &&
+            (top_collect_buffer[0].GetDataSize() == 3) &&
+            (top_collect_buffer[1].GetDataSize() == 4)) {
+          // (push past end) If script is coinbase scriptsig, length is low.
+          tmp_collect_buffer_size =
+              static_cast<uint32_t>(buffer.size()) - offset;
+          warn(CFD_LOG_SOURCE, "This script is coinbase scriptsig?");
+        } else {
+          warn(CFD_LOG_SOURCE, "buffer is incorrect size.");
+          throw InvalidScriptException("buffer is incorrect size.");
+        }
       }
 
       // OK
       collect_buffer.assign(
           buffer.begin() + offset,
-          buffer.begin() + offset + collect_buffer_size);
+          buffer.begin() + offset + tmp_collect_buffer_size);
 
-      if (collect_buffer_size <= kMaxScriptNumSize) {
+      if (top_collect_buffer.size() > script_stack_.size()) {
+        // for coinbase script check
+        top_collect_buffer[script_stack_.size()] = ByteData(collect_buffer);
+      }
+      if (tmp_collect_buffer_size <= kMaxScriptNumSize) {
         ScriptElement script_element =
             ScriptElement(ConvertToNumber(collect_buffer), true);
         script_stack_.push_back(script_element);
@@ -959,7 +982,7 @@ void Script::SetStackData(const ByteData& bytedata) {
         ScriptElement script_element = ScriptElement(byte_array);
         script_stack_.push_back(script_element);
       }
-      offset += collect_buffer_size;
+      offset += tmp_collect_buffer_size;
       is_collect_buffer = false;
     } else {
       ++offset;
