@@ -193,7 +193,7 @@ void cfd::core::logger::CfdLogger::SetLogger(void* function_address) {
 
 bool cfd::core::logger::CfdLogger::IsEnableLogLevel(CfdLogLevel level) {
   if (log_level_ == kCfdLogLevelOff) return false;
-  if (is_initialized_ && is_alive_ && (level >= log_level_)) return true;
+  if (is_initialized_ && is_alive_ && (level <= log_level_)) return true;
   return false;
 }
 

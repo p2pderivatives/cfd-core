@@ -532,3 +532,20 @@ TEST(Script, IsPegoutScriptTest) {
   EXPECT_FALSE(script.IsP2wshScript());
   EXPECT_TRUE(script.IsPegoutScript());
 }
+
+TEST(Script, ParseCoinbaseScriptsigTest) {
+  const std::string script = "03632b1e045352b260425443506f6f6cfabe6d6d4b081c2a3c7cb234c159b8e198294dfa79c04b54803e0e54c4a37d239445eb42020000007296cd100100000e8338000000000000";
+  Script obj(script);
+  EXPECT_EQ(script, obj.GetHex());
+  auto list = obj.GetElementList();
+  EXPECT_EQ(3, list.size());
+  if (list.size() == 3) {
+    EXPECT_EQ("03632b1e", list[0].GetData().GetHex());
+    EXPECT_EQ("045352b260", list[1].GetData().GetHex());
+    EXPECT_TRUE(list[2].IsBinary());
+    // buffer size is low from length.
+    EXPECT_EQ(
+      "5443506f6f6cfabe6d6d4b081c2a3c7cb234c159b8e198294dfa79c04b54803e0e54c4a37d239445eb42020000007296cd100100000e8338000000000000",
+      list[2].GetBinaryData().GetHex());
+  }
+}

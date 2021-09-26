@@ -95,6 +95,10 @@ TEST(ElementsConfidentialAddress, P2pkhAddress) {
           "04d570f84ffe5bdf7583400af2e6b9e219210ecf29a333757481cbca826ada8e16e50cd61e20eb14e59a0c763d9cda790becb868ceeb00e5f74da0d15ff8381534");
   EXPECT_THROW((address = ElementsConfidentialAddress(unblind_addr, uc_key)),
                CfdException);
+
+  // copy check
+  ElementsConfidentialAddress ca(address);
+  EXPECT_EQ(address.GetAddress(), ca.GetAddress());
 }
 
 TEST(ElementsConfidentialAddress, P2shAddress) {

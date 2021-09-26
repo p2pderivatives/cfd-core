@@ -144,6 +144,12 @@ class CFD_CORE_EXPORT OutPoint {
    * @retval false  equals
    */
   bool operator!=(const OutPoint& object) const;
+  /**
+   * @brief Compare object.
+   * @param[in] object     compare target.
+   * @return compare value (0 is match)
+   */
+  int Compare(const OutPoint& object) const;
 
  private:
   Txid txid_;      //!< txid
@@ -241,6 +247,11 @@ class CFD_CORE_EXPORT AbstractTxIn {
    * @return sequence番号
    */
   uint32_t GetSequence() const;
+  /**
+   * @brief Set a sequence number.
+   * @param[in] sequence    sequence number
+   */
+  void SetSequence(uint32_t sequence);
   /**
    * @brief Get a script witness.
    * @return ScriptWitness
@@ -584,6 +595,12 @@ class CFD_CORE_EXPORT AbstractTransaction {
    * @param[in] index     index
    */
   void RemoveTxIn(uint32_t index);
+  /**
+   * @brief Set the sequence number.
+   * @param[in] tx_in_index       TxIn index
+   * @param[in] sequence          sequence
+   */
+  void SetTxInSequence(uint32_t tx_in_index, uint32_t sequence);
   /**
    * @brief Set the unlocking script.
    * @param[in] tx_in_index       index

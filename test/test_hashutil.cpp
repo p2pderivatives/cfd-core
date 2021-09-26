@@ -65,6 +65,10 @@ TEST(HashUtil, Ripemd160ByOperator) {
       << ByteData160("0123456789abcdef0123456789abcdef01234567")).Output();
   EXPECT_STREQ(byte_data.GetHex().c_str(), "49ec9207a365f6f330d529ca2a79e23a7ea2b526");
 
+  auto bytedata160 = (HashUtil(HashUtil::kRipemd160)
+      << ByteData160("0123456789abcdef0123456789abcdef01234567")).Output160();
+  EXPECT_STREQ(bytedata160.GetHex().c_str(), "49ec9207a365f6f330d529ca2a79e23a7ea2b526");
+
   byte_data = (HashUtil(HashUtil::kRipemd160)
       << ByteData256("1234567890123456789012345678901234567890123456789012345678901234")).Output();
   EXPECT_STREQ(byte_data.GetHex().c_str(), "a5b1c86f10c81c3c543304e9891815d8de036296");
@@ -329,5 +333,17 @@ TEST(HashUtil, Sha512ByteScript) {
   ByteData byte_data = HashUtil::Sha512(target);
   EXPECT_STREQ(
       byte_data.GetHex().c_str(),
+      "7ad6132c2611fd0496ad42c758edc1bc2a23c3a4c463e139e144e25c35a53765c4c4c99d68d821a1bdd71b10e88afebdba72bfa0ae3877f628f1e2eab5320229");
+}
+
+TEST(HashUtil, operator) {
+  ByteData target(
+      "21026dccc749adc2a9d0d89497ac511f760f45c47dc5ed9cf352a58ac706453880aeadab210255a9626aebf5e29c0e6538428ba0d1dcf6ca98ffdf086aa8ced5e0d0215ea465ac");
+  HashUtil hash_util(HashUtil::kSha512);
+  hash_util << target.GetBytes();
+  HashUtil hash_util2(HashUtil::kSha512);
+  hash_util2 = hash_util;
+  EXPECT_EQ(
+      hash_util2.Output().GetHex(),
       "7ad6132c2611fd0496ad42c758edc1bc2a23c3a4c463e139e144e25c35a53765c4c4c99d68d821a1bdd71b10e88afebdba72bfa0ae3877f628f1e2eab5320229");
 }

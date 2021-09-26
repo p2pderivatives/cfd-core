@@ -544,11 +544,12 @@ class CFD_CORE_EXPORT ScriptOperator {
 
   /**
    * @brief Check if it is OP_SUCCESSxx.
-   * @param[in] op_code   OP Code
+   * @param[in] op_code       OP Code
+   * @param[in] is_elements   elements mode flag
    * @retval true   OP_SUCCESSxx
    * @retval false  other
    */
-  static bool IsOpSuccess(ScriptType op_code);
+  static bool IsOpSuccess(ScriptType op_code, bool is_elements = false);
 
   /**
    * @brief get data type.

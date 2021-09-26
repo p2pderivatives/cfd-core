@@ -143,3 +143,11 @@ TEST(ScriptOperator, GetOperator) {
   EXPECT_THROW((ope = ScriptOperator::Get("OP_xxxx")), CfdException);
 }
 
+TEST(ScriptOperator, IsOpSuccess) {
+  EXPECT_TRUE(ScriptOperator::IsOpSuccess(ScriptType::kOpSuccess137));
+  EXPECT_TRUE(ScriptOperator::IsOpSuccess(ScriptType::kOpSuccess137, true));
+  EXPECT_TRUE(ScriptOperator::IsOpSuccess(ScriptType::kOpSuccess192));
+  EXPECT_FALSE(ScriptOperator::IsOpSuccess(ScriptType::kOpSuccess192, true));
+  EXPECT_TRUE(ScriptOperator::IsOpSuccess(ScriptType::kOpSuccess195));
+  EXPECT_TRUE(ScriptOperator::IsOpSuccess(ScriptType::kOpSuccess195, true));
+}

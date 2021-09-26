@@ -110,6 +110,8 @@ void AbstractTxIn::SetUnlockingScript(const Script &unlocking_script) {
 
 uint32_t AbstractTxIn::GetSequence() const { return sequence_; }
 
+void AbstractTxIn::SetSequence(uint32_t sequence) { sequence_ = sequence; }
+
 ScriptWitness AbstractTxIn::GetScriptWitness() const {
   return script_witness_;
 }
@@ -267,22 +269,36 @@ bool OutPoint::operator!=(const OutPoint &object) const {
   return !(*this == object);
 }
 
+int OutPoint::Compare(const OutPoint &object) const {
+  if (vout_ < object.vout_)
+    return 1;
+  else if (vout_ > object.vout_)
+    return -1;
+  return std::strncmp(
+      txid_.GetHex().c_str(), object.txid_.GetHex().c_str(),
+      kByteData256Length * 2);
+}
+
 bool operator<(const OutPoint &source, const OutPoint &dest) {
-  if (source.GetVout() < dest.GetVout()) {
+  int comp = source.Compare(dest);
+  if (comp == 0) {
+    return false;
+  } else if (comp > 0) {
     return true;
+  } else {
+    return false;
   }
-  if (source.GetTxid().GetData().GetBytes() <
-      dest.GetTxid().GetData().GetBytes()) {
-    return true;
-  }
-  return false;
 }
 
 bool operator<=(const OutPoint &source, const OutPoint &dest) {
-  if (source == dest) {
+  int comp = source.Compare(dest);
+  if (comp == 0) {
     return true;
+  } else if (comp > 0) {
+    return true;
+  } else {
+    return false;
   }
-  return (source < dest);
 }
 
 bool operator>=(const OutPoint &source, const OutPoint &dest) {
@@ -290,10 +306,7 @@ bool operator>=(const OutPoint &source, const OutPoint &dest) {
 }
 
 bool operator>(const OutPoint &source, const OutPoint &dest) {
-  if (source == dest) {
-    return false;
-  }
-  return !(source < dest);
+  return !(source <= dest);
 }
 
 // -----------------------------------------------------------------------------
@@ -365,6 +378,20 @@ void AbstractTransaction::RemoveTxIn(uint32_t index) {
     warn(CFD_LOG_SOURCE, "wally_tx_remove_input NG[{}].", ret);
     throw CfdException(kCfdIllegalStateError, "txin remove error.");
   }
+}
+
+void AbstractTransaction::SetTxInSequence(
+    uint32_t tx_in_index, uint32_t sequence) {
+  CheckTxInIndex(tx_in_index, __LINE__, __FUNCTION__);
+
+  struct wally_tx *tx_pointer =
+      static_cast<struct wally_tx *>(wally_tx_pointer_);
+  if ((tx_pointer == nullptr) ||
+      (static_cast<uint32_t>(tx_pointer->num_inputs) <= tx_in_index)) {
+    warn(CFD_LOG_SOURCE, "wally invalid state.");
+    throw CfdException(kCfdIllegalStateError, "wally invalid state error.");
+  }
+  tx_pointer->inputs[tx_in_index].sequence = sequence;
 }
 
 void AbstractTransaction::SetUnlockingScript(

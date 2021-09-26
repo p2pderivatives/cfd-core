@@ -1223,5 +1223,48 @@ Script Address::GetLockingScript() const {
   return locking_script;
 }
 
+Address Address::GetPegoutAddress(NetType type, const Script& locking_script) {
+  return GetPegoutAddress(type, locking_script, GetBitcoinAddressFormatList());
+}
+
+Address Address::GetPegoutAddress(
+    NetType type, const Script& locking_script,
+    const AddressFormatData& network_parameter) {
+  const std::vector<AddressFormatData> params = {network_parameter};
+  return GetPegoutAddress(type, locking_script, params);
+}
+
+Address Address::GetPegoutAddress(
+    NetType type, const Script& locking_script,
+    const std::vector<AddressFormatData>& network_parameters) {
+  auto list = locking_script.GetElementList();
+  if ((!locking_script.IsPegoutScript()) || (list.size() <= 2)) {
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Invalid pegout script. This script have not a pegout address.");
+  }
+
+  Script pegout_locking_script = Script(list[2].GetBinaryData());
+  auto items = pegout_locking_script.GetElementList();
+  if (pegout_locking_script.IsP2wpkhScript()) {
+    ByteData hash(items[1].GetBinaryData());
+    return Address(type, WitnessVersion::kVersion0, hash, network_parameters);
+  } else if (pegout_locking_script.IsTaprootScript()) {
+    ByteData hash(items[1].GetBinaryData());
+    return Address(type, WitnessVersion::kVersion1, hash, network_parameters);
+  } else if (pegout_locking_script.IsP2pkhScript()) {
+    ByteData160 hash(items[2].GetBinaryData());
+    return Address(type, AddressType::kP2pkhAddress, hash, network_parameters);
+  } else if (pegout_locking_script.IsP2shScript()) {
+    ByteData160 hash(items[1].GetBinaryData());
+    return Address(type, AddressType::kP2shAddress, hash, network_parameters);
+  } else {
+    throw CfdException(
+        CfdError::kCfdIllegalArgumentError,
+        "Invalid pegout script. This script is unsupported by pegout "
+        "address.");
+  }
+}
+
 }  // namespace core
 }  // namespace cfd

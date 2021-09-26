@@ -182,6 +182,21 @@ class CFD_CORE_EXPORT ByteData {
   }
 
   /**
+   * @brief Split a byte data.
+   * @param[in] split_size_list   split size list.
+   * @return split byte data list.
+   */
+  std::vector<ByteData> SplitData(
+      const std::vector<uint32_t>& split_size_list) const;
+
+  /**
+   * @brief Split a byte data.
+   * @param[in] size_from_top     size from top.
+   * @return split byte data list.
+   */
+  ByteData SplitData(uint32_t size_from_top) const;
+
+  /**
    * @brief Push to back.
    * @param[in] back_insert_data  back insert data.
    */
@@ -566,6 +581,13 @@ class CFD_CORE_EXPORT Serializer {
   static constexpr uint8_t kViMax8 = 252;   //!< VarInt8
 
   /**
+   * @brief check big endian.
+   * @retval true   big endian.
+   * @retval false  little endian.
+   */
+  static bool IsBigEndian();
+
+  /**
    * @brief get variable integer size.
    * @param[in] value  value
    * @return variable integer size
@@ -666,6 +688,12 @@ class CFD_CORE_EXPORT Serializer {
    * @param[in] number     value
    */
   void AddDirectNumber(int64_t number);
+
+  /**
+   * @brief add direct number.
+   * @param[in] number     value
+   */
+  void AddDirectBigEndianNumber(uint32_t number);
 
   /**
    * @brief add direct byte array.
@@ -772,6 +800,11 @@ class CFD_CORE_EXPORT Deserializer {
    * @return uint8
    */
   uint8_t ReadUint8();
+  /**
+   * @brief read uint32 from big endian.
+   * @return uint32
+   */
+  uint32_t ReadUint32FromBigEndian();
 
   /**
    * @brief read variable integer.
@@ -807,6 +840,13 @@ class CFD_CORE_EXPORT Deserializer {
    * @return size (offset)
    */
   uint32_t GetReadSize();
+
+  /**
+   * @brief Check EOF.
+   * @retval true   already eof.
+   * @retval false  not eof.
+   */
+  bool HasEof();
 
  protected:
   std::vector<uint8_t> buffer_;  //!< buffer

@@ -416,6 +416,19 @@ class CFD_CORE_EXPORT DescriptorScriptReference {
    * @param[in] locking_script    locking script
    * @param[in] script_type       script type
    * @param[in] key_list          key(pubkey, extprivkey, extpubkey) list
+   * @param[in] tapbranch         taproot tapbranch
+   * @param[in] address_prefixes  address prefix list
+   */
+  explicit DescriptorScriptReference(
+      const Script& locking_script, DescriptorScriptType script_type,
+      const std::vector<DescriptorKeyReference>& key_list,
+      const TapBranch& tapbranch,
+      const std::vector<AddressFormatData>& address_prefixes);
+  /**
+   * @brief constructor.
+   * @param[in] locking_script    locking script
+   * @param[in] script_type       script type
+   * @param[in] key_list          key(pubkey, extprivkey, extpubkey) list
    * @param[in] script_tree       taproot script tree
    * @param[in] address_prefixes  address prefix list
    */
@@ -526,6 +539,17 @@ class CFD_CORE_EXPORT DescriptorScriptReference {
 
   // taproot api
   /**
+   * @brief exist taproot tapbranch.
+   * @retval true  exist
+   * @retval false not exist
+   */
+  bool HasTapBranch() const;
+  /**
+   * @brief getting taproot tapbranch.
+   * @return tapbranch
+   */
+  TapBranch GetTapBranch() const;
+  /**
    * @brief exist taproot script tree.
    * @retval true  exist
    * @retval false not exist
@@ -550,6 +574,8 @@ class CFD_CORE_EXPORT DescriptorScriptReference {
   Script redeem_script_;              //!< redeem script
   Address address_script_;            //!< address script data
   uint32_t req_num_;                  //!< multisig require signature number
+  TapBranch tapbranch_;               //!< taproot branch
+  bool is_tapbranch_;                 //!< exist tapbranch
   TaprootScriptTree script_tree_;     //!< taproot script tree
   //! child script
   std::shared_ptr<DescriptorScriptReference> child_script_ = nullptr;
@@ -659,19 +685,11 @@ class CFD_CORE_EXPORT DescriptorNode {
    */
   Pubkey GetPubkey(std::vector<std::string>* array_argument) const;
   /**
-   * @brief get schnorr pubkey.
-   * @param[in] array_argument  argument array.
-   * @return schnorr pubkey
-   */
-  SchnorrPubkey GetSchnorrPubkey(
-      std::vector<std::string>* array_argument) const;
-  /**
    * @brief get script tree.
    * @param[in] array_argument  argument array.
    * @return TapBranch
    */
-  TaprootScriptTree GetScriptTree(
-      std::vector<std::string>* array_argument) const;
+  TapBranch GetTapBranch(std::vector<std::string>* array_argument) const;
   /**
    * @brief get key reference object.
    * @param[in] array_argument  argument

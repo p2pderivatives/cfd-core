@@ -442,7 +442,8 @@ DescriptorKeyType DescriptorKeyReference::GetKeyType() const {
 // -----------------------------------------------------------------------------
 DescriptorScriptReference::DescriptorScriptReference()
     : script_type_(DescriptorScriptType::kDescriptorScriptNull),
-      is_script_(false) {
+      is_script_(false),
+      is_tapbranch_(false) {
   // do nothing
 }
 
@@ -452,6 +453,7 @@ DescriptorScriptReference::DescriptorScriptReference(
     : script_type_(script_type),
       locking_script_(locking_script),
       is_script_(false),
+      is_tapbranch_(false),
       addr_prefixes_(address_prefixes) {
   if ((script_type != DescriptorScriptType::kDescriptorScriptRaw) &&
       (script_type != DescriptorScriptType::kDescriptorScriptMiniscript)) {
@@ -470,6 +472,7 @@ DescriptorScriptReference::DescriptorScriptReference(
     : script_type_(script_type),
       locking_script_(locking_script),
       is_script_(true),
+      is_tapbranch_(false),
       addr_prefixes_(address_prefixes) {
   redeem_script_ = child_script.locking_script_;
   child_script_ = std::make_shared<DescriptorScriptReference>(child_script);
@@ -484,6 +487,7 @@ DescriptorScriptReference::DescriptorScriptReference(
       locking_script_(locking_script),
       is_script_(false),
       req_num_(req_sig_num),
+      is_tapbranch_(false),
       keys_(key_list),
       addr_prefixes_(address_prefixes) {
   // do nothing
@@ -496,6 +500,22 @@ DescriptorScriptReference::DescriptorScriptReference(
       locking_script_(address_script.GetLockingScript()),
       is_script_(false),
       address_script_(address_script),
+      is_tapbranch_(false),
+      addr_prefixes_(address_prefixes) {
+  // do nothing
+}
+
+DescriptorScriptReference::DescriptorScriptReference(
+    const Script& locking_script, DescriptorScriptType script_type,
+    const std::vector<DescriptorKeyReference>& key_list,
+    const TapBranch& tapbranch,
+    const std::vector<AddressFormatData>& address_prefixes)
+    : script_type_(script_type),
+      locking_script_(locking_script),
+      is_script_(false),
+      tapbranch_(tapbranch),
+      is_tapbranch_(true),
+      keys_(key_list),
       addr_prefixes_(address_prefixes) {
   // do nothing
 }
@@ -508,6 +528,7 @@ DescriptorScriptReference::DescriptorScriptReference(
     : script_type_(script_type),
       locking_script_(locking_script),
       is_script_(false),
+      is_tapbranch_(false),
       script_tree_(script_tree),
       keys_(key_list),
       addr_prefixes_(address_prefixes) {
@@ -524,6 +545,8 @@ DescriptorScriptReference::DescriptorScriptReference(
   child_script_ = object.child_script_;
   keys_ = object.keys_;
   req_num_ = object.req_num_;
+  tapbranch_ = object.tapbranch_;
+  is_tapbranch_ = object.is_tapbranch_;
   script_tree_ = object.script_tree_;
   addr_prefixes_ = object.addr_prefixes_;
 }
@@ -539,6 +562,8 @@ DescriptorScriptReference& DescriptorScriptReference::operator=(
     child_script_ = object.child_script_;
     keys_ = object.keys_;
     req_num_ = object.req_num_;
+    tapbranch_ = object.tapbranch_;
+    is_tapbranch_ = object.is_tapbranch_;
     script_tree_ = object.script_tree_;
     addr_prefixes_ = object.addr_prefixes_;
   }
@@ -570,14 +595,19 @@ Address DescriptorScriptReference::GenerateAddress(NetType net_type) const {
           locking_script_.IsTaprootScript() ||
           locking_script_.IsP2wshScript()) {
         auto hash = locking_script_.GetElementList()[1].GetBinaryData();
-        return Address(net_type, locking_script_.GetWitnessVersion(), hash);
+        return Address(
+            net_type, locking_script_.GetWitnessVersion(), hash,
+            addr_prefixes_);
       } else if (locking_script_.IsP2shScript()) {
         auto hash = locking_script_.GetElementList()[1].GetBinaryData();
-        return Address(net_type, AddressType::kP2shAddress, ByteData160(hash));
+        return Address(
+            net_type, AddressType::kP2shAddress, ByteData160(hash),
+            addr_prefixes_);
       } else if (locking_script_.IsP2pkhScript()) {
         auto hash = locking_script_.GetElementList()[2].GetBinaryData();
         return Address(
-            net_type, AddressType::kP2pkhAddress, ByteData160(hash));
+            net_type, AddressType::kP2pkhAddress, ByteData160(hash),
+            addr_prefixes_);
       }
       warn(CFD_LOG_SOURCE, "raw type descriptor is not support.");
       throw CfdException(
@@ -767,6 +797,12 @@ std::vector<DescriptorKeyReference> DescriptorScriptReference::GetKeyList()
   return keys_;
 }
 
+bool DescriptorScriptReference::HasTapBranch() const { return is_tapbranch_; }
+
+TapBranch DescriptorScriptReference::GetTapBranch() const {
+  return tapbranch_;
+}
+
 bool DescriptorScriptReference::HasScriptTree() const {
   return !script_tree_.GetScript().IsEmpty();
 }
@@ -898,13 +934,15 @@ void DescriptorNode::AnalyzeChild(
         child_node_.push_back(node);
         offset = idx + 1;
       } else if (name_ == "tr") {
-        DescriptorNode node(addr_prefixes_);
-        node.value_ = descriptor.substr(offset, idx - offset);
-        node.node_type_ = DescriptorNodeType::kDescriptorTypeKey;
-        node.depth_ = depth + 1;
-        node.parent_kind_ = parent_kind_;
-        child_node_.push_back(node);
-        offset = idx + 1;
+        if (child_node_.empty()) {
+          DescriptorNode node(addr_prefixes_);
+          node.value_ = descriptor.substr(offset, idx - offset);
+          node.node_type_ = DescriptorNodeType::kDescriptorTypeKey;
+          node.depth_ = depth + 1;
+          node.parent_kind_ = parent_kind_;
+          child_node_.push_back(node);
+          offset = idx + 1;
+        }
       } else {
         // ignore for miniscript
         // warn(CFD_LOG_SOURCE, "Illegal command.");
@@ -1160,6 +1198,7 @@ void DescriptorNode::AnalyzeKey() {
               CfdError::kCfdIllegalArgumentError,
               "Failed to taproot key. taproot is xonly pubkey only.");
         }
+        key_info_ = pubkey.GetHex();
       } else if (
           (parent_kind_ == "tr") &&
           (bytes.GetDataSize() == SchnorrPubkey::kSchnorrPubkeySize)) {
@@ -1167,11 +1206,9 @@ void DescriptorNode::AnalyzeKey() {
         schnorr_pubkey = SchnorrPubkey(bytes);
         pubkey = schnorr_pubkey.CreatePubkey();
         key_type_ = DescriptorKeyType::kDescriptorKeySchnorr;
+        key_info_ = schnorr_pubkey.GetHex();
       } else {
         is_wif = true;
-      }
-      if (!is_wif) {
-        key_info_ = pubkey.GetHex();
       }
     } catch (const CfdException& except) {
       std::string errmsg(except.what());
@@ -1370,7 +1407,8 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
           CFD_LOG_SOURCE, "Failed to taproot node num. size={}",
           child_node_.size());
       throw CfdException(
-          CfdError::kCfdIllegalArgumentError, "Failed to taproot node num.");
+          CfdError::kCfdIllegalArgumentError,
+          "Failed to taproot node num." + child_node_[0].value_);
     }
     child_node_[0].node_type_ = DescriptorNodeType::kDescriptorTypeKey;
     child_node_[0].parent_kind_ = "tr";
@@ -1393,12 +1431,7 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
            ++index) {
         temp_args.push_back("0");
       }
-      if (child_node_[1].GetScriptTree(&temp_args).ToString().empty()) {
-        warn(CFD_LOG_SOURCE, "Failed to analyze tapscript tree.");
-        throw CfdException(
-            CfdError::kCfdIllegalArgumentError,
-            "Failed to analyze tapscript tree.");
-      }
+      child_node_[1].GetTapBranch(&temp_args);  // check
     }
   } else if (child_node_.size() != 1) {
     warn(
@@ -1446,6 +1479,7 @@ void DescriptorNode::AnalyzeAll(const std::string& parent_name) {
           CfdError::kCfdIllegalArgumentError,
           "Failed to taproot. pkh is unsupported.");
     }
+    child_node_[0].parent_kind_ = parent_kind_;
     child_node_[0].AnalyzeAll(name_);
 
     if ((name_ == "wpkh") || (name_ == "wsh")) {
@@ -1473,8 +1507,35 @@ void DescriptorNode::AnalyzeScriptTree() {
   std::string temp_name;
   for (size_t idx = 0; idx < desc.size(); ++idx) {
     const char& str = desc[idx];
-    if ((str == ' ') || (str == ',') || (str == '{') || (str == '}')) {
+    if ((str == ' ') || (str == '{')) {
       if (script_depth == 0) ++offset;
+    } else if ((str == ',') || (str == '}')) {
+      if (script_depth == 0) {
+        tapscript = desc.substr(offset, idx - offset);
+        if (tapscript.length() >= (kByteData256Length * 2)) {
+          offset = idx + 1;
+          DescriptorNode node(addr_prefixes_);
+          node.name_ = temp_name;
+          node.node_type_ = DescriptorNodeType::kDescriptorTypeKey;
+          node.value_ = tapscript;
+          node.depth_ = 1;
+          node.parent_kind_ = "tr";
+          if (!temp_name.empty()) {
+            node.AnalyzeChild(tapscript, 2);
+          }
+          node.AnalyzeAll("tr");
+          tree_node_.emplace(tapscript, node);
+          child_node_.emplace_back(node);
+          ++tapleaf_count;
+          tapscript = "";
+          temp_name = "";
+          info(
+              CFD_LOG_SOURCE, "HashTarget script_depth={}, child.value={}",
+              script_depth, node.value_);
+        } else {
+          ++offset;
+        }
+      }
     } else if (str == '(') {
       if (script_depth == 0) {
         temp_name = desc.substr(offset, idx - offset);
@@ -1512,10 +1573,32 @@ void DescriptorNode::AnalyzeScriptTree() {
     }
   }
   if (tree_node_.empty()) {
-    warn(CFD_LOG_SOURCE, "Failed to taproot. empty script.");
-    throw CfdException(
-        CfdError::kCfdIllegalArgumentError,
-        "Failed to taproot. empty script.");
+    if (value_.length() >= (kByteData256Length * 2)) {
+      tapscript = value_;
+      DescriptorNode node(addr_prefixes_);
+      node.name_ = temp_name;
+      node.node_type_ = DescriptorNodeType::kDescriptorTypeKey;
+      node.value_ = tapscript;
+      node.depth_ = 1;
+      node.parent_kind_ = "tr";
+      if (!temp_name.empty()) {
+        node.AnalyzeChild(tapscript, 2);
+      }
+      node.AnalyzeAll("tr");
+      tree_node_.emplace(tapscript, node);
+      child_node_.emplace_back(node);
+      ++tapleaf_count;
+      tapscript = "";
+      temp_name = "";
+      info(
+          CFD_LOG_SOURCE, "LastTarget script_depth={}, child.value={}",
+          script_depth, node.value_);
+    } else {
+      warn(CFD_LOG_SOURCE, "Failed to taproot. empty script.");
+      throw CfdException(
+          CfdError::kCfdIllegalArgumentError,
+          "Failed to taproot. empty script.");
+    }
   }
 }
 
@@ -1645,17 +1728,21 @@ std::vector<DescriptorScriptReference> DescriptorNode::GetReferences(
           child_node_[0].GetKeyReferences(array_argument);
       SchnorrPubkey pubkey = ref.GetSchnorrPubkey();
       keys.push_back(ref);
-      if (child_node_.size() < 2) {
-        locking_script =
-            ScriptUtil::CreateTaprootLockingScript(pubkey.GetByteData256());
-        result.emplace_back(
-            locking_script, script_type_, keys, addr_prefixes_);
-      } else {
-        auto tree = child_node_[1].GetScriptTree(array_argument);
+      TapBranch branch;
+      if (child_node_.size() >= 2) {
+        branch = child_node_[1].GetTapBranch(array_argument);
+      }
+      if (branch.HasTapLeaf()) {
+        TaprootScriptTree tree(branch);
         TaprootUtil::CreateTapScriptControl(
             pubkey, tree, nullptr, &locking_script);
         result.emplace_back(
             locking_script, script_type_, keys, tree, addr_prefixes_);
+      } else {
+        TaprootUtil::CreateTapScriptControl(
+            pubkey, branch, nullptr, &locking_script);
+        result.emplace_back(
+            locking_script, script_type_, keys, branch, addr_prefixes_);
       }
     } else {
       std::vector<DescriptorKeyReference> keys;
@@ -1696,7 +1783,12 @@ std::vector<DescriptorScriptReference> DescriptorNode::GetReferences(
             script_type_ == DescriptorScriptType::kDescriptorScriptWpkh) {
           locking_script = ScriptUtil::CreateP2wpkhLockingScript(pubkey);
         } else if (script_type_ == DescriptorScriptType::kDescriptorScriptPk) {
-          build << pubkey << ScriptOperator::OP_CHECKSIG;
+          if (parent_kind_ == "tr") {
+            build << SchnorrPubkey::FromPubkey(pubkey).GetData()
+                  << ScriptOperator::OP_CHECKSIG;
+          } else {
+            build << pubkey << ScriptOperator::OP_CHECKSIG;
+          }
           locking_script = build.Build();
         }
         result.emplace_back(
@@ -1716,13 +1808,7 @@ Pubkey DescriptorNode::GetPubkey(
   return ref.GetPubkey();
 }
 
-SchnorrPubkey DescriptorNode::GetSchnorrPubkey(
-    std::vector<std::string>* array_argument) const {
-  DescriptorKeyReference ref = GetKeyReferences(array_argument);
-  return ref.GetSchnorrPubkey();
-}
-
-TaprootScriptTree DescriptorNode::GetScriptTree(
+TapBranch DescriptorNode::GetTapBranch(
     std::vector<std::string>* array_argument) const {
   static auto sort_func = [](const std::string& src, const std::string& dest) {
     return src.length() > dest.length();
@@ -1734,32 +1820,39 @@ TaprootScriptTree DescriptorNode::GetScriptTree(
   std::sort(key_list.begin(), key_list.end(), sort_func);
 
   std::string desc = value_;
+  std::string target;
   Script first_script;
   for (const auto& script_str : key_list) {
     const auto& node_ref = tree_node_.at(script_str);
-    const auto obj = node_ref.GetReference(array_argument);
-    Script script =
-        obj.HasRedeemScript() ? obj.GetRedeemScript() : obj.GetLockingScript();
-    if (first_script.IsEmpty()) first_script = script;
-    const auto tapscript = "tl(" + script.GetHex() + ")";
-    auto offset = desc.find(script_str);
-    while (offset != std::string::npos) {
-      desc = desc.replace(offset, script_str.length(), tapscript);
-      offset = desc.find(script_str);
+    if (node_ref.node_type_ == DescriptorNodeType::kDescriptorTypeKey) {
+      auto ref = node_ref.GetKeyReferences(array_argument);
+      target = ref.GetSchnorrPubkey().GetHex();
+    } else {
+      const auto obj = node_ref.GetReference(array_argument);
+      Script script = obj.HasRedeemScript() ? obj.GetRedeemScript()
+                                            : obj.GetLockingScript();
+      if (first_script.IsEmpty()) first_script = script;
+      target = "tl(" + script.GetHex() + ")";
+    }
+    if (script_str != target) {
+      auto offset = desc.find(script_str);
+      while (offset != std::string::npos) {
+        desc = desc.replace(offset, script_str.length(), target);
+        offset = desc.find(script_str);
+      }
     }
   }
 
   TapBranch tree;
-  if ((!desc.empty()) && (desc[0] != '{')) {
-    tree = TapBranch::FromString(desc);
+  if (desc.empty() || (desc == "{}")) {
+    // do nothing
   } else {
     tree = TapBranch::FromString(desc);
-    if (!tree.HasTapLeaf()) {
+    if ((!tree.HasTapLeaf()) && (!first_script.IsEmpty())) {
       tree = tree.ChangeTapLeaf(first_script);
     }
   }
-
-  return TaprootScriptTree(tree);
+  return tree;
 }
 
 DescriptorKeyReference DescriptorNode::GetKeyReferences(

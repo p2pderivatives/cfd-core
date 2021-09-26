@@ -588,6 +588,12 @@ void Transaction::RemoveTxIn(uint32_t index) {
   CallbackStateChange(kStateChangeRemoveTxIn);
 }
 
+void Transaction::SetTxInSequence(uint32_t tx_in_index, uint32_t sequence) {
+  AbstractTransaction::SetTxInSequence(tx_in_index, sequence);
+  vin_[tx_in_index].SetSequence(sequence);
+  CallbackStateChange(kStateChangeUpdateTxIn);
+}
+
 void Transaction::SetUnlockingScript(
     uint32_t tx_in_index, const Script &unlocking_script) {
   AbstractTransaction::SetUnlockingScript(tx_in_index, unlocking_script);

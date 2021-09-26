@@ -150,6 +150,8 @@ std::string TapBranch::ToString() const {
       ver_str = "," + ByteData(leaf_version_).GetHex();
     }
     buf = "tl(" + script_.GetHex() + ver_str + ")";
+  } else if (branch_list_.empty() && root_commitment_.IsEmpty()) {
+    return "";
   } else {
     buf = root_commitment_.GetHex();
   }
@@ -410,6 +412,36 @@ TapBranch TapBranch::FromString(const std::string& text) {
   return result;
 }
 
+ByteData256 TapBranch::GetTapTweak(
+    const SchnorrPubkey& internal_pubkey) const {
+  ByteData256 hash = GetCurrentBranchHash();
+  static auto kTaggedHash = HashUtil::Sha256("TapTweak");
+  auto hasher = HashUtil(HashUtil::kSha256)
+                << kTaggedHash << kTaggedHash << internal_pubkey.GetData();
+  if (!hash.IsEmpty()) hasher << hash;
+  return hasher.Output256();
+}
+
+SchnorrPubkey TapBranch::GetTweakedPubkey(
+    const SchnorrPubkey& internal_pubkey, bool* parity) const {
+  ByteData256 hash = GetTapTweak(internal_pubkey);
+  return internal_pubkey.CreateTweakAdd(hash, parity);
+}
+
+Privkey TapBranch::GetTweakedPrivkey(
+    const Privkey& internal_privkey, bool* parity) const {
+  bool is_parity = false;
+  auto internal_pubkey =
+      SchnorrPubkey::FromPrivkey(internal_privkey, &is_parity);
+  Privkey privkey = internal_privkey;
+  if (is_parity) privkey = internal_privkey.CreateNegate();
+
+  ByteData256 hash = GetTapTweak(internal_pubkey);
+  internal_pubkey.CreateTweakAdd(hash, &is_parity);
+  if (parity != nullptr) *parity = is_parity;
+  return privkey.CreateTweakAdd(hash);
+}
+
 // ----------------------------------------------------------------------------
 // TaprootScriptTree
 // ----------------------------------------------------------------------------
@@ -504,36 +536,6 @@ bool TaprootScriptTree::IsValid() const { return !script_.IsEmpty(); }
 
 ByteData256 TaprootScriptTree::GetTapLeafHash() const { return GetBaseHash(); }
 
-ByteData256 TaprootScriptTree::GetTapTweak(
-    const SchnorrPubkey& internal_pubkey) const {
-  ByteData256 hash = GetCurrentBranchHash();
-  static auto kTaggedHash = HashUtil::Sha256("TapTweak");
-  auto hasher = HashUtil(HashUtil::kSha256)
-                << kTaggedHash << kTaggedHash << internal_pubkey.GetData()
-                << hash;
-  return hasher.Output256();
-}
-
-SchnorrPubkey TaprootScriptTree::GetTweakedPubkey(
-    const SchnorrPubkey& internal_pubkey, bool* parity) const {
-  ByteData256 hash = GetTapTweak(internal_pubkey);
-  return internal_pubkey.CreateTweakAdd(hash, parity);
-}
-
-Privkey TaprootScriptTree::GetTweakedPrivkey(
-    const Privkey& internal_privkey, bool* parity) const {
-  bool is_parity = false;
-  auto internal_pubkey =
-      SchnorrPubkey::FromPrivkey(internal_privkey, &is_parity);
-  Privkey privkey = internal_privkey;
-  if (is_parity) privkey = internal_privkey.CreateNegate();
-
-  ByteData256 hash = GetTapTweak(internal_pubkey);
-  internal_pubkey.CreateTweakAdd(hash, &is_parity);
-  if (parity != nullptr) *parity = is_parity;
-  return privkey.CreateTweakAdd(hash);
-}
-
 std::vector<ByteData256> TaprootScriptTree::GetNodeList() const {
   return nodes_;
 }
@@ -570,12 +572,13 @@ bool TaprootUtil::IsValidLeafVersion(uint8_t leaf_version) {
 }
 
 ByteData TaprootUtil::CreateTapScriptControl(
-    const SchnorrPubkey& internal_pubkey, const TaprootScriptTree& merkle_tree,
+    const SchnorrPubkey& internal_pubkey, const TapBranch& merkle_tree,
     SchnorrPubkey* witness_program, Script* locking_script) {
   bool parity = false;
   auto pubkey_data =
       merkle_tree.GetTweakedPubkey(internal_pubkey, &parity).GetByteData256();
   uint8_t top = merkle_tree.GetLeafVersion();
+  if (top == 0) top = TaprootScriptTree::kTapScriptLeafVersion;
   if (parity) top |= 0x01;
   Serializer builder;
   builder.AddDirectByte(top);

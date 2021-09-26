@@ -5,12 +5,6 @@
 #include "cfdcore/cfdcore_bytedata.h"
 #include "cfdcore/cfdcore_exception.h"
 
-// https://qiita.com/yohm/items/477bac065f4b772127c7
-
-// The main function are using gtest's main().
-
-// TEST(test_suite_name, test_name)
-
 using cfd::core::ByteData;
 using cfd::core::ByteData160;
 using cfd::core::ByteData256;
@@ -63,6 +57,8 @@ TEST(ByteData160, BytesConstructor) {
   EXPECT_STREQ(byte_data.GetHex().c_str(),
                "0102030405060708090001020304050607080900");
   EXPECT_TRUE(is_equals);
+  auto copy_data = byte_data;
+  EXPECT_TRUE(copy_data == byte_data);
 }
 
 TEST(ByteData160, ByteDataConstructor) {
