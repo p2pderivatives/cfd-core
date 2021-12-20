@@ -21,7 +21,7 @@ jobs:
         shared: [on]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: cmake_version
       run: cmake --version
     - name: cmake_generage
